@@ -119,8 +119,25 @@
                         <a class="nav-link py-0 d-flex align-items-center" data-coreui-toggle="dropdown" href="#"
                             role="button">
 
-                            <img src="{{ $profile?->photo ? asset('storage/' . $profile->photo) : asset('images/default-avatar.png') }}"
-                                class="rounded-circle me-2" width="32" height="32">
+                            @php
+                                $name = $user->name ?? 'Guest';
+                                $initial = strtoupper(mb_substr($name, 0, 1));
+
+                                $colors = ['bg-primary', 'bg-success', 'bg-info', 'bg-warning', 'bg-danger', 'bg-dark'];
+                                $color = $colors[ord($initial) % count($colors)];
+                            @endphp
+
+                            @if (!empty($profile?->photo))
+                                <img src="{{ asset('storage/' . $profile->photo) }}" class="rounded-circle me-2"
+                                    width="32" height="32" alt="Foto Profil">
+                            @else
+                                <div class="rounded-circle {{ $color }} text-white d-flex align-items-center justify-content-center me-2"
+                                    style="width:32px; height:32px; font-size:0.85rem; font-weight:600;"
+                                    title="{{ $name }}">
+                                    {{ $initial }}
+                                </div>
+                            @endif
+
 
                             <span class="fw-semibold">{{ $user->name ?? 'Guest' }}</span>
                         </a>

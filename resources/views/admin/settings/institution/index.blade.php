@@ -3,10 +3,6 @@
 @section('title', 'Pengaturan Lembaga')
 
 @section('content')
-
-    {{-- =======================
-STYLE (BISA DIPINDAH KE SCSS)
-======================= --}}
     <style>
         .logo-upload-wrapper {
             position: relative;
