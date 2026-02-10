@@ -1,0 +1,16 @@
+// =====================================
+// COREUI REQUIRED IMPORTS
+// =====================================
+@import "@coreui/coreui/scss/functions";
+@import "@coreui/coreui/scss/variables";
+@import "@coreui/coreui/scss/mixins";
+@import "@coreui/coreui/scss/coreui";
+
+// CoreUI Icons
+@import "@coreui/icons/css/free.min.css";
+
+// Custom variables (optional)
+@import "variables";
+
+// Custom styling (sidebar active, dll)
+@import "custom";
