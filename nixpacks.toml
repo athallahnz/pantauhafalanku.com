@@ -2,8 +2,8 @@ providers = ["php"]
 
 [phases.setup]
 nixPkgs = [
-  "php81",
-  "php81Packages.composer",
+  "php82",
+  "php82Packages.composer",
   "nodejs_18"
 ]
 
