@@ -27,8 +27,14 @@
 <body>
     @php
         /** @var \App\Models\User|null $user */
+        /** @var \App\Models\InstitutionSetting|null $institution */
         $user = auth()->user();
         $role = $user->role ?? null;
+
+        // FIX: definisikan profile DI SINI
+        $profile = $user?->profileSetting ?? null;
+        $institution = \App\Models\InstitutionSetting::first();
+
     @endphp
 
     {{-- =============== SIDEBAR (PERSIS POLA COREUI) =============== --}}
@@ -36,7 +42,8 @@
         <div
             class="sidebar-header border-bottom border-white d-none d-md-flex align-items-center justify-content-center px-3 py-4">
             <div class="sidebar-brand-logo">
-                <img src="{{ asset('assets/logos.png') }}" alt="Logo" class="sidebar-logo-img">
+                <img src="{{ !empty($institution?->logo) ? asset('storage/' . $institution->logo) : asset('assets/logos.png') }}"
+                    alt="Logo Lembaga" class="sidebar-logo-img">
             </div>
         </div>
 
@@ -104,24 +111,22 @@
 
                 <ul class="header-nav ms-auto">
 
-                    <!-- ===========================
-                    DESKTOP — Avatar + Nama
-                    =========================== -->
+                    @php
+                        $isAdmin = in_array($user->role, ['admin', 'superadmin']);
+                    @endphp
+
                     <li class="nav-item dropdown d-none d-md-flex">
                         <a class="nav-link py-0 d-flex align-items-center" data-coreui-toggle="dropdown" href="#"
-                            role="button" aria-haspopup="true" aria-expanded="false">
+                            role="button">
 
-                            {{-- Avatar --}}
-                            <div class="avatar avatar-md bg-primary text-white rounded-circle d-flex
-                        align-items-center justify-content-center me-2"
-                                style="width:32px; height:32px; font-size:0.9rem;">
-                                {{ strtoupper(substr($user->name ?? 'G', 0, 1)) }}
-                            </div>
+                            <img src="{{ $profile?->photo ? asset('storage/' . $profile->photo) : asset('images/default-avatar.png') }}"
+                                class="rounded-circle me-2" width="32" height="32">
 
                             <span class="fw-semibold">{{ $user->name ?? 'Guest' }}</span>
                         </a>
 
                         <div class="dropdown-menu dropdown-menu-end pt-0">
+
                             <div class="dropdown-header bg-light py-2">
                                 <strong>{{ $user->name }}</strong><br>
                                 <small class="text-muted">{{ ucfirst($user->role ?? '-') }}</small>
@@ -129,33 +134,44 @@
 
                             <div class="dropdown-divider"></div>
 
-                            {{-- Logout --}}
+                            {{-- SETTINGS --}}
+                            @if ($isAdmin)
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('admin.settings.institution') }}">
+                                    <i class="cil-settings me-2"></i> Setting Lembaga
+                                </a>
+                            @endif
+
+                            <a class="dropdown-item d-flex align-items-center" href="{{ route('profile.settings') }}">
+                                <i class="cil-user me-2"></i> Setting Profil
+                            </a>
+
+                            <div class="dropdown-divider"></div>
+
+                            {{-- LOGOUT --}}
                             <form action="{{ route('logout') }}" method="POST">
                                 @csrf
                                 <button class="dropdown-item d-flex align-items-center" type="submit">
                                     <i class="cil-account-logout me-2"></i> Logout
                                 </button>
                             </form>
+
                         </div>
                     </li>
-
 
                     <!-- ===========================
                     MOBILE — Avatar Only
                     =========================== -->
                     <li class="nav-item dropdown d-flex d-md-none">
                         <a class="nav-link py-0 d-flex align-items-center" data-coreui-toggle="dropdown" href="#"
-                            role="button" aria-haspopup="true" aria-expanded="false">
+                            role="button">
 
-                            {{-- Avatar only --}}
-                            <div class="avatar avatar-md bg-primary text-white rounded-circle d-flex
-                        align-items-center justify-content-center"
-                                style="width:32px; height:32px; font-size:0.9rem;">
-                                {{ strtoupper(substr($user->name ?? 'G', 0, 1)) }}
-                            </div>
+                            <img src="{{ $profile?->photo ? asset('storage/' . $profile->photo) : asset('images/default-avatar.png') }}"
+                                class="avatar rounded-circle mb-2" width="120" height="120">
                         </a>
 
                         <div class="dropdown-menu dropdown-menu-end pt-0">
+
                             <div class="dropdown-header bg-light py-2">
                                 <strong>{{ $user->name }}</strong><br>
                                 <small class="text-muted">{{ ucfirst($user->role ?? '-') }}</small>
@@ -163,13 +179,28 @@
 
                             <div class="dropdown-divider"></div>
 
-                            {{-- Logout --}}
+                            {{-- SETTINGS --}}
+                            @if ($isAdmin)
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('admin.settings.institution') }}">
+                                    <i class="cil-settings me-2"></i> Setting Lembaga
+                                </a>
+                            @endif
+
+                            <a class="dropdown-item d-flex align-items-center" href="{{ route('profile.settings') }}">
+                                <i class="cil-user me-2"></i> Setting Profil
+                            </a>
+
+                            <div class="dropdown-divider"></div>
+
+                            {{-- LOGOUT --}}
                             <form action="{{ route('logout') }}" method="POST">
                                 @csrf
                                 <button class="dropdown-item d-flex align-items-center" type="submit">
                                     <i class="cil-account-logout me-2"></i> Logout
                                 </button>
                             </form>
+
                         </div>
                     </li>
 

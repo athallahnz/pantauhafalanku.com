@@ -23,13 +23,16 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    // Relasi profil
+    public function profileSetting()
+    {
+        return $this->hasOne(ProfileSetting::class);
+    }
+
     public function santri()
     {
         return $this->hasOne(Santri::class);
     }
-    
-    // app/Models/User.php
+
     public function santriProfile()
     {
         return $this->hasOne(Santri::class, 'user_id');

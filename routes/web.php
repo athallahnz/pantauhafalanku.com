@@ -9,6 +9,7 @@ use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardCo
 use App\Http\Controllers\SuperAdmin\UserController as SuperAdminUserController;
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\InstitutionSettingController;
 use App\Http\Controllers\Admin\LaporanController as AdminLaporanController;
 use App\Http\Controllers\Admin\SantriController as AdminSantriController;
 use App\Http\Controllers\Admin\MusyrifController as AdminMusyrifController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Santri\DashboardController as SantriDashboardController
 use App\Http\Controllers\Santri\HafalanController as SantriHafalanController;
 
 use App\Http\Controllers\KelasController;
+use App\Http\Controllers\ProfileSettingController;
 use App\Models\Santri;
 
 /*
@@ -43,6 +45,25 @@ Route::post('/logout', function () {
     return redirect()->route('login');
 })->name('logout');
 
+/*
+|--------------------------------------------------------------------------
+| PROFILE SETTINGS
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->group(function () {
+
+    Route::get(
+        '/profile/settings',
+        [ProfileSettingController::class, 'index']
+    )
+        ->name('profile.settings');
+
+    Route::post(
+        '/profile/settings',
+        [ProfileSettingController::class, 'store']
+    )
+        ->name('profile.settings.store');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -74,6 +95,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     // Dashboard Admin
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
+    Route::get(
+        '/settings/institution',
+        [InstitutionSettingController::class, 'index']
+    )
+        ->name('settings.institution');
+
+    Route::post(
+        '/settings/institution',
+        [InstitutionSettingController::class, 'store']
+    )
+        ->name('settings.institution.store');
+
     // Migrasi Santri
     Route::get('/santri/naik-kelas', [AdminMigrasiSantriController::class, 'page'])
         ->name('santri.migrasi.page');
@@ -99,7 +132,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::post('/santri/migrasi/auto/execute', [AdminMigrasiSantriController::class, 'executeAutoMapping'])
         ->name('santri.migrasi.auto.execute');
 
-
     // Kelola Musyrif
     Route::get('musyrif', [AdminMusyrifController::class, 'index'])->name('musyrif.index');
     Route::get('musyrif/data', [AdminMusyrifController::class, 'data'])->name('musyrif.data');
@@ -115,7 +147,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
         ->name('musyrif.attendances');
     Route::patch('musyrif/attendances/{attendance}/status', [AdminMusyrifController::class, 'updateAttendanceStatus'])
         ->name('musyrif.attendances.update_status');
-
 
     // Laporan Hafalan
     Route::get('laporan-hafalan', [AdminLaporanController::class, 'index'])->name('laporan.index');
@@ -141,6 +172,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('laporan-hafalan/export/kelas/pdf', [AdminLaporanController::class, 'exportKelasPdf'])->name('laporan.export-kelas-pdf');
     Route::get('laporan-hafalan/export/musyrif/pdf', [AdminLaporanController::class, 'exportMusyrifPdf'])->name('laporan.export-musyrif-pdf');
 });
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -230,6 +263,9 @@ Route::prefix('musyrif')
                     ->name('timeline');
             });
     });
+
+
+
 
 
 /*
