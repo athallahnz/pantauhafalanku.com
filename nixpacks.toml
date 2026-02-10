@@ -1,9 +1,7 @@
 providers = ["php"]
 
-[phases.build]
-cmds = [
-  "composer install --no-dev --optimize-autoloader"
-]
+[variables]
+PHP_VERSION = "8.1"
 
 [start]
 cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
