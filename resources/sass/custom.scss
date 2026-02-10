@@ -44,6 +44,51 @@
    COREUI SIDEBAR PRIMARY OVERRIDE
 ============================================================ */
 
+.logo-upload-wrapper {
+    position: relative;
+}
+
+.logo-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.logo-upload-box {
+    border: 2px dashed #cfd8dc;
+    border-radius: 12px;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background-color: #fff;
+    transition: all 0.2s ease;
+    padding: 20px;
+}
+
+.logo-upload-box:hover {
+    border-color: #321fdb; /* CoreUI primary */
+    background-color: #f8f9ff;
+}
+
+.logo-placeholder i {
+    font-size: 40px;
+    color: #6c757d;
+}
+
+.logo-preview-img {
+    max-height: 120px;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+/* =========================================================
+   2. SIDEBAR COLORS OVERRIDE
+   fully compatible CoreUI
+========================================================= */
 .sidebar {
     --cui-sidebar-bg: #5640a5;
     --cui-sidebar-color: rgba(255, 255, 255, 0.85);
