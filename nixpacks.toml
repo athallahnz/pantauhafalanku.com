@@ -1,11 +1,17 @@
 providers = ["php"]
 
 [phases.setup]
-nixPkgs = ["php81", "php81Packages.composer"]
+nixPkgs = [
+  "php81",
+  "php81Packages.composer",
+  "nodejs_18"
+]
 
 [phases.build]
 cmds = [
-  "composer install --no-dev --optimize-autoloader"
+  "composer install --no-dev --optimize-autoloader",
+  "npm ci",
+  "npm run build"
 ]
 
 [start]
