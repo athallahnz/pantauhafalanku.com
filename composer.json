@@ -8,6 +8,7 @@
         "php": "^8.1",
         "barryvdh/laravel-dompdf": "^3.1",
         "guzzlehttp/guzzle": "^7.2",
+        "ladumor/laravel-pwa": "^0.0.5",
         "laravel/fortify": "^1.32",
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.3",

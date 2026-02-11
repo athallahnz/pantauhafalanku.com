@@ -4,6 +4,11 @@
 <head>
     <meta charset="utf-8">
     <title>@yield('title', 'Sistem Informasi Hafalan Santri')</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0d6efd">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Laravel App">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Sistem Informasi Hafalan Santri">
     <meta name="author" content="AnzArt Studio">
@@ -182,9 +187,16 @@
                     <li class="nav-item dropdown d-flex d-md-none">
                         <a class="nav-link py-0 d-flex align-items-center" data-coreui-toggle="dropdown" href="#"
                             role="button">
-
-                            <img src="{{ $profile?->photo ? asset('storage/' . $profile->photo) : asset('images/default-avatar.png') }}"
-                                class="avatar rounded-circle mb-2" width="120" height="120">
+                            @if (!empty($profile?->photo))
+                                <img src="{{ asset('storage/' . $profile->photo) }}" class="avatar rounded-circle mb-2"
+                                    width="120" height="120" alt="Foto Profil">
+                            @else
+                                <div class="rounded-circle {{ $color }} text-white d-flex align-items-center justify-content-center me-2"
+                                    style="width:32px; height:32px; font-size:0.85rem; font-weight:600;"
+                                    title="{{ $name }}">
+                                    {{ $initial }}
+                                </div>
+                            @endif
                         </a>
 
                         <div class="dropdown-menu dropdown-menu-end pt-0">
@@ -204,7 +216,8 @@
                                 </a>
                             @endif
 
-                            <a class="dropdown-item d-flex align-items-center" href="{{ route('profile.settings') }}">
+                            <a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('profile.settings') }}">
                                 <i class="cil-user me-2"></i> Setting Profil
                             </a>
 

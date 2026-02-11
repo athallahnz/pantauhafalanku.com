@@ -4,6 +4,11 @@
 <head>
     <meta charset="utf-8">
     <title>@yield('title', 'Login Sistem Informasi Hafalan Santri')</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0d6efd">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Laravel App">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Sistem Informasi Hafalan Santri">
     <meta name="author" content="AnzArt Studio">
