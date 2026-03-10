@@ -10,13 +10,18 @@ export default defineConfig({
     ],
 
     server: {
-        host: "0.0.0.0",
-        port: 5173, // ✅ port default Vite
-
+        host: "0.0.0.0", // Mengizinkan akses dari luar (HP)
+        port: 5173,
         strictPort: true,
+        cors: true, // ✅ PENTING: Mencegah Safari memblokir file lintas domain
 
         hmr: {
-            host: "localhost",
+            // ✅ Ganti "localhost" dengan DOMAIN NGROK MAS SAAT INI (tanpa https://)
+            // Catatan: Kalau Ngrok di-restart dan URL berubah, ini harus di-update lagi ya!
+            host: "idioblastic-stetson-recreatively.ngrok-free.dev",
+
+            clientPort: 443, // ✅ Mengelabui browser agar pakai port standar HTTPS Ngrok
+            protocol: "wss", // ✅ Menggunakan WebSocket Secure agar Safari tidak marah
         },
     },
 });

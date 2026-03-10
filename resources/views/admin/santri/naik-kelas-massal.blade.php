@@ -1,177 +1,233 @@
 @extends('layouts.app')
 
-@section('title', 'Naik Kelas Massal (Per Kelas)')
+@section('title', 'Naik Kelas Massal')
 
 @section('content')
-    <div class="container py-3">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-            <div>
-                <h4 class="mb-1">Naik Kelas / Pindah Kelas (Massal)</h4>
-                <div class="text-muted small">
-                    Alur 1 | Naik per Kelas : Pilih Kelas Asal dan Tujuan → Sistem ambil semua santri → Preview → Execute.
-                </div>
-                <div class="text-muted small">
-                    Alur 2 | Auto Naik Semua Kelas : Klik Auto-Mapping Preview → Preview Berhasil (OK) → Klik Auto-Mapping
-                    Execute.
-                </div>
-            </div>
+    <style>
+        /* ================= KONSISTENSI STYLING ================= */
+        .text-adaptive-purple {
+            color: var(--islamic-purple-700);
+            transition: color 0.3s ease;
+        }
 
-            <div class="d-flex gap-2">
-                <a href="{{ route('santri.master.index') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-arrow-left"></i> Kembali ke Daftar Santri
-                </a>
-            </div>
+        [data-coreui-theme="dark"] .text-adaptive-purple {
+            color: #ffffff !important;
+        }
+
+        /* Form Controls */
+        .form-control,
+        .form-select {
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+        }
+
+        .form-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--cui-secondary-color);
+        }
+
+        /* Status Badge Semester */
+        .semester-status-card {
+            background: linear-gradient(45deg, var(--islamic-purple-600), #8e44ad);
+            color: white;
+            border: none;
+        }
+
+        /* Section Separator */
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--cui-secondary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--cui-border-color);
+        }
+
+        /* Execute Button Styles */
+        .btn-execute {
+            background: #198754;
+            color: white;
+            border: none;
+        }
+
+        .btn-execute:disabled {
+            background: #a5d6a7;
+        }
+    </style>
+
+    {{-- HEADER PAGE --}}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div>
+            <h4 class="mb-0 fw-bold text-adaptive-purple">Manajemen Naik Kelas</h4>
+            <span class="text-muted small">Proses migrasi data santri antar kelas dan semester</span>
         </div>
+        <a href="{{ route('santri.master.index') }}" class="btn btn-outline-secondary px-3 rounded-pill shadow-sm">
+            <i class="bi bi-arrow-left"></i> Kembali ke Daftar
+        </a>
+    </div>
 
-
-        <div class="alert alert-light border d-flex justify-content-between align-items-center">
+    {{-- SEMESTER INFO CARD --}}
+    <div class="card semester-status-card shadow-sm rounded-4 mb-4 overflow-hidden">
+        <div class="card-body p-4 d-flex justify-content-between align-items-center">
             <div>
-                <div class="fw-semibold">Semester Aktif</div>
-                <div class="small text-muted">
+                <div class="opacity-75 small text-uppercase fw-bold mb-1">Semester Aktif Saat Ini</div>
+                <h3 class="mb-0 fw-bold">
                     @if ($semesterAktif)
                         {{ strtoupper($semesterAktif->nama) }}
                     @else
-                        Belum ada semester aktif (set is_active=true di semesters).
+                        BELUM ADA SEMESTER AKTIF
                     @endif
-                </div>
+                </h3>
             </div>
             <div class="text-end">
-                <span class="badge bg-{{ $semesterAktif ? 'success' : 'danger' }}">
-                    {{ $semesterAktif ? 'ACTIVE' : 'NOT SET' }}
-                </span>
-            </div>
-        </div>
-
-        <div class="card mb-3">
-            <div class="card-body">
-                <div class="row g-2">
-                    <div class="col-md-6">
-                        <label class="form-label">Kelas Asal</label>
-                        <select class="form-select" id="fromKelasId" {{ !$semesterAktif ? 'disabled' : '' }}>
-                            <option value="">Pilih kelas asal...</option>
-                            @foreach ($kelasList as $k)
-                                <option value="{{ $k->id }}">{{ $k->nama_kelas }}</option>
-                            @endforeach
-                        </select>
-                        <div class="small text-muted mt-1">Semua santri pada kelas ini akan diproses.</div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Kelas Tujuan</label>
-                        <select class="form-select" id="toKelasId" {{ !$semesterAktif ? 'disabled' : '' }}>
-                            <option value="">Pilih kelas tujuan...</option>
-                            @foreach ($kelasList as $k)
-                                <option value="{{ $k->id }}">{{ $k->nama_kelas }}</option>
-                            @endforeach
-                        </select>
-                        <div class="small text-muted mt-1">Kelas aktif santri akan diubah ke kelas tujuan.</div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Musyrif Tujuan (opsional)</label>
-                        <select class="form-select" id="toMusyrifId" {{ !$semesterAktif ? 'disabled' : '' }}>
-                            <option value="">(Tidak diubah)</option>
-                            @foreach ($musyrifList as $m)
-                                <option value="{{ $m->id }}">{{ $m->nama }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-md-3">
-                        <label class="form-label">Tipe</label>
-                        <select class="form-select" id="tipe" {{ !$semesterAktif ? 'disabled' : '' }}>
-                            <option value="naik_kelas">Naik Kelas</option>
-                            <option value="mutasi">Mutasi</option>
-                            <option value="tinggal_kelas">Tinggal Kelas</option>
-                            <option value="penempatan">Penempatan</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-3">
-                        <label class="form-label">Catatan (opsional)</label>
-                        <input type="text" class="form-control" id="catatan" maxlength="1000"
-                            placeholder="Misal: Naik Ganjil 2026/2027" {{ !$semesterAktif ? 'disabled' : '' }}>
-                    </div>
-                </div>
-
-                <hr class="my-3">
-
-                <div
-                    class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
-
-                    {{-- KIRI: Info santri --}}
-                    <div class="text-start">
-                        <div class="fw-semibold">Santri terdeteksi</div>
-                        <div class="small text-muted" id="countInfo">0 santri</div>
-                    </div>
-
-                    {{-- KANAN: Action buttons --}}
-                    <div class="d-grid d-md-flex gap-2 w-100 w-md-auto align-items-md-center justify-content-md-end">
-
-                        {{-- ===== MANUAL FLOW ===== --}}
-                        <span class="small text-uppercase text-muted d-none d-md-inline me-1">Manual</span>
-
-                        <button class="btn btn-outline-primary" id="btnLoad" {{ !$semesterAktif ? 'disabled' : '' }}>
-                            Ambil Santri
-                        </button>
-
-                        <button class="btn btn-primary" id="btnPreview" disabled>
-                            Preview
-                        </button>
-
-                        <button class="btn btn-success text-white" id="btnExecute" disabled>
-                            Execute
-                        </button>
-
-                        {{-- Divider desktop --}}
-                        <div class="vr d-none d-md-block mx-2"></div>
-
-                        {{-- ===== AUTO FLOW ===== --}}
-                        <span class="small text-uppercase text-muted d-none d-md-inline me-1">Auto</span>
-
-                        <button class="btn btn-primary" id="btnAutoPreview">
-                            Auto-Mapping Preview
-                        </button>
-
-                        <button class="btn btn-success text-white" id="btnAutoExecute" disabled>
-                            Auto-Mapping Execute
-                        </button>
-
-                    </div>
-                </div>
-
-                <div class="mt-3 d-none" id="previewBox">
-                    <div class="alert alert-info mb-2">
-                        Preview OK. Klik <b>Eksekusi</b> untuk memproses perubahan kelas.
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table table-sm table-bordered align-middle">
-                            <thead>
-                                <tr>
-                                    <th style="width:60px;">#</th>
-                                    <th>Santri</th>
-                                    <th style="width:140px;">NIS</th>
-                                </tr>
-                            </thead>
-                            <tbody id="previewRows"></tbody>
-                        </table>
-                    </div>
-
-                    <div class="small text-muted">
-                        Ditampilkan maksimal 30 santri pertama untuk ringkasan.
-                    </div>
-                </div>
+                <i class="bi bi-calendar-check" style="font-size: 2.5rem; opacity: 0.5;"></i>
             </div>
         </div>
     </div>
 
-    {{-- Pastikan layout sudah ada meta CSRF --}}
+    {{-- CONFIGURATION CARD --}}
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            {{-- ALUR 1: MANUAL PER KELAS --}}
+            <div class="section-title mb-4">ALUR 1: KONFIGURASI MANUAL PER KELAS</div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">Kelas Asal</label>
+                    <select class="form-select shadow-xs" id="fromKelasId" {{ !$semesterAktif ? 'disabled' : '' }}>
+                        <option value="">Pilih kelas asal...</option>
+                        @foreach ($kelasList as $k)
+                            <option value="{{ $k->id }}">{{ $k->nama_kelas }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Kelas Tujuan</label>
+                    <select class="form-select shadow-xs" id="toKelasId" {{ !$semesterAktif ? 'disabled' : '' }}>
+                        <option value="">Pilih kelas tujuan...</option>
+                        @foreach ($kelasList as $k)
+                            <option value="{{ $k->id }}">{{ $k->nama_kelas }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Musyrif Baru (Opsional)</label>
+                    <select class="form-select shadow-xs" id="toMusyrifId" {{ !$semesterAktif ? 'disabled' : '' }}>
+                        <option value="">(Tetap/Tidak Diubah)</option>
+                        @foreach ($musyrifList as $m)
+                            <option value="{{ $m->id }}">{{ $m->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tipe Perubahan</label>
+                    <select class="form-select shadow-xs" id="tipe" {{ !$semesterAktif ? 'disabled' : '' }}>
+                        <option value="naik_kelas">Naik Kelas</option>
+                        <option value="mutasi">Mutasi</option>
+                        <option value="tinggal_kelas">Tinggal Kelas</option>
+                        <option value="penempatan">Penempatan</option>
+                    </select>
+                </div>
+                <div class="col-md-9">
+                    <label class="form-label">Catatan Riwayat</label>
+                    <input type="text" class="form-control shadow-xs" id="catatan"
+                        placeholder="Contoh: Kenaikan Semester Genap 2025/2026" {{ !$semesterAktif ? 'disabled' : '' }}>
+                </div>
+            </div>
+
+            {{-- ACTION BOX --}}
+            <div class="bg-light rounded-4 p-4 border border-dashed">
+                <div class="d-flex flex-column flex-lg-row align-items-center justify-content-between gap-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-white rounded-circle p-3 shadow-sm">
+                            <i class="bi bi-people text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark">Total Santri Terpilih</div>
+                            <div class="h5 mb-0 text-primary fw-bold" id="countInfo">0 Santri</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 justify-content-center">
+                        {{-- Manual Buttons --}}
+                        <button class="btn btn-outline-primary px-3 rounded-pill fw-bold" id="btnPreview" disabled>
+                            <i class="bi bi-eye"></i> Preview Manual
+                        </button>
+                        <button class="btn btn-execute px-4 rounded-pill fw-bold shadow-sm" id="btnExecute" disabled>
+                            <i class="bi bi-lightning-fill"></i> Eksekusi Manual
+                        </button>
+
+                        <div class="vr mx-2 d-none d-lg-block"></div>
+
+                        {{-- Auto Buttons --}}
+                        <button class="btn btn-primary px-3 rounded-pill fw-bold shadow-sm" id="btnAutoPreview">
+                            <i class="bi bi-magic"></i> Auto-Mapping Preview
+                        </button>
+                        <button class="btn btn-execute px-4 rounded-pill fw-bold shadow-sm" id="btnAutoExecute" disabled>
+                            <i class="bi bi-rocket-takeoff-fill"></i> Eksekusi Auto
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- PREVIEW AREA --}}
+            <div class="mt-4 d-none" id="previewBox">
+                <div class="alert alert-info border-0 rounded-3 shadow-sm d-flex align-items-center gap-3">
+                    <i class="bi bi-info-circle-fill fs-4"></i>
+                    <div>
+                        <strong>Preview Berhasil!</strong> Silakan periksa daftar santri di bawah ini sebelum menekan tombol
+                        Eksekusi.
+                    </div>
+                </div>
+
+                <div class="table-responsive border rounded-4 overflow-hidden mt-3">
+                    <table class="table table-striped table-hover align-middle mb-0">
+                        <thead class="table-light text-uppercase small fw-bold">
+                            <tr>
+                                <th class="ps-4" style="width:60px;">#</th>
+                                <th>Nama Santri</th>
+                                <th class="pe-4" style="width:140px;">NIS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewRows"></tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3 text-muted small italic">
+                    * Menampilkan maksimal 30 santri pertama untuk keperluan ringkasan preview.
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
     <script>
         (function() {
+            // Gunakan SweetAlert secara konsisten jika tersedia
+            const swalHelper = (icon, title, text) => {
+                if (window.Swal) {
+                    Swal.fire({
+                        icon,
+                        title,
+                        text
+                    });
+                } else {
+                    alert(text);
+                }
+            };
+
             const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             const semesterId = {{ $semesterAktif?->id ?? 'null' }};
 
@@ -180,15 +236,11 @@
             const toMusyrifId = document.getElementById('toMusyrifId');
             const tipe = document.getElementById('tipe');
             const catatan = document.getElementById('catatan');
-
-            const btnLoad = document.getElementById('btnLoad'); // opsional
             const btnPreview = document.getElementById('btnPreview');
             const btnExecute = document.getElementById('btnExecute');
-
             const countInfo = document.getElementById('countInfo');
             const previewBox = document.getElementById('previewBox');
             const previewRows = document.getElementById('previewRows');
-
             const btnAutoPreview = document.getElementById('btnAutoPreview');
             const btnAutoExecute = document.getElementById('btnAutoExecute');
 
@@ -197,28 +249,28 @@
 
             function resetFlow() {
                 lastCount = 0;
-                countInfo.textContent = '0 santri';
+                countInfo.textContent = '0 Santri';
+                countInfo.className = 'h5 mb-0 text-primary fw-bold';
                 btnExecute.disabled = true;
                 previewBox.classList.add('d-none');
                 previewRows.innerHTML = '';
                 togglePreviewEnable();
             }
 
-            function must(val, msg) {
-                if (!val) throw new Error(msg);
+            function togglePreviewEnable() {
+                const ok = !!(semesterId && fromKelasId.value && toKelasId.value) && (fromKelasId.value !== toKelasId
+                    .value);
+                btnPreview.disabled = !ok;
             }
 
-            async function getJson(url) {
-                const res = await fetch(url, {
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                const json = await res.json().catch(() => ({}));
-                if (!res.ok) throw new Error(json?.message || 'Gagal mengambil data.');
-                return json;
-            }
+            // Event Listeners for reset
+            [fromKelasId, toKelasId, toMusyrifId, tipe, catatan].forEach(el => {
+                el.addEventListener('change', resetFlow);
+                el.addEventListener('input', resetFlow);
+            });
+            [fromKelasId, toKelasId].forEach(el => el.addEventListener('change', togglePreviewEnable));
 
+            // Helper AJAX
             async function postJson(url, payload) {
                 const res = await fetch(url, {
                     method: 'POST',
@@ -229,365 +281,182 @@
                     },
                     body: JSON.stringify(payload)
                 });
-
                 const json = await res.json().catch(() => ({}));
-                if (!res.ok) {
-                    // Jika backend mengembalikan mismatch, tetap tampilkan message utama.
-                    throw new Error(json?.message || 'Terjadi kesalahan.');
-                }
+                if (!res.ok) throw new Error(json?.message || 'Terjadi kesalahan sistem.');
                 return json;
             }
 
-            function buildMassalPayload() {
-                must(semesterId, 'Semester aktif tidak tersedia.');
-                must(fromKelasId.value, 'Pilih kelas asal.');
-                must(toKelasId.value, 'Pilih kelas tujuan.');
-                if (fromKelasId.value === toKelasId.value) {
-                    throw new Error('Kelas tujuan tidak boleh sama dengan kelas asal.');
-                }
-
-                return {
-                    semester_id: parseInt(semesterId, 10),
-                    from_kelas_id: parseInt(fromKelasId.value, 10),
-                    to_kelas_id: parseInt(toKelasId.value, 10),
-                    to_musyrif_id: toMusyrifId.value ? parseInt(toMusyrifId.value, 10) : null,
-                    tipe: tipe.value || 'naik_kelas',
-                    catatan: catatan.value || null
-                };
-            }
-
-            function togglePreviewEnable() {
-                const ok = !!(semesterId && fromKelasId.value && toKelasId.value) && (fromKelasId.value !== toKelasId
-                    .value);
-                btnPreview.disabled = !ok;
-            }
-
-            // Reset jika dropdown berubah
-            [fromKelasId, toKelasId, toMusyrifId, tipe, catatan].forEach(el => {
-                el.addEventListener('change', resetFlow);
-                el.addEventListener('input', resetFlow);
-            });
-            [fromKelasId, toKelasId].forEach(el => el.addEventListener('change', togglePreviewEnable));
-
-            /**
-             * OPSIONAL: "Ambil Santri" hanya untuk cek jumlah cepat via endpoint by_kelas.
-             * Tidak wajib untuk flow; Preview Massal sudah mengembalikan count.
-             */
-            if (btnLoad) {
-                btnLoad.addEventListener('click', async function() {
-                    try {
-                        must(fromKelasId.value, 'Pilih kelas asal.');
-
-                        if (window.Swal) {
-                            Swal.fire({
-                                title: 'Mengambil santri...',
-                                allowOutsideClick: false,
-                                didOpen: () => Swal.showLoading()
-                            });
-                        }
-
-                        const url = new URL(`{{ route('admin.santri.migrasi.by_kelas') }}`, window.location
-                            .origin);
-                        url.searchParams.set('kelas_id', fromKelasId.value);
-
-                        const json = await getJson(url.toString());
-                        const santris = json.santris || [];
-
-                        if (window.Swal) Swal.close();
-
-                        lastCount = santris.length;
-                        countInfo.textContent = `${lastCount} santri`;
-                        btnExecute.disabled = true;
-                        previewBox.classList.add('d-none');
-                        previewRows.innerHTML = '';
-
-                        if (window.Swal) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Data diambil',
-                                text: `${lastCount} santri terdeteksi pada kelas asal.`
-                            });
-                        }
-                    } catch (e) {
-                        if (window.Swal) Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal',
-                            text: e.message
-                        });
-                        else alert(e.message);
-                    }
-                });
-            }
-
-            /**
-             * Preview Massal
-             * Backend: previewMassal() -> return count + santris (max 30)
-             */
+            // Flow Manual: Preview
             btnPreview.addEventListener('click', async function() {
                 try {
-                    const payload = buildMassalPayload();
+                    if (!fromKelasId.value || !toKelasId.value) throw new Error(
+                        'Pilih kelas asal dan tujuan.');
 
-                    if (window.Swal) {
-                        Swal.fire({
-                            title: 'Memproses preview...',
-                            allowOutsideClick: false,
-                            didOpen: () => Swal.showLoading()
-                        });
-                    }
+                    if (window.Swal) Swal.fire({
+                        title: 'Memproses preview...',
+                        allowOutsideClick: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+
+                    const payload = {
+                        semester_id: parseInt(semesterId, 10),
+                        from_kelas_id: parseInt(fromKelasId.value, 10),
+                        to_kelas_id: parseInt(toKelasId.value, 10),
+                        to_musyrif_id: toMusyrifId.value ? parseInt(toMusyrifId.value, 10) : null,
+                        tipe: tipe.value,
+                        catatan: catatan.value
+                    };
 
                     const json = await postJson(`{{ route('admin.santri.migrasi.massal.preview') }}`,
                         payload);
-
                     if (window.Swal) Swal.close();
 
                     lastCount = json.count || 0;
-                    countInfo.textContent = `${lastCount} santri`;
+                    countInfo.textContent = `${lastCount} Santri`;
+                    countInfo.className = 'h5 mb-0 text-success fw-bold';
 
-                    const list = (json.santris || []).slice(0, 30);
-                    previewRows.innerHTML = list.map((s, i) => `
-                <tr>
-                    <td>${i + 1}</td>
-                    <td>${s.nama ?? '-'}</td>
-                    <td>${s.nis ?? '-'}</td>
-                </tr>
-            `).join('');
+                    previewRows.innerHTML = (json.santris || []).map((s, i) => `
+                        <tr>
+                            <td class="ps-4">${i + 1}</td>
+                            <td class="fw-bold">${s.nama ?? '-'}</td>
+                            <td class="pe-4 text-muted">${s.nis ?? '-'}</td>
+                        </tr>
+                    `).join('');
 
                     previewBox.classList.remove('d-none');
                     btnExecute.disabled = lastCount === 0;
 
-                    if (window.Swal) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Preview OK',
-                            text: `Akan memproses ${lastCount} santri. Klik Eksekusi untuk lanjut.`
-                        });
-                    }
+                    swalHelper('success', 'Preview OK',
+                        `Ditemukan ${lastCount} santri yang siap dipindahkan.`);
                 } catch (e) {
-                    if (window.Swal) Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal',
-                        text: e.message
-                    });
-                    else alert(e.message);
+                    swalHelper('error', 'Gagal', e.message);
                 }
             });
 
-            /**
-             * Execute Massal
-             * Backend: executeMassal() -> guard kelas asal harus match
-             */
+            // Flow Manual: Execute
             btnExecute.addEventListener('click', async function() {
                 try {
-                    const payload = buildMassalPayload();
-
                     if (window.Swal) {
                         const confirm = await Swal.fire({
                             icon: 'warning',
                             title: 'Konfirmasi Eksekusi',
-                            html: `Anda akan memproses <b>${lastCount || 'semua'}</b> santri dari kelas asal.<br>
-                            Sistem akan mengubah kelas aktif dan menulis riwayat semester.`,
+                            html: `Pindahkan <b>${lastCount} santri</b> ke kelas tujuan?<br><small class="text-danger">Aksi ini tidak dapat dibatalkan.</small>`,
                             showCancelButton: true,
-                            confirmButtonText: 'Ya, Eksekusi',
-                            cancelButtonText: 'Batal'
+                            confirmButtonText: 'Ya, Pindahkan!',
+                            confirmButtonColor: '#198754'
                         });
                         if (!confirm.isConfirmed) return;
-
                         Swal.fire({
                             title: 'Mengeksekusi...',
                             allowOutsideClick: false,
                             didOpen: () => Swal.showLoading()
                         });
                     }
+
+                    const payload = {
+                        semester_id: parseInt(semesterId, 10),
+                        from_kelas_id: parseInt(fromKelasId.value, 10),
+                        to_kelas_id: parseInt(toKelasId.value, 10),
+                        to_musyrif_id: toMusyrifId.value ? parseInt(toMusyrifId.value, 10) : null,
+                        tipe: tipe.value,
+                        catatan: catatan.value
+                    };
 
                     const json = await postJson(`{{ route('admin.santri.migrasi.massal.execute') }}`,
                         payload);
 
-                    if (window.Swal) Swal.close();
-
                     if (window.Swal) {
-                        Swal.fire({
-                                icon: 'success',
-                                title: 'Berhasil',
-                                text: json.message || 'Migrasi kelas berhasil.'
-                            })
-                            .then(() => window.location.reload());
-                    } else {
-                        alert(json.message || 'Berhasil');
-                        window.location.reload();
-                    }
-                } catch (e) {
-                    if (window.Swal) Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal',
-                        text: e.message
-                    });
-                    else alert(e.message);
-                }
-            });
-
-            btnAutoPreview.addEventListener('click', async () => {
-                try {
-                    if (!semesterId) throw new Error('Semester aktif tidak tersedia.');
-
-                    const payload = {
-                        semester_id: parseInt(semesterId, 10),
-                        include_graduation: true,
-                        catatan: (catatan?.value || null)
-                    };
-
-                    if (window.Swal) {
-                        Swal.fire({
-                            title: 'Preview auto-mapping...',
-                            allowOutsideClick: false,
-                            didOpen: () => Swal.showLoading()
-                        });
-                    }
-
-                    const json = await postJson(`{{ route('admin.santri.migrasi.auto.preview') }}`,
-                        payload);
-
-                    if (window.Swal) Swal.close();
-
-                    autoLast = json;
-                    btnAutoExecute.disabled = !json.ok;
-
-                    const rows = (json.rows || []);
-                    const total = json.total_santri_affected ?? rows.reduce((a, r) => a + (r.count_santri ||
-                        0), 0);
-
-                    // build table
-                    const tableRows = rows.map(r => {
-                        const cnt = Number(r.count_santri || 0);
-                        const badgeStyle = cnt > 0 ?
-                            'background:#198754;color:#fff;' :
-                            'background:#6c757d;color:#fff;';
-
-                        return `
-                        <tr>
-                        <td style="padding:6px 10px; text-align:left; white-space:nowrap;">
-                            ${r.from_nama} &rarr; ${r.to_nama}
-                        </td>
-                        <td style="padding:6px 10px; text-align:right;">
-                            <span style="display:inline-block; min-width:42px; padding:2px 10px; border-radius:999px; font-weight:700; ${badgeStyle}">
-                            ${cnt}
-                            </span>
-                        </td>
-                        </tr>
-                    `;
-                    }).join('');
-
-                    const html = `
-                    <div style="text-align:left;">
-                        <div style="margin-bottom:10px;">
-                        <div style="font-weight:800;">Ringkasan Auto-Mapping</div>
-                        <div style="color:#6c757d; font-size:13px;">
-                            Total santri diproses: <b>${total}</b>
-                        </div>
-                        </div>
-
-                        <div style="max-height:260px; overflow:auto; border:1px solid #e9ecef; border-radius:10px;">
-                        <table style="width:100%; border-collapse:collapse;">
-                            <thead>
-                            <tr style="background:#f8f9fa;">
-                                <th style="padding:8px 10px; text-align:left; position:sticky; top:0; background:#f8f9fa;">Mapping</th>
-                                <th style="padding:8px 10px; text-align:right; position:sticky; top:0; background:#f8f9fa;">Jumlah</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            ${tableRows}
-                            </tbody>
-                        </table>
-                        </div>
-
-                        ${json.ok ? '' : `
-                                            <div style="margin-top:10px; color:#dc3545; font-size:13px;">
-                                                Ada mapping yang tidak valid (kelas tidak ditemukan). Periksa nama_kelas.
-                                            </div>
-                                            `}
-                    </div>
-                    `;
-
-                    if (window.Swal) {
-                        Swal.fire({
-                            icon: json.ok ? 'success' : 'error',
-                            title: 'Preview',
-                            html,
-                            width: 720,
-                            confirmButtonText: 'OK'
-                        });
-                    } else {
-                        // fallback plain text
-                        const lines = rows.map(r => `${r.from_nama} → ${r.to_nama}: ${r.count_santri || 0}`)
-                            .join('\n');
-                        alert(`Total: ${total}\n\n${lines}`);
-                    }
-
-                } catch (e) {
-                    if (window.Swal) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal',
-                            text: e.message
-                        });
-                    } else {
-                        alert(e.message);
-                    }
-                }
-            });
-
-
-            btnAutoExecute.addEventListener('click', async () => {
-                try {
-                    if (!autoLast?.ok) throw new Error(
-                        'Jalankan preview auto-mapping dulu (dan pastikan OK).');
-
-                    const payload = {
-                        semester_id: parseInt(semesterId, 10),
-                        include_graduation: true,
-                        catatan: (catatan?.value || null)
-                    };
-
-                    if (window.Swal) {
-                        const c = await Swal.fire({
-                            icon: 'warning',
-                            title: 'Konfirmasi Auto-Mapping',
-                            text: `Total diproses: ${autoLast.total_santri_affected} santri. Lanjutkan?`,
-                            showCancelButton: true
-                        });
-                        if (!c.isConfirmed) return;
-                        Swal.fire({
-                            title: 'Mengeksekusi...',
-                            allowOutsideClick: false,
-                            didOpen: () => Swal.showLoading()
-                        });
-                    }
-
-                    const json = await postJson(`{{ route('admin.santri.migrasi.auto.execute') }}`,
-                        payload);
-                    if (window.Swal) Swal.close();
-
-                    if (window.Swal) {
-                        Swal.fire({
+                        await Swal.fire({
                             icon: 'success',
-                            title: 'Berhasil',
+                            title: 'Berhasil!',
                             text: json.message
-                        }).then(() => location.reload());
-                    } else {
-                        alert(json.message);
+                        });
                         location.reload();
                     }
                 } catch (e) {
-                    if (window.Swal) Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal',
-                        text: e.message
-                    });
-                    else alert(e.message);
+                    swalHelper('error', 'Gagal', e.message);
                 }
             });
 
-            resetFlow();
-            togglePreviewEnable();
+            // Flow Auto: Preview
+            btnAutoPreview.addEventListener('click', async () => {
+                try {
+                    if (!semesterId) throw new Error('Semester aktif tidak ditemukan.');
+                    if (window.Swal) Swal.fire({
+                        title: 'Menganalisis Mapping...',
+                        allowOutsideClick: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+
+                    const json = await postJson(`{{ route('admin.santri.migrasi.auto.preview') }}`, {
+                        semester_id: parseInt(semesterId, 10),
+                        include_graduation: true,
+                        catatan: catatan.value
+                    });
+
+                    if (window.Swal) Swal.close();
+                    autoLast = json;
+                    btnAutoExecute.disabled = !json.ok;
+
+                    // Build table HTML for SweetAlert
+                    let tableMapping = `<div class="table-responsive mt-3"><table class="table table-sm table-bordered small">
+                        <thead class="table-light"><tr><th>Mapping</th><th>Jumlah</th></tr></thead><tbody>`;
+                    json.rows.forEach(r => {
+                        tableMapping +=
+                            `<tr><td>${r.from_nama} → ${r.to_nama}</td><td class="fw-bold">${r.count_santri}</td></tr>`;
+                    });
+                    tableMapping += `</tbody></table></div>`;
+
+                    if (window.Swal) {
+                        Swal.fire({
+                            title: 'Preview Auto-Mapping',
+                            html: `Total santri terdampak: <b>${json.total_santri_affected}</b> ${tableMapping}`,
+                            width: '600px'
+                        });
+                    }
+                } catch (e) {
+                    swalHelper('error', 'Gagal', e.message);
+                }
+            });
+
+            // Flow Auto: Execute
+            btnAutoExecute.addEventListener('click', async () => {
+                try {
+                    if (!autoLast?.ok) return;
+                    if (window.Swal) {
+                        const confirm = await Swal.fire({
+                            icon: 'warning',
+                            title: 'Eksekusi Auto-Mapping',
+                            text: `Sistem akan memproses semua kelas secara otomatis. Lanjutkan?`,
+                            showCancelButton: true
+                        });
+                        if (!confirm.isConfirmed) return;
+                        Swal.fire({
+                            title: 'Memproses...',
+                            allowOutsideClick: false,
+                            didOpen: () => Swal.showLoading()
+                        });
+                    }
+
+                    const json = await postJson(`{{ route('admin.santri.migrasi.auto.execute') }}`, {
+                        semester_id: parseInt(semesterId, 10),
+                        include_graduation: true,
+                        catatan: catatan.value
+                    });
+
+                    if (window.Swal) {
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Sukses',
+                            text: json.message
+                        });
+                        location.reload();
+                    }
+                } catch (e) {
+                    swalHelper('error', 'Gagal', e.message);
+                }
+            });
+
         })();
     </script>
 @endpush

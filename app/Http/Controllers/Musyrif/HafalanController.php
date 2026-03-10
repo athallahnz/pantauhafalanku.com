@@ -78,34 +78,37 @@ class HafalanController extends Controller
             abort(403, 'Profil musyrif tidak ditemukan.');
         }
 
-        $query = Hafalan::with(['santri.kelas', 'template'])
-            ->where('musyrif_id', $musyrif->id)
-            ->select('hafalans.*');
+        // Gunakan Join agar bisa searching ke tabel relasi
+        $query = Hafalan::query()
+            ->leftJoin('santris', 'hafalans.santri_id', '=', 'santris.id')
+            ->leftJoin('kelas', 'santris.kelas_id', '=', 'kelas.id')
+            ->leftJoin('hafalan_templates', 'hafalans.hafalan_template_id', '=', 'hafalan_templates.id')
+            ->where('hafalans.musyrif_id', $musyrif->id)
+            ->select([
+                'hafalans.*',
+                'santris.nama as santri_nama',
+                'kelas.nama_kelas as kelas_nama',
+                'hafalan_templates.label as template_label_sql',
+                'hafalan_templates.juz as template_juz_sql'
+            ]);
 
         if ($request->filled('filter_tanggal')) {
             $now = Carbon::now('Asia/Jakarta');
-
             switch ($request->filter_tanggal) {
                 case 'today':
-                    $query->whereDate('tanggal_setoran', now('Asia/Jakarta')->toDateString());
+                    $query->whereDate('hafalans.tanggal_setoran', now('Asia/Jakarta')->toDateString());
                     break;
-
                 case 'yesterday':
-                    $query->whereDate(
-                        'tanggal_setoran',
-                        now('Asia/Jakarta')->subDay()->toDateString()
-                    );
+                    $query->whereDate('hafalans.tanggal_setoran', now('Asia/Jakarta')->subDay()->toDateString());
                     break;
-
                 case 'last_7_days':
-                    $query->whereBetween('tanggal_setoran', [
+                    $query->whereBetween('hafalans.tanggal_setoran', [
                         now('Asia/Jakarta')->subDays(6)->toDateString(),
                         now('Asia/Jakarta')->toDateString(),
                     ]);
                     break;
-
                 case 'this_month':
-                    $query->whereBetween('tanggal_setoran', [
+                    $query->whereBetween('hafalans.tanggal_setoran', [
                         $now->copy()->startOfMonth(),
                         $now->copy()->endOfMonth(),
                     ]);
@@ -113,46 +116,46 @@ class HafalanController extends Controller
             }
         }
 
-        $query->orderByDesc('tanggal_setoran');
+        $query->orderByDesc('hafalans.tanggal_setoran');
 
         return DataTables::of($query)
             ->addIndexColumn()
 
+            /* ==========================================================
+           FIX: Hanya cari di kolom yang BENAR-BENAR ada di database
+        ========================================================== */
+            ->filterColumn('santri', function ($query, $keyword) {
+                $query->where('santris.nama', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('kelas', function ($query, $keyword) {
+                $query->where('kelas.nama_kelas', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('template_juz', function ($query, $keyword) {
+                $query->where('hafalan_templates.juz', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('template_label', function ($query, $keyword) {
+                // HANYA cari di kolom label template, rentang_label dibuang dari sini karena bukan kolom DB
+                $query->where('hafalan_templates.label', 'like', "%{$keyword}%");
+            })
+
+            /* ==========================================================
+           Mapping View (Tetap Menggunakan Logika Mas)
+        ========================================================== */
             ->addColumn('santri', function ($row) {
-                return $row->santri->nama ?? '-';
+                return $row->santri_nama ?? '-';
             })
-
             ->addColumn('kelas', function ($row) {
-                return optional($row->santri->kelas)->nama_kelas ?: '-';
+                return $row->kelas_nama ?: '-';
             })
-
-            // Juz dari template (bukan input manual)
             ->addColumn('template_juz', function ($row) {
-                return $row->template?->juz ?? '-';
+                return $row->template_juz_sql ?? '-';
             })
-
-            // Label Surah:Ayat dari template.label (fallback ke accessor rentang_label jika masa transisi)
             ->addColumn('template_label', function ($row) {
-                // Jika template ada, label dari template
-                if ($row->template?->label) {
-                    return $row->template->label;
-                }
-
-                // fallback (masa transisi)
-                return $row->rentang_label ?? '-';
+                return $row->template_label_sql ?? ($row->rentang_label ?? '-');
             })
-
             ->addColumn('tanggal', function ($row) {
-                if (!$row->tanggal_setoran)
-                    return '-';
-                try {
-                    return $row->tanggal_setoran->format('d-m-Y');
-                } catch (\Throwable $e) {
-                    return (string) $row->tanggal_setoran;
-                }
+                return $row->tanggal_setoran ? $row->tanggal_setoran->format('d-m-Y') : '-';
             })
-
-            // Nilai label -> Arab
             ->addColumn('nilai_label', function ($row) {
                 return match ($row->nilai_label) {
                     'mumtaz' => 'ممتاز',
@@ -161,8 +164,6 @@ class HafalanController extends Controller
                     default => '-',
                 };
             })
-
-            // Tahap dari template
             ->addColumn('template_tahap', function ($row) {
                 return match ($row->template?->tahap) {
                     'harian' => 'Harian',
@@ -173,7 +174,6 @@ class HafalanController extends Controller
                     default => '-',
                 };
             })
-
             ->editColumn('status', function ($row) {
                 return match ($row->status) {
                     'lulus' => '<span class="badge bg-success">Lulus</span>',
@@ -183,38 +183,21 @@ class HafalanController extends Controller
                     default => '<span class="badge bg-secondary">-</span>',
                 };
             })
-
             ->addColumn('aksi', function ($row) {
                 $tanggalLabel = $row->tanggal_setoran ? $row->tanggal_setoran->format('d-m-Y') : '-';
                 $tanggalYmd = $row->tanggal_setoran ? $row->tanggal_setoran->format('Y-m-d') : '';
-
-                $templateJuz = $row->template?->juz ?? '';
+                $templateJuz = $row->template_juz_sql ?? '';
                 $templateTahap = $row->template?->tahap ?? '';
-                $templateLabel = $row->template?->label ?? ($row->rentang_label ?? '-');
+                $templateLabel = $row->template_label_sql ?? ($row->rentang_label ?? '-');
 
-                // data-* untuk modal edit/detail versi baru
-                $attrs =
-                    'data-id="' . $row->id . '" ' .
-                    'data-santri_id="' . ($row->santri_id ?? '') . '" ' .
-                    'data-santri="' . e(optional($row->santri)->nama) . '" ' .
-                    'data-kelas="' . e(optional(optional($row->santri)->kelas)->nama_kelas) . '" ' .
+                $attrs = 'data-id="' . $row->id . '" data-santri_id="' . ($row->santri_id ?? '') . '" data-santri="' . e($row->santri_nama) . '" data-kelas="' . e($row->kelas_nama) . '" data-template_juz="' . e($templateJuz) . '" data-template_tahap="' . e($templateTahap) . '" data-template_label="' . e($templateLabel) . '" data-hafalan_template_id="' . e($row->hafalan_template_id ?? '') . '" data-tanggal_label="' . e($tanggalLabel) . '" data-tanggal_ymd="' . e($tanggalYmd) . '" data-nilai_label="' . e($row->nilai_label ?? '') . '" data-status="' . e($row->status ?? '') . '" data-catatan="' . e($row->catatan ?? '') . '"';
 
-                    'data-template_juz="' . e($templateJuz) . '" ' .
-                    'data-template_tahap="' . e($templateTahap) . '" ' .
-                    'data-template_label="' . e($templateLabel) . '" ' .
-
-                    'data-hafalan_template_id="' . e($row->hafalan_template_id ?? '') . '" ' .
-
-                    'data-tanggal_label="' . e($tanggalLabel) . '" ' .
-                    'data-tanggal_ymd="' . e($tanggalYmd) . '" ' .
-
-                    'data-nilai_label="' . e($row->nilai_label ?? '') . '" ' .
-                    'data-status="' . e($row->status ?? '') . '" ' .
-                    'data-catatan="' . e($row->catatan ?? '') . '"';
-
-                return '<div class="d-flex gap-2 flex-wrap py-2"><button class="btn btn-sm btn-outline-info btn-detail" ' . $attrs . '>Detail</button> <button class="btn btn-sm btn-outline-secondary btn-edit" ' . $attrs . '>Edit</button> <button class="btn btn-sm btn-outline-danger btn-delete" data-id="' . $row->id . '">Hapus</button></div>';
+                return '<div class="d-flex flex-nowrap gap-1">
+                <button class="btn btn-sm btn-outline-primary btn-detail" ' . $attrs . '><i class="bi bi-eye"></i></button>
+                <button class="btn btn-sm btn-warning text-white btn-edit" ' . $attrs . '><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-danger text-white btn-delete" data-id="' . $row->id . '"><i class="bi bi-trash"></i></button>
+            </div>';
             })
-
             ->rawColumns(['status', 'aksi'])
             ->make(true);
     }

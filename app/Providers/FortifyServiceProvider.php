@@ -18,6 +18,12 @@ use Laravel\Fortify\Fortify;
 use Laravel\Fortify\Contracts\LoginResponse;
 use App\Actions\Auth\LoginResponse as CustomLoginResponse;
 use App\Models\User;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Laravel\Fortify\Contracts\RegisterResponse;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use App\Models\Santri;
+use App\Models\Musyrif;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -26,7 +32,25 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(LoginResponse::class, CustomLoginResponse::class);
+        // Ini buat Response Login Mas yang udah ada
+        $this->app->singleton(\Laravel\Fortify\Contracts\LoginResponse::class, \App\Actions\Auth\LoginResponse::class);
+
+        // PAKSA BINDING UNTUK REGISTER DISINI:
+        $this->app->bind(
+            \Laravel\Fortify\Contracts\CreatesNewUsers::class,
+            \App\Actions\Fortify\CreateNewUser::class
+        );
+
+        // Di dalam register()
+        $this->app->instance(RegisterResponse::class, new class implements RegisterResponse {
+            public function toResponse($request)
+            {
+                // Setelah daftar, paksa logout (karena Fortify otomatis login)
+                // lalu lempar ke halaman waiting
+                auth()->logout();
+                return redirect()->route('waiting.approval');
+            }
+        });
     }
 
     /**
@@ -64,9 +88,8 @@ class FortifyServiceProvider extends ServiceProvider
 
         // CUSTOM AUTH
         Fortify::authenticateUsing(function (Request $request) {
-
             $request->validate([
-                'login' => ['required', 'string'],
+                'login'    => ['required', 'string'],
                 'password' => ['required', 'string'],
             ]);
 
@@ -82,13 +105,24 @@ class FortifyServiceProvider extends ServiceProvider
 
             if (!$user) {
                 throw ValidationException::withMessages([
-                    'login' => 'Email atau nomor tidak terdaftar.'
+                    'login' => 'Email atau nomor tidak terdaftar.',
                 ]);
             }
 
             if (!Hash::check($request->password, $user->password)) {
                 throw ValidationException::withMessages([
-                    'password' => 'Password yang Anda masukkan salah.'
+                    'password' => 'Password yang Anda masukkan salah.',
+                ]);
+            }
+
+            // Pengecekan verifikasi email yang bikin error tadi:
+            if ($user instanceof MustVerifyEmail && !$user->hasVerifiedEmail()) {
+                return null;
+            }
+
+            if (!$user->is_approved) {
+                throw ValidationException::withMessages([
+                    'login' => 'Akun Anda sudah diverifikasi, namun masih menunggu persetujuan Admin Department.',
                 ]);
             }
 

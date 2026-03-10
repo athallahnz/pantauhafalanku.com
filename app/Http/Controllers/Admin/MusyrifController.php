@@ -3,16 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Imports\MusyrifImport;
 use App\Models\Musyrif;
 use App\Models\User;
+use App\Models\Kelas;
+use App\Models\MusyrifAttendance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Yajra\DataTables\Facades\DataTables;
-use App\Models\MusyrifAttendance;
 use Carbon\Carbon;
-
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\HeadingRowImport;
+use Illuminate\Support\Facades\Storage;
 
 class MusyrifController extends Controller
 {
@@ -38,13 +42,24 @@ class MusyrifController extends Controller
 
     public function index()
     {
-        // Ambil kandidat user role musyrif yang belum terpakai, + yang sudah terpakai (untuk edit)
         $musyrifUserCandidates = User::query()
             ->where('role', 'musyrif')
             ->orderBy('name')
             ->get(['id', 'name', 'email', 'role']);
 
-        return view('admin.musyrif.index', compact('musyrifUserCandidates'));
+        // TAMBAHKAN INI: Ambil data kelas untuk dropdown
+        $listKelas = Kelas::orderBy('nama_kelas')->get();
+
+        return view('admin.musyrif.index', compact('musyrifUserCandidates', 'listKelas'));
+    }
+
+    public function getByKelas($kelas_id)
+    {
+        $musyrif = Musyrif::where('kelas_id', $kelas_id)->first();
+        return response()->json([
+            'id' => $musyrif ? $musyrif->id : '',
+            'nama' => $musyrif ? $musyrif->nama : 'Belum ada Musyrif'
+        ]);
     }
 
     public function data(Request $request)
@@ -86,10 +101,12 @@ class MusyrifController extends Controller
                 $join->on('musyrifs.id', '=', 'month_att.musyrif_id');
             })
             ->leftJoin('users', 'users.id', '=', 'musyrifs.user_id')
+            ->leftJoin('kelas', 'kelas.id', '=', 'musyrifs.kelas_id')
             ->select([
                 'musyrifs.*',
                 'users.name as akun_nama',
                 'users.email as akun_email',
+                'kelas.nama_kelas as nama_kelas',
 
                 'today_att.morning_time',
                 'today_att.morning_status',
@@ -111,6 +128,10 @@ class MusyrifController extends Controller
                 return "<div class='fw-semibold'>{$name}</div><div class='text-muted small'>{$email}</div>";
             })
 
+            ->addColumn('kelas', function ($row) {
+                return $row->nama_kelas ? e($row->nama_kelas) : '-';
+            })
+            
             ->addColumn('absen_pagi', function ($row) {
                 return $this->renderAttendanceCell($row->morning_time, $row->morning_status);
             })
@@ -125,13 +146,20 @@ class MusyrifController extends Controller
 
             ->addColumn('aksi', function ($row) {
                 $id = (int) $row->id;
+                $kelas_id = $row->kelas_id; // Ambil kelas_id dari row
 
-                $btnAbsensi = "<a href='" . route('admin.musyrif.attendances', $id) . "' class='btn btn-sm btn-outline-primary'>Absensi</a>";
+                $btnAbsensi = "<a href='" . route('admin.musyrif.attendances', $id) . "' class='btn btn-sm btn-outline-primary' data-toggle='tooltip' title='Lihat Absensi'><i class='bi bi-calendar'></i></a>";
+                $btnDetail = "<button class='btn btn-sm btn-info text-white btnDetail' data-id='{$id}' data-kelas_id='{$kelas_id}' data-toggle='tooltip' title='Detail Profil'><i class='bi bi-eye'></i></button>";
 
-                $btnEdit = "<button class='btn btn-sm btn-warning text-white btnEdit' data-id='{$id}'>Edit</button>";
-                $btnDelete = "<button class='btn btn-sm btn-danger text-white btnDelete' data-id='{$id}'>Hapus</button>";
+                // TAMBAHKAN data-kelas_id DI SINI
+                $btnEdit = "<button class='btn btn-sm btn-warning text-white btnEdit'
+                data-id='{$id}'
+                data-kelas_id='{$kelas_id}'
+                data-toggle='tooltip' title='Edit'><i class='bi bi-pencil'></i></button>";
 
-                return "<div class='d-flex gap-1'>{$btnAbsensi}{$btnEdit}{$btnDelete}</div>";
+                $btnDelete = "<button class='btn btn-sm btn-danger text-white btnDelete' data-id='{$id}' data-toggle='tooltip' title='Hapus'><i class='bi bi-trash'></i></button>";
+
+                return "<div class='d-flex gap-1'>{$btnAbsensi}{$btnDetail}{$btnEdit}{$btnDelete}</div>";
             })
 
             ->rawColumns(['akun', 'absen_pagi', 'absen_sore', 'rekap_bulan', 'aksi'])
@@ -140,78 +168,54 @@ class MusyrifController extends Controller
 
     public function store(Request $request)
     {
+        // 1. Validasi Input
         $validated = $request->validate([
-            'nama' => ['required', 'string', 'max:150'],
-            'kode' => ['nullable', 'string', 'max:50'],
-            'keterangan' => ['nullable', 'string'],
-
-            // opsi 1: pilih user musyrif yang sudah ada
-            'user_id' => ['nullable', 'integer', 'exists:users,id'],
-
-            // opsi 2: buat akun baru (optional)
-            'create_user' => ['nullable', 'boolean'],
-            'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['nullable', 'string', 'min:8'],
+            'nama'                => ['required', 'string', 'max:150'],
+            'kode'                => ['nullable', 'string', 'max:50'],
+            'kelas_id'            => ['nullable', 'exists:kelas,id'],
+            'alamat'              => ['nullable', 'string'],
+            'pendidikan_terakhir' => ['nullable', 'string'],
+            'domisili'            => ['nullable', 'string'],
+            'halaqah'             => ['nullable', 'string'],
+            'metode_alquran'      => ['nullable', 'string'],
+            'tahun_sertifikasi'   => ['nullable', 'integer'],
+            'keterangan'          => ['nullable', 'string'],
+            'email'               => ['nullable', 'required_if:create_user,true', 'email', 'unique:users,email'],
+            'password'            => ['nullable', 'required_if:create_user,true', 'string', 'min:8'],
         ]);
 
         return DB::transaction(function () use ($request, $validated) {
+            $userId = null;
 
-            $userId = $validated['user_id'] ?? null;
-
-            // Jika admin memilih "buat user baru"
+            // 2. Logika Pembuatan User Otomatis
             if ($request->boolean('create_user')) {
-                // minimal field yang dibutuhkan
-                $request->validate([
-                    'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-                    'password' => ['required', 'string', 'min:8'],
-                ]);
-
                 $user = User::create([
-                    'name' => $validated['nama'],
-                    'email' => $validated['email'],
-                    'role' => 'musyrif',
+                    'name'     => $validated['nama'],
+                    'email'    => $validated['email'],
+                    'role'     => 'musyrif',
                     'password' => Hash::make($validated['password']),
                 ]);
-
                 $userId = $user->id;
-            } else {
-                // Kalau memilih existing user_id, pastikan rolenya musyrif
-                if ($userId) {
-                    $u = User::find($userId);
-                    if (!$u || $u->role !== 'musyrif') {
-                        return response()->json([
-                            'message' => 'User yang dipilih harus ber-role musyrif.'
-                        ], 422);
-                    }
-                }
             }
 
-            $m = Musyrif::create([
-                'user_id' => $userId,
-                'nama' => $validated['nama'],
-                'kode' => $validated['kode'] ?? null,
-                'keterangan' => $validated['keterangan'] ?? null,
+            // 3. Simpan Data Musyrif
+            Musyrif::create([
+                'user_id'             => $userId,
+                'kelas_id'            => $validated['kelas_id'],
+                'nama'                => $validated['nama'],
+                'kode'                => $validated['kode'],
+                'alamat'              => $validated['alamat'],
+                'pendidikan_terakhir' => $validated['pendidikan_terakhir'],
+                'domisili'            => $validated['domisili'],
+                'halaqah'             => $validated['halaqah'],
+                'metode_alquran'      => $validated['metode_alquran'],
+                'is_sertifikasi_ummi' => $request->boolean('is_sertifikasi_ummi'), // Aman & Clean
+                'tahun_sertifikasi'   => $validated['tahun_sertifikasi'],
+                'keterangan'          => $request->input('keterangan'), // Solusi Error Undefined Key
             ]);
 
-            return response()->json([
-                'message' => 'Musyrif berhasil ditambahkan.',
-                'data' => $m,
-            ]);
+            return response()->json(['message' => 'Musyrif berhasil ditambahkan.']);
         });
-    }
-
-    public function show($id)
-    {
-        $musyrif = Musyrif::with('user')->findOrFail($id);
-
-        return response()->json([
-            'id' => $musyrif->id,
-            'nama' => $musyrif->nama,
-            'kode' => $musyrif->kode,
-            'keterangan' => $musyrif->keterangan,
-            'user_id' => $musyrif->user_id,
-            'email' => optional($musyrif->user)->email,
-        ]);
     }
 
     public function update(Request $request, $id)
@@ -219,34 +223,79 @@ class MusyrifController extends Controller
         $musyrif = Musyrif::findOrFail($id);
 
         $validated = $request->validate([
-            'nama' => ['required', 'string', 'max:150'],
-            'kode' => ['nullable', 'string', 'max:50'],
-            'keterangan' => ['nullable', 'string'],
-
-            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'nama'                => ['required', 'string', 'max:150'],
+            'kode'                => ['nullable', 'string', 'max:50'],
+            'kelas_id'            => ['nullable', 'exists:kelas,id'],
+            'alamat'              => ['nullable', 'string'],
+            'pendidikan_terakhir' => ['nullable', 'string'],
+            'domisili'            => ['nullable', 'string'],
+            'halaqah'             => ['nullable', 'string'],
+            'metode_alquran'      => ['nullable', 'string'],
+            'tahun_sertifikasi'   => ['nullable', 'integer'],
+            'keterangan'          => ['nullable', 'string'],
         ]);
 
-        // validasi role jika user_id diisi
-        if (!empty($validated['user_id'])) {
-            $u = User::find($validated['user_id']);
-            if (!$u || $u->role !== 'musyrif') {
-                return response()->json(['message' => 'User yang dipilih harus ber-role musyrif.'], 422);
+        DB::transaction(function () use ($request, $validated, $musyrif) {
+            // 1. Update Musyrif
+            $musyrif->update([
+                'kelas_id'            => $validated['kelas_id'],
+                'nama'                => $validated['nama'],
+                'kode'                => $validated['kode'],
+                'alamat'              => $request->input('alamat'),
+                'pendidikan_terakhir' => $request->input('pendidikan_terakhir'),
+                'is_sertifikasi_ummi' => $request->boolean('is_sertifikasi_ummi'),
+                'keterangan'          => $request->input('keterangan'),
+                'domisili'            => $request->input('domisili'),
+                'halaqah'             => $request->input('halaqah'),
+                'metode_alquran'      => $request->input('metode_alquran'),
+                'tahun_sertifikasi'   => $request->input('tahun_sertifikasi'),
+            ]);
+
+            // 2. Update Akun User Jika Ada
+            if ($musyrif->user) {
+                $updateUser = [
+                    'name'  => $validated['nama'],
+                    'email' => $request->input('email', $musyrif->user->email),
+                ];
+
+                if ($request->filled('password')) {
+                    $updateUser['password'] = Hash::make($request->password);
+                }
+
+                $musyrif->user->update($updateUser);
             }
+        });
+
+        return response()->json(['message' => 'Data musyrif diperbarui!']);
+    }
+
+    public function show($id)
+    {
+        // Gunakan Eloquent with() agar relasi 'user' dan 'kelas' terload otomatis
+        $musyrif = Musyrif::with(['user', 'kelas'])->find($id);
+
+        if (!$musyrif) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
         }
 
-        $musyrif->update([
-            'user_id' => $validated['user_id'] ?? null,
-            'nama' => $validated['nama'],
-            'kode' => $validated['kode'] ?? null,
-            'keterangan' => $validated['keterangan'] ?? null,
+        return response()->json([
+            'id'                => $musyrif->id,
+            'nama'              => $musyrif->nama,
+            'kode'              => $musyrif->kode ?? '-',
+            'kelas_id'          => $musyrif->kelas_id, // Penting untuk Edit Mode
+            'nama_kelas'        => $musyrif->kelas->nama_kelas ?? '-', // Untuk Detail Mode
+            'alamat'            => $musyrif->alamat ?? '-',
+            'nomor'             => $musyrif->user->nomor ?? '-',
+            'email'             => $musyrif->user->email ?? '-',
+            'pendidikan_terakhir' => $musyrif->pendidikan_terakhir ?? '-',
+            'domisili'          => $musyrif->domisili ?? '-',
+            'halaqah'           => $musyrif->halaqah ?? '-',
+            'amanah_lain'       => $musyrif->amanah_lain ?? '-',
+            'metode_alquran'    => $musyrif->metode_alquran ?? '-',
+            'is_sertifikasi_ummi' => $musyrif->is_sertifikasi_ummi,
+            'tahun_sertifikasi' => $musyrif->tahun_sertifikasi ?? '-',
+            'keterangan'        => $musyrif->keterangan ?? '-',
         ]);
-
-        // (opsional) sinkronkan nama user = nama musyrif
-        if ($musyrif->user) {
-            $musyrif->user->update(['name' => $validated['nama']]);
-        }
-
-        return response()->json(['message' => 'Musyrif berhasil diperbarui.']);
     }
 
     public function destroy(Request $request, $id)
@@ -341,5 +390,124 @@ class MusyrifController extends Controller
         $attendance->save();
 
         return back()->with('success', 'Status absensi berhasil diperbarui.');
+    }
+
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file_excel' => 'required|mimes:xlsx,xls,csv'
+        ]);
+
+        try {
+            Excel::import(new MusyrifImport, $request->file('file_excel'));
+            return response()->json(['message' => 'Seluruh data musyrif berhasil diimport!']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal import: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function getSheetPreview(Request $request)
+    {
+        $request->validate([
+            'temp_path' => 'required',
+            'sheet_index' => 'required|integer'
+        ]);
+
+        $path = storage_path('app/' . $request->temp_path);
+        $sheetIndex = (int) $request->sheet_index;
+
+        // Baca data hanya pada sheet yang dipilih
+        $spreadsheet = Excel::toCollection(collect(), $path);
+
+        // Ambil sheet berdasarkan index
+        $sheetData = $spreadsheet->get($sheetIndex);
+
+        if ($sheetData->isEmpty()) {
+            return response()->json(['headers' => [], 'preview' => []]);
+        }
+
+        // Ambil header (baris pertama) dan data (5 baris berikutnya)
+        $headers = $sheetData->first()->keys()->toArray();
+        $preview = $sheetData->take(6); // Mengambil 6 baris (1 header + 5 data)
+
+        return response()->json([
+            'headers' => $headers,
+            'preview' => $preview
+        ]);
+    }
+
+    public function previewImport(Request $request)
+    {
+        // Sesuaikan 'file' dengan name="file" di HTML
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls'
+        ]);
+
+        try {
+            $file = $request->file('file');
+            // Simpan sementara
+            $path = $file->storeAs('temp', 'import_musyrif_' . time() . '.xlsx');
+
+            // Ambil daftar sheet dan info jumlah baris
+            $reader = \Maatwebsite\Excel\Facades\Excel::toCollection(collect(), $file);
+            $sheets = [];
+
+            foreach ($reader as $index => $content) {
+                $sheets[] = [
+                    'name' => $reader->keys()[$index],
+                    'rows' => $content->count(),
+                    'index' => $index
+                ];
+            }
+
+            return response()->json([
+                'sheets' => $reader->keys(), // Untuk dropdown/list
+                'temp_path' => $path,
+                'sheet_info' => $sheets // Opsional jika ingin detail baris
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal membaca file: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function executeImport(Request $request)
+    {
+        $request->validate([
+            'temp_path' => 'required',
+            'sheet_index' => 'required|integer'
+        ]);
+
+        $path = storage_path('app/' . $request->temp_path);
+        $sheetIndex = (int) $request->sheet_index;
+
+        try {
+            // Kita bungkus import-nya agar hanya menjalankan sheet yang dipilih
+            Excel::import(
+                new class($sheetIndex) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
+                    private $sheetIndex;
+                    public function __construct($index)
+                    {
+                        $this->sheetIndex = $index;
+                    }
+
+                    public function sheets(): array
+                    {
+                        return [
+                            $this->sheetIndex => new \App\Imports\MusyrifImport()
+                        ];
+                    }
+                },
+                $path
+            );
+
+            // Hapus file temp setelah berhasil
+            if (Storage::exists($request->temp_path)) {
+                Storage::delete($request->temp_path);
+            }
+
+            return response()->json(['message' => 'Data musyrif dari sheet tersebut berhasil diimport!']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal import: ' . $e->getMessage()], 500);
+        }
     }
 }

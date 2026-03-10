@@ -1,7 +1,10 @@
 @extends('layouts.app')
 
+@section('title', 'Pengaturan Profil')
+
 @section('content')
     <style>
+        /* ================= AREA UPLOAD FOTO ADAPTIF ================= */
         .logo-upload-wrapper {
             position: relative;
             isolation: isolate;
@@ -13,151 +16,185 @@
             opacity: 0;
             cursor: pointer;
             z-index: 2;
+            width: 100%;
+            height: 100%;
         }
 
         .logo-upload-box {
-            border: 2px dashed #cfd8dc;
-            border-radius: 12px;
-            min-height: 180px;
+            border: 2px dashed var(--cui-border-color);
+            border-radius: 16px;
+            min-height: 200px;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
-            background-color: #fff;
+            background-color: var(--cui-body-bg);
+            /* Adaptif dark/light */
             padding: 20px;
             cursor: pointer;
-            transition:
-                border-color 0.25s ease,
-                background-color 0.25s ease,
-                box-shadow 0.25s ease,
-                transform 0.15s ease;
+            transition: all 0.3s ease;
         }
 
         .logo-upload-box:hover {
-            border-color: #321fdb;
-            background-color: #f8f9ff;
-            box-shadow: 0 0 0 4px rgba(50, 31, 219, 0.08);
+            border-color: var(--islamic-purple-500);
+            background-color: rgba(107, 78, 255, 0.05);
         }
 
         .logo-upload-box:active {
-            transform: scale(0.995);
+            transform: scale(0.99);
         }
 
         .logo-placeholder i {
-            font-size: 40px;
-            color: #6c757d;
-            transition: all 0.25s ease;
+            font-size: 48px;
+            color: var(--cui-secondary-color);
+            transition: all 0.3s ease;
         }
 
         .logo-upload-box:hover .logo-placeholder i {
-            color: #321fdb;
-            transform: translateY(-2px);
+            color: var(--islamic-purple-600);
+            transform: translateY(-4px);
         }
 
-        .logo-upload-box:hover .logo-placeholder {
-            color: #321fdb;
-        }
-
-        .logo-preview-img {
-            max-height: 120px;
-            max-width: 100%;
-            object-fit: contain;
+        .logo-upload-box:hover .logo-placeholder .text-muted {
+            color: var(--islamic-purple-500) !important;
         }
 
         .profile-preview-img {
-            width: 120px;
-            height: 120px;
+            width: 140px;
+            height: 140px;
             object-fit: cover;
             border-radius: 50%;
-            border: 3px solid #e9ecef;
+            border: 4px solid var(--islamic-purple-100);
+            padding: 4px;
+            background: var(--cui-card-bg);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        /* Penyesuaian khusus Dark Mode untuk foto */
+        [data-coreui-theme="dark"] .profile-preview-img {
+            border-color: var(--islamic-purple-700);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
     </style>
 
-    <div class="row">
-        <div class="card">
-            <div class="card-header">
-                <strong>Profil Saya</strong>
-            </div>
+    {{-- HEADER TITLE --}}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-0 fw-bold text-adaptive-purple">Pengaturan Profil</h4>
+            <span class="text-muted small">Kelola informasi pribadi dan foto profil Anda</span>
+        </div>
+    </div>
 
-            <div class="card-body">
+    <div class="row mb-4">
+        <div class="col-lg-8 col-md-10 mx-auto">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-transparent py-3 fw-semibold d-flex align-items-center">
+                    <i class="bi bi-person-lines-fill fs-5 me-2" style="color: var(--islamic-purple-500);"></i> Detail Profil
+                </div>
 
-                @if (session('success'))
-                    <div class="alert alert-success">
-                        {{ session('success') }}
-                    </div>
-                @endif
+                <div class="card-body p-4">
 
-                <form action="{{ route('profile.settings.store') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
+                    @if (session('success'))
+                        <div class="alert alert-success d-flex align-items-center rounded-3" role="alert">
+                            <i class="bi bi-check-circle-fill flex-shrink-0 me-2 fs-5"></i>
+                            <div>{{ session('success') }}</div>
+                        </div>
+                    @endif
 
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold d-flex align-items-center gap-2">
-                            <i class="cil-user"></i> Foto Profil
-                        </label>
+                    <form action="{{ route('profile.settings.store') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
 
-                        <div class="logo-upload-wrapper">
-                            <input type="file" name="photo" id="photoInput" accept="image/*"
-                                class="logo-input @error('photo') is-invalid @enderror">
+                        {{-- FOTO PROFIL --}}
+                        <div class="mb-4 text-center">
+                            <label
+                                class="form-label fw-semibold d-flex align-items-center justify-content-center gap-2 mb-3">
+                                Foto Profil
+                            </label>
 
-                            <div class="logo-upload-box" id="photoPreviewBox">
+                            <div class="logo-upload-wrapper mx-auto" style="max-width: 400px;">
+                                <input type="file" name="photo" id="photoInput" accept="image/*"
+                                    class="logo-input @error('photo') is-invalid @enderror">
 
-                                @if (!empty($profile?->photo))
-                                    <img src="{{ asset('storage/' . $profile->photo) }}" alt="Foto Profil"
-                                        class="profile-preview-img">
-                                @else
-                                    <div class="logo-placeholder">
-                                        <i class="cil-cloud-upload"></i>
-                                        <div class="mt-2 fw-semibold">Klik untuk upload foto profil</div>
-                                        <small class="text-muted">
-                                            PNG, JPG, WebP (Maks. 2MB)
-                                        </small>
-                                    </div>
-                                @endif
+                                <div class="logo-upload-box" id="photoPreviewBox">
+                                    @if (!empty($profile?->photo))
+                                        <img src="{{ asset('storage/' . $profile->photo) }}" alt="Foto Profil"
+                                            class="profile-preview-img">
+                                    @else
+                                        <div class="logo-placeholder">
+                                            <i class="bi bi-cloud-arrow-up-fill"></i>
+                                            <div class="mt-2 fw-semibold">Klik atau seret foto ke sini</div>
+                                            <small class="text-muted">PNG, JPG, WebP (Maks. 2MB)</small>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
 
+                            @error('photo')
+                                <div class="text-danger mt-2 small">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <hr class="my-4" style="opacity: 0.1;">
+
+                        {{-- FORM DATA --}}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium text-muted small text-uppercase">Nama Lengkap</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-transparent text-muted"><i
+                                            class="bi bi-person"></i></span>
+                                    <input type="text" name="full_name"
+                                        value="{{ old('full_name', $profile->full_name ?? auth()->user()->name) }}"
+                                        class="form-control" placeholder="Masukkan nama lengkap...">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium text-muted small text-uppercase">Email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-transparent text-muted"><i
+                                            class="bi bi-envelope"></i></span>
+                                    <input type="email" value="{{ auth()->user()->email }}"
+                                        class="form-control text-muted" disabled placeholder="Masukkan email..."
+                                        style="background-color: var(--cui-secondary-bg);">
+                                </div>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-medium text-muted small text-uppercase">Nomor HP</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-transparent text-muted"><i
+                                            class="bi bi-telephone"></i></span>
+                                    <input type="text" name="phone"
+                                        value="{{ old('phone', $profile->phone ?? auth()->user()->nomor) }}"
+                                        class="form-control" placeholder="Contoh: 08123456789">
+                                </div>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-medium text-muted small text-uppercase">Alamat Lengkap</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-transparent text-muted align-items-start pt-2"><i
+                                            class="bi bi-geo-alt"></i></span>
+                                    <textarea name="address" class="form-control" rows="3" placeholder="Masukkan alamat domisili...">{{ old('address', $profile->address ?? '') }}</textarea>
+                                </div>
                             </div>
                         </div>
 
-                        @error('photo')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                        @enderror
-                    </div>
+                        {{-- BUTTONS --}}
+                        <div class="text-end mt-4 pt-3 border-top d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-light px-4" onclick="history.back()">
+                                Batal
+                            </button>
+                            <button type="submit" class="btn text-white px-4"
+                                style="background: var(--islamic-purple-600);">
+                                <i class="bi bi-save me-1"></i> Simpan Perubahan
+                            </button>
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Nama Lengkap</label>
-                        <input type="text" name="full_name"
-                            value="{{ old('full_name', $profile->full_name ?? auth()->user()->name) }}" class="form-control"
-                            placeholder="Masukkan nama lengkap...">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" value="{{ auth()->user()->email }}" class="form-control" disabled
-                            placeholder="Masukkan email...">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Nomor HP</label>
-                        <input type="text" name="phone"
-                            value="{{ old('phone', $profile->phone ?? auth()->user()->nomor) }}" class="form-control"
-                            placeholder="Masukkan nomor HP...">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Alamat</label>
-                        <textarea name="address" class="form-control" rows="3" placeholder="Masukkan alamat...">{{ old('address', $profile->address ?? '') }}</textarea>
-                    </div>
-
-                    <div class="text-end">
-                        <button type="reset" class="btn btn-secondary me-2" onclick="history.back()">
-                            <i class="bi bi-x-circle"></i> Batal
-                        </button>
-                        <button class="btn btn-primary">
-                            <i class="bi bi-save"></i> Simpan Profil
-                        </button>
-                    </div>
-
-                </form>
-
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -181,13 +218,14 @@
 
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    photoBox.innerHTML = `
-                    <img
-                        src="${e.target.result}"
-                        class="profile-preview-img"
-                        alt="Preview Foto Profil"
-                    >
-                `;
+                    // Beri sedikit animasi fade-in saat gambar berubah
+                    photoBox.style.opacity = '0';
+                    setTimeout(() => {
+                        photoBox.innerHTML = `
+                            <img src="${e.target.result}" class="profile-preview-img" alt="Preview Foto Profil">
+                        `;
+                        photoBox.style.opacity = '1';
+                    }, 150);
                 };
                 reader.readAsDataURL(file);
             });

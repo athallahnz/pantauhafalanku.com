@@ -25,7 +25,6 @@ use App\Http\Controllers\Santri\HafalanController as SantriHafalanController;
 
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\ProfileSettingController;
-use App\Models\Santri;
 
 /*
 |--------------------------------------------------------------------------
@@ -40,10 +39,15 @@ use App\Models\Santri;
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
 Route::post('/logout', function () {
     Auth::logout();
     return redirect()->route('login');
 })->name('logout');
+
+Route::get('/waiting-approval', function () {
+    return view('auth.waiting-approval');
+})->name('waiting.approval');
 
 /*
 |--------------------------------------------------------------------------
@@ -75,12 +79,22 @@ Route::prefix('superadmin')
     ->middleware(['auth', 'role:superadmin'])
     ->group(function () {
 
-        // Dashboard SuperAdmin
+        // 1. Dashboard
         Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
-        // Manajemen User SuperAdmin
+
+        // 2. Bulk Actions (WAJIB DI ATAS ROUTE {id})
+        Route::post('/users/bulk-approve', [SuperAdminUserController::class, 'bulkApprove'])->name('users.bulk_approve');
+
+        // UBAH POST JADI DELETE DI SINI
+        Route::delete('/users/bulk-delete', [SuperAdminUserController::class, 'bulkDelete'])->name('users.bulk_delete');
+
+        // 3. Manajemen User
         Route::get('/users', [SuperAdminUserController::class, 'index'])->name('users.index');
         Route::get('/users/datatable', [SuperAdminUserController::class, 'getData'])->name('users.datatable');
         Route::post('/users', [SuperAdminUserController::class, 'store'])->name('users.store');
+        Route::post('/users/approve', [SuperAdminUserController::class, 'approve'])->name('users.approve');
+
+        // 4. Route Parameter (WAJIB DI BAWAH)
         Route::put('/users/{id}', [SuperAdminUserController::class, 'update'])->name('users.update');
         Route::delete('/users/{id}', [SuperAdminUserController::class, 'destroy'])->name('users.destroy');
     });
@@ -90,7 +104,7 @@ Route::prefix('superadmin')
 | ADMIN / DEPARTEMEN
 |--------------------------------------------------------------------------
 */
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|pimpinan'])->group(function () {
 
     // Dashboard Admin
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
@@ -139,6 +153,21 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::post('musyrif', [AdminMusyrifController::class, 'store'])->name('musyrif.store');
     Route::put('musyrif/{id}', [AdminMusyrifController::class, 'update'])->name('musyrif.update');
     Route::delete('musyrif/{id}', [AdminMusyrifController::class, 'destroy'])->name('musyrif.destroy');
+    Route::post('musyrif/import', [AdminMusyrifController::class, 'importExcel'])->name('musyrif.import');
+    Route::get('musyrif/get-by-kelas/{kelas_id}', [AdminMusyrifController::class, 'getByKelas'])->name('musyrif.by_kelas');
+
+    // ==========================================
+    // ROUTE BARU UNTUK IMPORT EXCEL & PREVIEW
+    // ==========================================
+
+    // 1. Route untuk upload file & ambil preview (Step 1)
+    Route::post('musyrif/sheet-preview', [AdminMusyrifController::class, 'getSheetPreview'])->name('musyrif.sheet_preview');
+    Route::post('musyrif/preview-import', [AdminMusyrifController::class, 'previewImport'])
+        ->name('musyrif.preview');
+
+    // 2. Route untuk eksekusi import setelah pilih sheet (Step 2)
+    Route::post('musyrif/execute-import', [AdminMusyrifController::class, 'executeImport'])
+        ->name('musyrif.execute_import');
 
     // DataTables endpoint untuk attendances musyrif
     Route::get('musyrif/{id}/attendances', [AdminMusyrifController::class, 'attendances'])
@@ -182,7 +211,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
 */
 Route::prefix('musyrif')
     ->name('musyrif.')
-    ->middleware(['auth', 'role:musyrif'])
+    ->middleware(['auth', 'role:musyrif', 'approved']) // pastikan middleware 'approved' sudah ditambahkan di Kernel.php
     ->group(function () {
 
         // ===================== DASHBOARD =====================
@@ -312,7 +341,7 @@ Route::prefix('santri-master')
         Route::put('/{id}', [AdminSantriController::class, 'update'])->name('update');
         Route::delete('/{id}', [AdminSantriController::class, 'destroy'])->name('destroy');
         Route::get('/{id}', [AdminSantriController::class, 'show'])->name('show');
-
+        Route::get('/get-by-kelas/{kelas_id}', [AdminSantriController::class, 'getByKelas'])->name('get_by_kelas');
         // PUT khusus untuk assign / update user
         Route::put('/{id}/assign-user', [AdminSantriController::class, 'addUser'])->name('addUser');
 
@@ -331,7 +360,7 @@ Route::prefix('santri-master')
 
 Route::prefix('santri')
     ->name('santri.')
-    ->middleware(['auth', 'role:santri'])
+    ->middleware(['auth', 'role:santri', 'approved']) // pastikan middleware 'approved' sudah ditambahkan di Kernel.php
     ->group(function () {
         Route::get('/dashboard', [SantriDashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/ringkasan-data', [SantriDashboardController::class, 'ringkasanData'])->name('dashboard.ringkasan-data');
@@ -339,4 +368,6 @@ Route::prefix('santri')
 
         Route::get('/hafalan', [SantriHafalanController::class, 'index'])->name('hafalan.index');
         Route::get('/hafalan/timeline', [SantriHafalanController::class, 'timeline'])->name('hafalan.timeline');
+        Route::get('/hafalan/export-pdf', [SantriHafalanController::class, 'exportPdf'])
+            ->name('hafalan.export-pdf');
     });

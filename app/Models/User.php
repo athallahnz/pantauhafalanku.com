@@ -17,10 +17,13 @@ class User extends Authenticatable
         'nomor',
         'password',
         'role',
+        'is_approved',
+
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'is_approved' => 'boolean',
     ];
 
     public function profileSetting()

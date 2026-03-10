@@ -3,57 +3,164 @@
 @section('title', 'Riwayat Hafalan Santri Binaan')
 
 @section('content')
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span>Riwayat Setoran Hafalan</span>
-            <button class="btn btn-light btn-sm" id="btnAddHafalan">
-                <i class="cil-plus me-1"></i> Input Hafalan
-            </button>
+    <style>
+        /* ================= TEMA ISLAMIC PURPLE & MODERN TABLE ================= */
+        .text-adaptive-purple {
+            color: var(--islamic-purple-700);
+        }
+
+        [data-coreui-theme="dark"] .text-adaptive-purple {
+            color: #fff !important;
+        }
+
+        .main-card {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+        }
+
+        .card-header-purple {
+            background: transparent;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 1.25rem 1.5rem;
+        }
+
+        /* Styling Filter Nav-Pills (Kapsul) */
+        #filterTanggalGroup .nav-link {
+            color: var(--cui-secondary-color);
+            background-color: var(--cui-tertiary-bg);
+            border: 1px solid var(--cui-border-color);
+            border-radius: 50px;
+            padding: 0.4rem 1rem;
+            margin-right: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.25s ease;
+        }
+
+        #filterTanggalGroup .nav-link.active {
+            background-color: var(--islamic-purple-600) !important;
+            color: #ffffff !important;
+            border-color: var(--islamic-purple-600) !important;
+            box-shadow: 0 4px 10px rgba(111, 66, 193, 0.2);
+        }
+
+        /* Modal Styling */
+        .modal-content {
+            border-radius: 24px;
+            border: none;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background: var(--cui-tertiary-bg);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .badge-nilai {
+            font-family: 'Amiri', serif;
+            font-size: 1.1rem;
+        }
+
+        /* ================= FLOATING ACTION BUTTON (FAB) ================= */
+        .btn-fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1040;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50px;
+            padding: 12px 24px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(111, 66, 193, 0.4) !important;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn-fab i {
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-fab:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(111, 66, 193, 0.5) !important;
+        }
+
+        .btn-fab .fab-text {
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+
+        /* Mode Mobile: Berubah jadi bulat & icon saja */
+        @media (max-width: 768px) {
+            .btn-fab {
+                bottom: 25px;
+                right: 25px;
+                width: 60px;
+                height: 60px;
+                padding: 0;
+                border-radius: 50%;
+                /* Menjadi lingkaran penuh */
+            }
+
+            .btn-fab .fab-text {
+                display: none;
+                /* Sembunyikan teks */
+            }
+
+            .btn-fab i {
+                font-size: 1.8rem;
+                /* Icon dibesarkan untuk jempol */
+                margin-left: 0;
+            }
+        }
+    </style>
+
+    <div class="row mb-4 align-items-center px-3 px-md-0 g-3">
+        <div class="col-12 col-md-auto text-start">
+            <h4 class="fw-bold text-adaptive-purple mb-1">Manajemen Hafalan</h4>
+            <p class="text-muted small mb-0">Pantau dan kelola progress setoran hafalan santri binaan Anda.</p>
         </div>
+    </div>
 
-        <div class="card-header bg-light">
-            <div class="d-flex align-items-center gap-3 flex-wrap">
+    <div class="card main-card spotlight-card">
+        <div class="card-header card-header-purple bg-light bg-opacity-10 py-3 px-3 px-md-4">
+            <div
+                class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
 
-                <!-- Filter Tanggal (Nav Pills) -->
-                <ul class="nav nav-pills nav-pills-sm flex-nowrap overflow-auto" id="filterTanggalGroup" role="tablist">
+                <div class="w-100 w-md-auto overflow-auto">
+                    <ul class="nav nav-pills nav-pills-sm flex-nowrap" id="filterTanggalGroup" role="tablist">
+                        <li class="nav-item"><button class="nav-link active text-nowrap" type="button"
+                                data-filter="today">Hari Ini</button></li>
+                        <li class="nav-item"><button class="nav-link text-nowrap" type="button"
+                                data-filter="yesterday">Kemarin</button></li>
+                        <li class="nav-item"><button class="nav-link text-nowrap" type="button" data-filter="last_7_days">7
+                                Hari</button></li>
+                        <li class="nav-item"><button class="nav-link text-nowrap" type="button"
+                                data-filter="this_month">Bulan Ini</button></li>
+                        <li class="nav-item"><button class="nav-link text-nowrap" type="button"
+                                data-filter="all">Semuanya</button></li>
+                    </ul>
+                </div>
 
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active text-nowrap" type="button" data-filter="today">
-                            Hari Ini
-                        </button>
-                    </li>
-
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link text-nowrap" type="button" data-filter="yesterday">
-                            Kemarin
-                        </button>
-                    </li>
-
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link text-nowrap" type="button" data-filter="last_7_days">
-                            7 Hari
-                        </button>
-                    </li>
-
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link text-nowrap" type="button" data-filter="this_month">
-                            Bulan Ini
-                        </button>
-                    </li>
-                </ul>
-
-                <!-- Badge Info -->
-                <span class="badge bg-primary-subtle text-primary" id="filterBadge">
-                    Menampilkan: Hari Ini
-                </span>
+                <div class="w-100 w-md-auto text-md-end">
+                    <span
+                        class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 d-block d-md-inline-block shadow-sm"
+                        id="filterBadge" style="min-width: 150px; border: 1px solid rgba(111, 66, 193, 0.1);">
+                        <i class="bi bi-info-circle me-1"></i> Menampilkan: Hari Ini
+                    </span>
+                </div>
 
             </div>
         </div>
 
-        <div class="card-body table-responsive">
-            <table id="hafalan-table" class="table table-striped align-middle w-100">
-                <thead>
-                    <tr>
+        <div class="card-body card-body-table table-responsive">
+            <table id="hafalan-table" class="table table-hover align-middle w-100 text-nowrap">
+                <thead class="bg-light bg-opacity-50">
+                    <tr class="text-muted small fw-bold text-uppercase" style="letter-spacing: 1px;">
                         <th>No.</th>
                         <th>Santri</th>
                         <th>Kelas</th>
@@ -63,7 +170,7 @@
                         <th>Nilai</th>
                         <th>Tahap</th>
                         <th>Status</th>
-                        <th class="text-end">Aksi</th>
+                        <th class="text-end pe-4">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -76,56 +183,58 @@
 @endsection
 
 @push('modals')
-
+    {{-- TOMBOL FAB INPUT HAFALAN --}}
+    <button class="btn btn-primary btn-fab" id="btnAddHafalan" title="Input Setoran Hafalan">
+        <i class="bi bi-plus-lg"></i>
+        <span class="fab-text">Input Hafalan</span>
+    </button>
     {{-- ===================== MODAL CREATE ===================== --}}
     <div class="modal fade" id="modalCreateHafalan" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <form id="formCreateHafalan">
                 @csrf
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Input Setoran Hafalan</h5>
+                <div class="modal-content shadow-lg">
+                    <div class="modal-header px-4">
+                        <h5 class="modal-title fw-bold text-adaptive-purple"><i class="bi bi-journal-plus me-2"></i>Input
+                            Setoran Hafalan</h5>
                         <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                     </div>
 
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Tanggal Setoran</label>
-                                <input type="text" name="tanggal_setoran" id="tanggal_create" class="form-control"
-                                    readonly>
+                    <div class="modal-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">TANGGAL SETORAN</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i
+                                            class="bi bi-calendar-check"></i></span>
+                                    <input type="text" name="tanggal_setoran" id="tanggal_create"
+                                        class="form-control bg-light border-start-0" readonly>
+                                </div>
                             </div>
 
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Santri</label>
-                                <select name="santri_id" id="create_santri_id" class="form-select" required>
-                                    <option value="">-- Pilih Santri Binaan --</option>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">SANTRI BINAAN</label>
+                                <select name="santri_id" id="create_santri_id" class="form-select select2-basic" required>
+                                    <option value="">-- Pilih Santri --</option>
                                     @foreach ($santriBinaan as $santri)
-                                        <option value="{{ $santri->id }}">
-                                            {{ $santri->nama }}
-                                            @if ($santri->kelas)
-                                                ({{ $santri->kelas->nama_kelas }})
-                                            @endif
-                                        </option>
+                                        <option value="{{ $santri->id }}">{{ $santri->nama }}
+                                            {{ $santri->kelas ? '(' . $santri->kelas->nama_kelas . ')' : '' }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Juz</label>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">JUZ</label>
                                 <select id="create_juz_ui" class="form-select" required>
                                     <option value="">-- Pilih Juz --</option>
                                     @for ($i = 1; $i <= 30; $i++)
                                         <option value="{{ $i }}">{{ $i }}</option>
                                     @endfor
                                 </select>
-                                <div class="form-text">Untuk memfilter template.</div>
                             </div>
 
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Tahapan</label>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">TAHAPAN</label>
                                 <select id="create_tahap_ui" class="form-select" required>
                                     <option value="harian">Harian</option>
                                     <option value="tahap_1">Tahap 1</option>
@@ -133,110 +242,94 @@
                                     <option value="tahap_3">Tahap 3</option>
                                     <option value="ujian_akhir">Ujian Akhir</option>
                                 </select>
-                                <div class="form-text">Untuk memfilter template.</div>
                             </div>
 
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Surah : Ayat (otomatis)</label>
-                            <select name="hafalan_template_id" id="create_template_id" class="form-select">
-                                <option value="">-- Pilih Juz & Tahapan dulu --</option>
-                            </select>
-                            <div class="form-text">Isi dropdown otomatis dari template (juz + tahapan).</div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Status</label>
-                                <select name="status" id="create_status" class="form-select" required>
-                                    <option value="lulus">Lulus</option>
-                                    <option value="ulang">Ulang</option>
-                                    <option value="hadir_tidak_setor">Hadir Tidak Setor</option>
-                                    <option value="alpha">Alpha</option>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-primary">SURAH : AYAT (TEMPLATES)</label>
+                                <select name="hafalan_template_id" id="create_template_id"
+                                    class="form-select border-primary border-opacity-25"
+                                    style="background-color: #f8f9ff;">
+                                    <option value="">-- Pilih Juz & Tahapan dulu --</option>
                                 </select>
                             </div>
 
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Nilai</label>
-                                <select name="nilai_label" id="create_nilai_label" class="form-select">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">STATUS</label>
+                                <select name="status" id="create_status" class="form-select fw-bold" required>
+                                    <option value="lulus" class="text-success">Lulus</option>
+                                    <option value="ulang" class="text-warning">Ulang</option>
+                                    <option value="hadir_tidak_setor" class="text-info">Hadir Tidak Setor</option>
+                                    <option value="alpha" class="text-danger">Alpha</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">NILAI (TAQDIR)</label>
+                                <select name="nilai_label" id="create_nilai_label" class="form-select fw-bold">
                                     <option value="">-- Pilih Nilai --</option>
-                                    <option value="mumtaz">ممتاز</option>
-                                    <option value="jayyid_jiddan">جيد جدًا</option>
-                                    <option value="jayyid">جيد</option>
+                                    <option value="mumtaz">ممتاز (Mumtaz)</option>
+                                    <option value="jayyid_jiddan">جيد جدًا (Jayyid Jiddan)</option>
+                                    <option value="jayyid">جيد (Jayyid)</option>
                                 </select>
-                                <div class="form-text">Nilai aktif hanya saat status Lulus/Ulang.</div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">CATATAN MUSYRIF</label>
+                                <textarea name="catatan" id="create_catatan" class="form-control" rows="2"
+                                    placeholder="Catatan tajwid, kelancaran, adab, dll."></textarea>
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Catatan Musyrif (opsional)</label>
-                            <textarea name="catatan" id="create_catatan" class="form-control" rows="3"
-                                placeholder="Catatan tajwid, kelancaran, adab, dll."></textarea>
+                        <div class="alert alert-warning py-2 mt-3 d-none rounded-3 border-0" id="create_hint">
+                            <i class="bi bi-info-circle-fill me-2"></i><small id="create_hint_text"></small>
                         </div>
-
-                        <div class="alert alert-warning py-2 d-none" id="create_hint">
-                            <small id="create_hint_text"></small>
-                        </div>
-
                     </div>
 
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    <div class="modal-footer border-top-0 px-4 pb-4">
+                        <button type="button" class="btn btn-light rounded-pill px-4"
+                            data-coreui-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 shadow">Simpan Setoran</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
-    {{-- ===================== MODAL EDIT ===================== --}}
+    {{-- ===================== MODAL EDIT (REFACTORED STYLE) ===================== --}}
     <div class="modal fade" id="modalEditHafalan" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <form id="formEditHafalan">
                 @csrf
                 @method('PUT')
                 <input type="hidden" id="edit_id">
-
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Edit Setoran Hafalan</h5>
+                <div class="modal-content shadow-lg">
+                    <div class="modal-header px-4">
+                        <h5 class="modal-title fw-bold text-adaptive-purple"><i class="bi bi-pencil-square me-2"></i>Edit
+                            Setoran Hafalan</h5>
                         <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                     </div>
-
-                    <div class="modal-body">
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Tanggal Setoran</label>
-                                <input type="text" name="tanggal_setoran" id="tanggal_edit" class="form-control"
-                                    readonly>
+                    <div class="modal-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">TANGGAL SETORAN</label>
+                                <input type="text" name="tanggal_setoran" id="tanggal_edit"
+                                    class="form-control bg-light" readonly>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Santri</label>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">SANTRI</label>
                                 <select name="santri_id" id="edit_santri_id" class="form-select" required>
-                                    <option value="">-- Pilih Santri Binaan --</option>
                                     @foreach ($santriBinaan as $santri)
-                                        <option value="{{ $santri->id }}">
-                                            {{ $santri->nama }}
-                                            @if ($santri->kelas)
-                                                ({{ $santri->kelas->nama_kelas }})
-                                            @endif
-                                        </option>
+                                        <option value="{{ $santri->id }}">{{ $santri->nama }}</option>
                                     @endforeach
                                 </select>
                             </div>
-
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Juz</label>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">JUZ</label>
                                 <input type="number" id="edit_juz_ui" class="form-control" min="1"
                                     max="30" required>
                             </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Tahapan</label>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">TAHAPAN</label>
                                 <select id="edit_tahap_ui" class="form-select" required>
                                     <option value="harian">Harian</option>
                                     <option value="tahap_1">Tahap 1</option>
@@ -245,18 +338,13 @@
                                     <option value="ujian_akhir">Ujian Akhir</option>
                                 </select>
                             </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Surah : Ayat (otomatis)</label>
-                            <select name="hafalan_template_id" id="edit_template_id" class="form-select">
-                                <option value="">-- Pilih Juz & Tahapan dulu --</option>
-                            </select>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Status</label>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-primary">SURAH : AYAT</label>
+                                <select name="hafalan_template_id" id="edit_template_id"
+                                    class="form-select border-primary border-opacity-25"></select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">STATUS</label>
                                 <select name="status" id="edit_status" class="form-select" required>
                                     <option value="lulus">Lulus</option>
                                     <option value="ulang">Ulang</option>
@@ -264,9 +352,8 @@
                                     <option value="alpha">Alpha</option>
                                 </select>
                             </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Nilai</label>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">NILAI</label>
                                 <select name="nilai_label" id="edit_nilai_label" class="form-select">
                                     <option value="">-- Pilih Nilai --</option>
                                     <option value="mumtaz">ممتاز</option>
@@ -274,84 +361,97 @@
                                     <option value="jayyid">جيد</option>
                                 </select>
                             </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">CATATAN MUSYRIF</label>
+                                <textarea name="catatan" id="edit_catatan" class="form-control" rows="3"></textarea>
+                            </div>
                         </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Catatan Musyrif (opsional)</label>
-                            <textarea name="catatan" id="edit_catatan" class="form-control" rows="3"></textarea>
+                        <div class="alert alert-warning py-2 mt-3 d-none rounded-3 border-0" id="edit_hint">
+                            <i class="bi bi-info-circle-fill me-2"></i><small id="edit_hint_text"></small>
                         </div>
-
-                        <div class="alert alert-warning py-2 d-none" id="edit_hint">
-                            <small id="edit_hint_text"></small>
-                        </div>
-
                     </div>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Update</button>
+                    <div class="modal-footer border-top-0 px-4 pb-4">
+                        <button type="button" class="btn btn-light rounded-pill px-4"
+                            data-coreui-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 shadow">Update Setoran</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
-    {{-- ===================== MODAL DETAIL ===================== --}}
+    {{-- ===================== OPTION 1: ACHIEVEMENT CARD ===================== --}}
     <div class="modal fade" id="modalDetailHafalan" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Detail Setoran Hafalan</h5>
-                    <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg overflow-hidden" style="border-radius: 28px;">
+                <div class="p-4 text-center"
+                    style="background: linear-gradient(135deg, var(--islamic-purple-50) 0%, #ffffff 100%); border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge rounded-pill bg-dark px-3 py-2" id="detail_tahap"
+                            style="font-size: 10px; letter-spacing: 1px;"></span>
+                        <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
+                    </div>
+                    <h3 class="fw-bold text-primary mb-1" id="detail_rentang" style="letter-spacing: -0.5px;"></h3>
+                    <p class="text-muted small fw-bold mb-0 text-uppercase" style="letter-spacing: 2px;">Juz <span
+                            id="detail_juz"></span></p>
                 </div>
 
-                <div class="modal-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-3">Santri</dt>
-                        <dd class="col-sm-9" id="detail_santri"></dd>
+                <div class="modal-body p-4">
+                    <div class="d-flex align-items-center mb-4 p-3 rounded-4 bg-light border border-white shadow-sm">
+                        <div class="flex-shrink-0 bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                            style="width: 50px; height: 50px;">
+                            <i class="bi bi-person-fill text-primary fs-4"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="fw-bold mb-0" id="detail_santri"></h6>
+                            <small class="text-muted" id="detail_kelas"></small>
+                        </div>
+                        <div class="ms-auto text-end">
+                            <div id="detail_status"></div>
+                        </div>
+                    </div>
 
-                        <dt class="col-sm-3">Kelas</dt>
-                        <dd class="col-sm-9" id="detail_kelas"></dd>
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <div class="p-3 rounded-4 border border-light text-center bg-white h-100">
+                                <small class="text-muted d-block mb-1 fw-bold" style="font-size: 10px;">TANGGAL</small>
+                                <span class="fw-semibold small" id="detail_tanggal"></span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 rounded-4 border border-light text-center bg-white h-100">
+                                <small class="text-muted d-block mb-1 fw-bold" style="font-size: 10px;">NILAI</small>
+                                <h4 class="badge-nilai text-primary mb-0" id="detail_nilai"
+                                    style="font-family: 'Amiri', serif;"></h4>
+                            </div>
+                        </div>
+                    </div>
 
-                        <dt class="col-sm-3">Juz</dt>
-                        <dd class="col-sm-9" id="detail_juz"></dd>
-
-                        <dt class="col-sm-3">Surah / Ayat</dt>
-                        <dd class="col-sm-9" id="detail_rentang"></dd>
-
-                        <dt class="col-sm-3">Tanggal Setoran</dt>
-                        <dd class="col-sm-9" id="detail_tanggal"></dd>
-
-                        <dt class="col-sm-3">Nilai</dt>
-                        <dd class="col-sm-9" id="detail_nilai"></dd>
-
-                        <dt class="col-sm-3">Tahap</dt>
-                        <dd class="col-sm-9" id="detail_tahap"></dd>
-
-                        <dt class="col-sm-3">Status</dt>
-                        <dd class="col-sm-9" id="detail_status"></dd>
-
-                        <dt class="col-sm-3">Catatan Musyrif</dt>
-                        <dd class="col-sm-9" id="detail_catatan"></dd>
-                    </dl>
+                    <div class="p-3 rounded-4 border-start border-primary border-4 bg-primary-subtle bg-opacity-10">
+                        <small class="fw-bold text-primary d-block mb-1" style="font-size: 10px;"><i
+                                class="bi bi-chat-left-text-fill me-1"></i> EVALUASI MUSYRIF</small>
+                        <p class="small mb-0 fst-italic text-dark text-opacity-75" id="detail_catatan"></p>
+                    </div>
                 </div>
 
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Tutup</button>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm"
+                        data-coreui-dismiss="modal">Tutup & Kembali</button>
                 </div>
             </div>
         </div>
     </div>
-
 @endpush
 
 @push('scripts')
+    {{-- LOGIKA UTUH 100% - SEARCHING FIXED --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // ================== Filter Tanggal (Button Group) ==================
             let filterTanggal = 'today';
 
             const filterLabels = {
+                all: 'Semua Riwayat',
                 today: 'Hari Ini',
                 yesterday: 'Kemarin',
                 last_7_days: '7 Hari Terakhir',
@@ -372,11 +472,8 @@
             }
 
             function formatTanggalIndonesia(iso) {
-
                 if (!iso) return '';
-
                 const d = new Date(iso);
-
                 return d.toLocaleDateString('id-ID', {
                     year: 'numeric',
                     month: 'long',
@@ -430,12 +527,10 @@
                 const juzEl = document.getElementById(`${mode}_juz_ui`);
                 const tahapEl = document.getElementById(`${mode}_tahap_ui`);
                 const tplEl = document.getElementById(`${mode}_template_id`);
-
                 if (!tplEl) return;
 
                 const juz = juzEl?.value;
                 const tahap = tahapEl?.value;
-
                 tplEl.innerHTML = `<option value="">-- Memuat... --</option>`;
 
                 if (!juz || !tahap) {
@@ -444,12 +539,10 @@
                 }
 
                 const json = await fetchTemplates(juz, tahap);
-
                 if (!json.ok) {
                     tplEl.innerHTML = `<option value="">-- Gagal memuat template --</option>`;
                     return;
                 }
-
                 if (!json.templates || json.templates.length === 0) {
                     tplEl.innerHTML = `<option value="">-- Template tidak ditemukan --</option>`;
                     return;
@@ -468,12 +561,10 @@
                 const statusEl = document.getElementById(`${mode}_status`);
                 const tplEl = document.getElementById(`${mode}_template_id`);
                 const nilaiEl = document.getElementById(`${mode}_nilai_label`);
-
                 const hintBox = document.getElementById(`${mode}_hint`);
                 const hintText = document.getElementById(`${mode}_hint_text`);
 
                 if (!statusEl || !tplEl || !nilaiEl) return;
-
                 const status = statusEl.value;
                 const isSetor = (status === 'lulus' || status === 'ulang');
 
@@ -494,13 +585,7 @@
                 }
             }
 
-            // ================== DataTables ==================
-            // NOTE: Pastikan endpoint datatable Anda sudah mengirim field baru:
-            // - template_label (surah:ayat)
-            // - template_juz, template_tahap (untuk edit)
-            // - hafalan_template_id
-            // - nilai_label
-            // - status
+            // ================== DataTables (SEARCH FIXED) ==================
             const table = $('#hafalan-table').DataTable({
                 processing: true,
                 serverSide: true,
@@ -510,7 +595,6 @@
                         d.filter_tanggal = filterTanggal;
                     }
                 },
-
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
@@ -521,63 +605,54 @@
                         data: 'santri',
                         name: 'santri',
                         orderable: false,
-                        searchable: false
-                    },
+                        searchable: true
+                    }, // FIXED: true
                     {
                         data: 'kelas',
                         name: 'kelas',
                         orderable: false,
-                        searchable: false
-                    },
-
-                    // tampilkan juz dari template (bukan input manual)
+                        searchable: true
+                    }, // FIXED: true
                     {
                         data: 'template_juz',
                         name: 'template_juz',
-                        searchable: false
-                    },
-
-                    // label Surah:Ayat dari template
+                        searchable: true
+                    }, // FIXED: true
                     {
                         data: 'template_label',
                         name: 'template_label',
                         orderable: false,
-                        searchable: false
-                    },
-
+                        searchable: true
+                    }, // FIXED: true
                     {
                         data: 'tanggal',
                         name: 'tanggal_setoran',
                         searchable: false
                     },
-
-                    // nilai arab dari nilai_label
                     {
                         data: 'nilai_label',
                         name: 'nilai_label',
                         orderable: false,
                         searchable: false
                     },
-
                     {
                         data: 'template_tahap',
                         name: 'template_tahap',
                         orderable: false,
-                        searchable: false
-                    },
+                        searchable: true
+                    }, // FIXED: true
                     {
                         data: 'status',
                         name: 'status',
                         orderable: false,
-                        searchable: false
-                    },
-
+                        searchable: true
+                    }, // FIXED: true
                     {
                         data: 'aksi',
                         name: 'aksi',
                         orderable: false,
                         searchable: false,
-                        className: 'text-end'
+                        className: 'text-end text-nowrap'
                     }
                 ],
                 order: [
@@ -585,47 +660,32 @@
                 ]
             });
 
-            // ================== Filter Tanggal: Button Group ==================
+            // ================== Filter Tanggal ==================
             $('#filterTanggalGroup button').on('click', function() {
                 if ($(this).hasClass('active')) return;
-
                 $('#filterTanggalGroup button').removeClass('active');
                 $(this).addClass('active');
-
                 filterTanggal = $(this).data('filter');
-
-                $('#filterBadge').text('Menampilkan: ' + filterLabels[filterTanggal]);
-
-                table.ajax.reload(null, true); // true = reset paging
-            });
-
-            table.on('draw', function() {
-                $('#filterBadge').text('Menampilkan: ' + filterLabels[filterTanggal]);
+                $('#filterBadge').html('<i class="bi bi-info-circle me-1"></i> Menampilkan: ' +
+                    filterLabels[filterTanggal]);
+                table.ajax.reload(null, true);
             });
 
             // ================== Open Create ==================
             $('#btnAddHafalan').on('click', function() {
                 $('#formCreateHafalan')[0].reset();
-
-                // auto today
                 const tglCreate = document.getElementById('tanggal_create');
                 if (tglCreate) {
                     const iso = todayISO();
                     tglCreate.value = formatTanggalIndonesia(iso);
                     tglCreate.dataset.iso = iso;
                 }
-
-                // reset dropdown template
                 const tplEl = document.getElementById('create_template_id');
                 if (tplEl) tplEl.innerHTML = `<option value="">-- Pilih Juz & Tahapan dulu --</option>`;
-
-                // default status rules
                 syncRules('create');
-
                 modalCreate.show();
             });
 
-            // ================== Create: load template when filter changes ==================
             $('#create_juz_ui, #create_tahap_ui').on('change', function() {
                 loadTemplateOptions('create');
             });
@@ -636,15 +696,13 @@
             // ================== Store (Create) ==================
             $('#formCreateHafalan').on('submit', function(e) {
                 e.preventDefault();
-
                 $.ajax({
                     url: "{{ route('musyrif.hafalan.store') }}",
                     type: 'POST',
                     data: $('#formCreateHafalan').serialize(),
                     success: function(res) {
                         modalCreate.hide();
-                        table.ajax.reload(null, true); // true = reset paging
-
+                        table.ajax.reload(null, true);
                         if (window.AppAlert) {
                             AppAlert.success(res.message ??
                                 'Setoran hafalan berhasil disimpan.');
@@ -666,42 +724,25 @@
             // ================== Open Edit ==================
             $(document).on('click', '.btn-edit', async function() {
                 const d = $(this).data();
-
-                // isi field yang disimpan
                 $('#edit_id').val(d.id);
                 $('#edit_santri_id').val(d.santri_id);
                 if (d.tanggal_ymd) {
-                    $('#tanggal_edit')
-                        .val(formatTanggalIndonesia(d.tanggal_ymd))
-                        .attr('data-iso', d.tanggal_ymd);
+                    $('#tanggal_edit').val(formatTanggalIndonesia(d.tanggal_ymd)).attr('data-iso', d
+                        .tanggal_ymd);
                 }
-
                 $('#edit_status').val(d.status || 'hadir_tidak_setor');
                 $('#edit_nilai_label').val(d.nilai_label || '');
                 $('#edit_catatan').val(d.catatan || '');
-
-                // isi filter UI (untuk memuat template list)
                 $('#edit_juz_ui').val(d.template_juz || '');
                 $('#edit_tahap_ui').val(d.template_tahap || 'harian');
-
-                // load templates then select template_id
                 await loadTemplateOptions('edit');
                 $('#edit_template_id').val(d.hafalan_template_id || '');
-
-                // apply rules (disable template/nilai jika alpha/hadir_tidak_setor)
                 syncRules('edit');
-
                 const iso = d.tanggal_ymd || todayISO();
-
-                $('#tanggal_edit')
-                    .val(formatTanggalIndonesia(iso))
-                    .attr('data-iso', iso);
-
-
+                $('#tanggal_edit').val(formatTanggalIndonesia(iso)).attr('data-iso', iso);
                 modalEdit.show();
             });
 
-            // ================== Edit: load template when filter changes ==================
             $('#edit_juz_ui, #edit_tahap_ui').on('change', function() {
                 loadTemplateOptions('edit');
             });
@@ -712,18 +753,15 @@
             // ================== Update (Edit) ==================
             $('#formEditHafalan').on('submit', function(e) {
                 e.preventDefault();
-
                 const id = $('#edit_id').val();
                 const url = "{{ url('musyrif/hafalan') }}/" + id;
-
                 $.ajax({
                     url: url,
-                    type: 'POST', // POST + _method=PUT (sesuai form)
+                    type: 'POST',
                     data: $('#formEditHafalan').serialize(),
                     success: function(res) {
                         modalEdit.hide();
-                        table.ajax.reload(null, true); // true = reset paging
-
+                        table.ajax.reload(null, true);
                         if (window.AppAlert) {
                             AppAlert.success(res.message ??
                                 'Setoran hafalan berhasil diupdate.');
@@ -745,37 +783,27 @@
             // ================== Detail ==================
             $(document).on('click', '.btn-detail', function() {
                 const d = $(this).data();
-
                 $('#detail_santri').text(d.santri || '-');
                 $('#detail_kelas').text(d.kelas || '-');
-
-                // sekarang juz/tahap/rentang dari template
                 $('#detail_juz').text(d.template_juz || '-');
                 $('#detail_rentang').text(d.template_label || '-');
-
                 $('#detail_tanggal').text(d.tanggal_label || '-');
-
-                // nilai arab
                 $('#detail_nilai').text(nilaiArab(d.nilai_label) || '-');
-
                 $('#detail_tahap').text(tahapLabel(d.template_tahap));
-                $('#detail_status').text(statusLabel(d.status));
-
+                $('#detail_status').html(
+                    `<span class="badge bg-primary-subtle text-primary rounded-pill px-3">${statusLabel(d.status)}</span>`
+                );
                 $('#detail_catatan').text(d.catatan || '-');
-
                 modalDetail.show();
             });
 
             // ================== Delete ==================
             $(document).on('click', '.btn-delete', function() {
                 const id = $(this).data('id');
-
                 if (!window.AppAlert) return;
-
                 AppAlert.warning('Data hafalan tidak dapat dikembalikan!', 'Hapus Setoran?')
                     .then(result => {
                         if (!result.isConfirmed) return;
-
                         $.ajax({
                             url: "{{ url('musyrif/hafalan') }}/" + id,
                             type: 'POST',
@@ -784,7 +812,7 @@
                                 _token: "{{ csrf_token() }}"
                             },
                             success: function(res) {
-                                table.ajax.reload(null, true); // true = reset paging
+                                table.ajax.reload(null, true);
                                 AppAlert.success(res.message ??
                                     'Setoran hafalan berhasil dihapus.');
                             },
@@ -794,7 +822,6 @@
                         });
                     });
             });
-
         });
     </script>
 @endpush

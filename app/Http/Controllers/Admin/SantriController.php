@@ -58,8 +58,7 @@ class SantriController extends Controller
                 'users.name as user_name',
                 'users.nomor as user_nomor',
                 'users.email as user_email',
-            ])
-            ->orderBy('santris.nama');
+            ]);
 
         if ($request->filled('kelas_id')) {
             $query->where('santris.kelas_id', $request->kelas_id);
@@ -107,23 +106,7 @@ class SantriController extends Controller
                     data-user-name="' . ($row->user_name ?? '') . '"
                     data-user-nomor="' . ($row->user_nomor ?? '') . '"
                     data-user-email="' . ($row->user_email ?? '') . '"
-                >Detail</button>';
-
-                $btnEdit = '
-                <button class="btn btn-sm btn-outline-secondary btn-edit"
-                    data-id="' . $row->id . '"
-                    data-nama="' . e($row->nama) . '"
-                    data-nis="' . e($row->nis) . '"
-                    data-kelas_id="' . e($row->kelas_id) . '"
-                    data-musyrif_id="' . e($row->musyrif_id) . '"
-                    data-tanggal_lahir="' . e($tgl) . '"
-                    data-jenis_kelamin="' . e($row->jenis_kelamin) . '"
-                >Edit</button>';
-
-                $btnDelete = '
-                <button class="btn btn-sm btn-outline-danger btn-delete"
-                    data-id="' . $row->id . '"
-                >Hapus</button>';
+                ><i class="bi bi-eye" data-toggle="tooltip" data-placement="top" title="Lihat Detail"></i></button>';
 
                 $btnUser = '
                 <button class="btn btn-sm btn-outline-primary btn-user"
@@ -133,44 +116,81 @@ class SantriController extends Controller
                     data-user-name="' . ($row->user_name ?? '') . '"
                     data-user-nomor="' . ($row->user_nomor ?? '') . '"
                     data-user-email="' . ($row->user_email ?? '') . '"
-                >Buat User</button>';
+                ><i class="bi bi-person-plus" data-toggle="tooltip" data-placement="top" title="Buat User"></i></button>';
 
-                return '<div class="d-flex flex-wrap gap-1 gap-md-2">' . $btnDetail . $btnEdit . $btnDelete . $btnUser . '</div>';
+                $btnEdit = '
+                <button class="btn btn-sm btn-warning btn-edit text-white"
+                    data-id="' . $row->id . '"
+                    data-nama="' . e($row->nama) . '"
+                    data-nis="' . e($row->nis) . '"
+                    data-kelas_id="' . e($row->kelas_id) . '"
+                    data-musyrif_id="' . $row->musyrif_id . '"
+                    data-tanggal_lahir="' . e($tgl) . '"
+                    data-jenis_kelamin="' . e($row->jenis_kelamin) . '"
+                    data-toggle="tooltip" title="Edit">
+                    <i class="bi bi-pencil"></i>
+                </button>';
+
+                $btnDelete = '
+                <button class="btn btn-sm btn-danger btn-delete text-white"
+                    data-id="' . $row->id . '"
+                ><i class="bi bi-trash" data-toggle="tooltip" data-placement="top" title="Hapus"></i></button>';
+
+                return '<div class="d-flex flex-nowrap gap-1">' . $btnDetail . $btnUser . $btnEdit . $btnDelete . '</div>';
             })
             ->rawColumns(['aksi', 'akun'])
             ->make(true);
+    }
+
+    public function getByKelas($kelas_id)
+    {
+        // Ambil semua musyrif yang kelas_id-nya cocok
+        $musyrifs = Musyrif::where('kelas_id', $kelas_id)->get();
+
+        if ($musyrifs->isEmpty()) {
+            return response()->json([
+                'status' => 'empty',
+                'message' => 'Belum ada Musyrif di kelas ini!',
+                'data' => []
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $musyrifs // Mengirimkan array of objects
+        ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'kelas_id' => 'required|exists:kelas,id',
-            'musyrif_id' => 'nullable|exists:musyrifs,id',
+            'musyrif_id' => 'required|exists:musyrifs,id', // Sebaiknya required jika ingin konsisten
             'nama' => 'required|string|max:150',
             'nis' => 'nullable|string|max:50',
             'tanggal_lahir' => 'nullable|date',
             'jenis_kelamin' => 'nullable|in:L,P',
         ]);
 
-        $santri = Santri::create([
-            'user_id' => null,
-            'kelas_id' => $validated['kelas_id'],
-            'musyrif_id' => $validated['musyrif_id'] ?? null,
-            'nama' => $validated['nama'],
-            'nis' => $validated['nis'] ?? null,
-            'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
-            'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
-        ]);
+        // Tambahkan pengecekan yang sama dengan store
+        $check = Musyrif::where('id', $validated['musyrif_id'])
+            ->where('kelas_id', $validated['kelas_id'])
+            ->exists();
 
-        if ($request->ajax()) {
+        if (!$check) {
             return response()->json([
-                'status' => 'success',
-                'message' => 'Santri berhasil dibuat.',
-                'data' => $santri,
-            ]);
+                'status' => 'error',
+                'message' => 'Musyrif yang dipilih tidak bertugas di kelas ini!'
+            ], 422);
         }
 
-        return redirect()->route('santri.master.index')->with('success', 'Santri berhasil dibuat.');
+        $santri = Santri::create($validated);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Santri berhasil ditambahkan.',
+            'data' => $santri
+        ]);
     }
 
     public function update(Request $request, $id)
@@ -510,7 +530,7 @@ class SantriController extends Controller
                     $errors[] = "Sheet " . ($sheetIndex + 1) . ": tidak ditemukan.";
                     continue;
                 }
-
+                $musyrifTerpilih = Musyrif::where('kelas_id', $kelasId)->first();
                 $rows = $allSheets[$sheetIndex];
 
                 // ✅ detect header row
@@ -574,7 +594,7 @@ class SantriController extends Controller
                     Santri::create([
                         'user_id' => null,
                         'kelas_id' => $kelasId,
-                        'musyrif_id' => null,
+                        'musyrif_id' => $musyrifTerpilih ? $musyrifTerpilih->id : null,
                         'nama' => $nama,
                         'nis' => $nis ?: null,
                         'tanggal_lahir' => $tgl ?: null,

@@ -48,16 +48,16 @@ class KelasController extends Controller
             ->addColumn('aksi', function ($row) {
                 return '
                 <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-secondary btn-edit flex-sm-grow-0"
+                    <button class="btn btn-sm btn-warning text-white btn-edit flex-sm-grow-0"
                         data-id="' . $row->id . '"
                         data-nama="' . e($row->nama_kelas) . '"
                         data-deskripsi="' . e($row->deskripsi) . '">
-                        Edit
+                        <i class="bi bi-pencil" data-toggle="tooltip" data-placement="top" title="Edit"></i>
                     </button>
 
-                    <button class="btn btn-sm btn-outline-danger btn-delete flex-sm-grow-0"
+                    <button class="btn btn-sm btn-danger text-white btn-delete flex-sm-grow-0"
                         data-id="' . $row->id . '">
-                        Hapus
+                        <i class="bi bi-trash" data-toggle="tooltip" data-placement="top" title="Hapus"></i>
                     </button>
                 </div>
             ';

@@ -14,11 +14,22 @@ class Musyrif extends Model
         'nama',
         'kode',
         'keterangan',
+        'kelas_id',
+        'alamat',
+        'pendidikan_terakhir',
+        'domisili',
+        'halaqah',
+        'lama_mengabdi',
+        'amanah_lain',
+        'metode_alquran',
+        'is_sertifikasi_ummi',
+        'tahun_sertifikasi',
+        'siap_sertifikasi'
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function santris()
@@ -40,4 +51,8 @@ class Musyrif extends Model
         return $this->hasMany(MusyrifAttendance::class, 'musyrif_id');
     }
 
+    public function kelas()
+    {
+        return $this->belongsTo(Kelas::class, 'kelas_id');
+    }
 }

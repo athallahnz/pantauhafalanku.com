@@ -13,11 +13,10 @@ class DashboardController extends Controller
     {
         // ================= KPI RINGKASAN =================
         $totalUser       = User::count();
+        $totalPending    = User::where('is_approved', false)->count(); // <--- TAMBAHKAN INI
         $totalDepartemen = User::where('role', 'admin')->count();
         $totalSantri     = Santri::count();
-        $totalKelas      = class_exists(\App\Models\Kelas::class)
-            ? Kelas::count()
-            : 0;
+        $totalKelas      = class_exists(\App\Models\Kelas::class) ? Kelas::count() : 0;
 
         // ================= STATISTIK USER PER ROLE =================
         $roleCounts = User::selectRaw('role, COUNT(*) as total')
@@ -26,6 +25,7 @@ class DashboardController extends Controller
 
         return view('superadmin.dashboard', compact(
             'totalUser',
+            'totalPending', // <--- LEMPAR KE VIEW
             'totalDepartemen',
             'totalSantri',
             'totalKelas',

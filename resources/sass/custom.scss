@@ -1,24 +1,13 @@
 /* ============================================================
-   SISTEM INFORMASI HAFALAN SANTRI – COREUI PREMIUM THEME
-   Brand: Departemen Al-Qur'an (Ungu + Tosca)
-   FINAL VERSION — COREUI SAFE
+SISTEM INFORMASI HAFALAN SANTRI
+CoreUI Theme Refactor
+Islamic Purple + Tosca Design System
 ============================================================ */
 
 /* ============================================================
-   1. GLOBAL VARIABLES
+1. ISLAMIC COLOR SYSTEM
 ============================================================ */
-
 :root {
-    /* SIDEBAR */
-    --sidebar-active-bg: linear-gradient(135deg, #40307a 0%, #5640a5 100%);
-    --sidebar-active-border: #13a3b3;
-    --sidebar-active-color: #ffffff;
-
-    --sidebar-dark: linear-gradient(135deg, #40307a 0%, #0f7f8c 100%);
-    --sidebar-header: #5640a5;
-
-    /* ISLAMIC COLOR SYSTEM */
-
     --islamic-purple-50: #f4f1ff;
     --islamic-purple-100: #ebe6ff;
     --islamic-purple-200: #d6ccff;
@@ -35,353 +24,321 @@
     --islamic-tosca-400: #39c1cc;
     --islamic-tosca-500: #13a3b3;
     --islamic-tosca-600: #0f7f8c;
-
-    /* CoreUI sync */
-    --app-sidebar-margin: var(--cui-sidebar-narrow-width, 4.5rem);
 }
 
 /* ============================================================
-   COREUI SIDEBAR PRIMARY OVERRIDE
+2. BODY & GENERAL
 ============================================================ */
-
-.logo-upload-wrapper {
-    position: relative;
+body {
+    background: var(--cui-body-bg);
+    overflow-x: hidden;
 }
 
-.logo-input {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 2;
-}
-
-.logo-upload-box {
-    border: 2px dashed #cfd8dc;
-    border-radius: 12px;
-    min-height: 180px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    background-color: #fff;
-    transition: all 0.2s ease;
-    padding: 20px;
-}
-
-.logo-upload-box:hover {
-    border-color: #321fdb; /* CoreUI primary */
-    background-color: #f8f9ff;
-}
-
-.logo-placeholder i {
-    font-size: 40px;
-    color: #6c757d;
-}
-
-.logo-preview-img {
-    max-height: 120px;
-    max-width: 100%;
-    object-fit: contain;
-}
-
-/* =========================================================
-   2. SIDEBAR COLORS OVERRIDE
-   fully compatible CoreUI
-========================================================= */
-.sidebar {
-    --cui-sidebar-bg: #5640a5;
-    --cui-sidebar-color: rgba(255, 255, 255, 0.85);
-
-    --cui-sidebar-hover-bg: rgba(0, 0, 0, 0.08);
-    --cui-sidebar-hover-color: #ffffff;
-
-    --cui-sidebar-active-bg: #40307a;
-    --cui-sidebar-active-color: #ffffff;
-
-    --cui-sidebar-brand-bg: #5640a5;
-}
-
-/* ------------------------------------------------------------ 3. SIDEBAR BRAND: LOGO + TEXT (FULL MODE) ------------------------------------------------------------ */
-.sidebar-logo-img {
-    width: 28px;
-    height: 28px;
-    object-fit: contain;
-    display: block;
-}
-.sidebar-brand-text .brand-line-1 {
+.footer {
     font-size: 0.85rem;
-    font-weight: 600;
-    line-height: 1.1;
-}
-.sidebar-brand-text .brand-line-2 {
-    font-size: 1rem;
-    font-weight: 700;
-    margin-top: -2px;
-    line-height: 1.1;
+    background: var(--cui-footer-bg);
+    color: var(--cui-footer-color);
 }
 
-/* =========================================================
-   BUTTON LIGHT VARIANT — ISLAMIC DESIGN SYSTEM
-   fully compatible CoreUI / Bootstrap
-========================================================= */
+@media (max-width: 576px) {
+    .footer {
+        font-size: 0.75rem; /* Lebih kecil di HP */
+        text-align: center;
+        flex-direction: column; /* Baris jadi satu tumpukan */
+        gap: 4px;
+        padding-top: 15px !important;
+        padding-bottom: 80px !important; /* Kasih ruang agar tidak tertutup tombol FAB */
+    }
 
-/* Base light button */
-.btn-light {
-    background-color: var(--islamic-purple-50);
-    color: var(--islamic-purple-700);
-    border: 1px solid var(--islamic-purple-200);
+    .footer .ms-auto {
+        margin-left: 0 !important; /* Tengah di mobile */
+        opacity: 0.7;
+    }
 
-    transition: all 0.2s ease;
-}
-
-/* Hover */
-.btn-light:hover {
-    background-color: var(--islamic-purple-100);
-    color: var(--islamic-purple-700);
-    border-color: var(--islamic-purple-300);
-}
-
-/* Focus */
-.btn-light:focus {
-    background-color: var(--islamic-purple-100);
-    color: var(--islamic-purple-700);
-    border-color: var(--islamic-purple-400);
-
-    box-shadow: 0 0 0 0.2rem rgba(107, 78, 255, 0.15);
-}
-
-/* Active / pressed */
-.btn-light:active,
-.btn-light.active {
-    background-color: var(--islamic-purple-200);
-    border-color: var(--islamic-purple-400);
-    color: var(--islamic-purple-700);
-}
-
-/* Optional: icon sync */
-.btn-light i,
-.btn-light .icon {
-    color: var(--islamic-purple-600);
-}
-
-/* =========================================================
-   BUTTON OUTLINE LIGHT VARIANT — ISLAMIC DESIGN SYSTEM
-   fully compatible CoreUI / Bootstrap
-========================================================= */
-
-/* Base outline */
-.btn-outline-light {
-    background-color: transparent;
-    color: var(--islamic-purple-50);
-    border: 1px solid var(--islamic-purple-300);
-
-    transition: all 0.2s ease;
-}
-
-/* Hover */
-.btn-outline-light:hover {
-    background-color: var(--islamic-purple-50);
-    color: var(--islamic-purple-700);
-    border-color: var(--islamic-purple-400);
-}
-
-/* Focus */
-.btn-outline-light:focus {
-    background-color: var(--islamic-purple-50);
-    color: var(--islamic-purple-700);
-    border-color: var(--islamic-purple-500);
-
-    box-shadow: 0 0 0 0.2rem rgba(107, 78, 255, 0.15);
-}
-
-/* Active / pressed */
-.btn-outline-light:active,
-.btn-outline-light.active,
-.btn-outline-light.dropdown-toggle.show {
-    background-color: var(--islamic-purple-100);
-    color: var(--islamic-purple-700);
-    border-color: var(--islamic-purple-500);
-}
-
-/* Disabled */
-.btn-outline-light:disabled,
-.btn-outline-light.disabled {
-    color: var(--islamic-purple-300);
-    border-color: var(--islamic-purple-200);
-    background-color: transparent;
-}
-
-/* Icon sync */
-.btn-outline-light i,
-.btn-outline-light .icon {
-    color: var(--islamic-purple-500);
-}
-
-/* Icon hover sync */
-.btn-outline-light:hover i,
-.btn-outline-light:hover .icon {
-    color: var(--islamic-purple-600);
-}
-
-/* =========================================================
-   NAV PILLS LIGHT — ISLAMIC DESIGN SYSTEM
-   CoreUI compatible
-========================================================= */
-
-/* default */
-.nav-pills .nav-link {
-    // background-color: var(--islamic-purple-50);
-    color: var(--islamic-purple-50);
-    border: 1px solid var(--islamic-purple-200);
-    border-radius: 8px;
-
-    margin-right: 4px;
-
-    transition: all 0.2s ease;
-}
-
-/* hover */
-.nav-pills .nav-link:hover {
-    background-color: var(--islamic-purple-100);
-    color: var(--islamic-purple-700);
-    border-color: var(--islamic-purple-300);
-}
-
-/* active */
-.nav-pills .nav-link.active,
-.nav-pills .show > .nav-link {
-    background-color: var(--islamic-purple-600);
-    color: #ffffff;
-    border-color: var(--islamic-purple-600);
-
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-}
-
-/* focus */
-.nav-pills .nav-link:focus {
-    box-shadow: 0 0 0 0.15rem rgba(107, 78, 255, 0.15);
-}
-
-/* ------------------------------------------------------------
-   SIDEBAR NAV HOVER WHITE BACKGROUND
------------------------------------------------------------- */
-
-.sidebar-nav .nav-link {
-    color: rgba(255, 255, 255, 0.75);
-    border-radius: 10px;
-    transition: all 0.18s ease;
-}
-
-/* HOVER WHITE BG */
-.sidebar-nav .nav-link:hover {
-    background: #ffffff !important;
-    color: #1e293b !important;
-}
-
-/* icon ikut berubah */
-.sidebar-nav .nav-link:hover .nav-icon {
-    color: #1e293b !important;
-}
-
-/* ACTIVE tetap prioritas */
-.sidebar-nav .nav-link.active {
-    background: var(--sidebar-active-bg) !important;
-    border-left: solid var(--sidebar-active-border);
-    color: var(--sidebar-active-color) !important;
-}
-
-/* ACTIVE icon */
-.sidebar-nav .nav-link.active .nav-icon {
-    color: var(--sidebar-active-border) !important;
-}
-
-/* ============================================ 5. SIDEBAR BRAND – LOGO ONLY ============================================ */ /* Default: Expanded */
-.sidebar .sidebar-brand-logo img {
-    width: 88px; /* ukuran besar */
-    height: auto;
-    transition: all 0.25s ease-in-out;
-    max-width: 100%; /* allow bigger */
-}
-.sidebar .sidebar-brand-logo {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-}
-
-/* COLLAPSED MODE — ANY NARROW STATE */
-.sidebar.sidebar-narrow .sidebar-brand-logo img,
-.sidebar.sidebar-narrow:not(.sidebar-narrow-hover) .sidebar-brand-logo img,
-.sidebar.sidebar-narrow-unfoldable.sidebar-narrow .sidebar-brand-logo img {
-    width: 44px !important;
-    height: auto;
-}
-
-/* COLLAPSED HOVER → kembali besar */
-.sidebar.sidebar-narrow.sidebar-narrow-hover .sidebar-brand-logo img,
-.sidebar.sidebar-narrow-unfoldable.sidebar-narrow:hover
-    .sidebar-brand-logo
-    img {
-    width: 88px !important;
-    height: auto;
-}
-
-.sidebar .nav-title {
-    color: rgba(255, 255, 255, 0.55);
-}
-
-.sidebar .nav-link .nav-icon {
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.sidebar .nav-link.active .nav-icon {
-    color: #13a3b3;
-}
-
-/* ============================================================
-   5. WRAPPER SHIFT
-============================================================ */
-
-@media (min-width: 992px) {
-    .sidebar ~ .wrapper {
-        margin-left: var(--app-sidebar-margin);
-        transition: margin-left 0.25s ease;
+    .footer .brand-studio {
+        display: none; /* Sembunyikan 'Created by' biar ringkas */
     }
 }
 
 /* ============================================================
-   6. HEADER
+3. SIDEBAR THEME & LOGIC
 ============================================================ */
+.sidebar {
+    --cui-sidebar-bg: linear-gradient(
+        180deg,
+        var(--islamic-purple-700),
+        var(--islamic-purple-600)
+    );
+    --cui-sidebar-color: rgba(255, 255, 255, 0.85);
+    --cui-sidebar-hover-bg: rgba(255, 255, 255, 0.1);
+    --cui-sidebar-active-bg: var(--islamic-purple-700);
 
-.header {
-    position: relative;
-    z-index: 1030;
-
-    background: #fff;
-
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    width: 260px;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    transition:
+        width 0.3s ease,
+        left 0.3s ease;
+    z-index: 1035;
+    overflow-x: hidden;
 }
 
-.body {
-    padding-top: 0.5rem;
-    padding-bottom: 1.5rem;
+.sidebar.sidebar-narrow {
+    width: 72px;
+}
+
+.sidebar-header {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(6px);
+}
+
+.sidebar-brand-logo img {
+    width: 90px;
+    transition:
+        width 0.3s ease,
+        opacity 0.2s ease;
+}
+
+.sidebar.sidebar-narrow .sidebar-brand-logo img {
+    width: 42px;
 }
 
 /* ============================================================
-   7. MAIN BACKGROUND
+TEXT ADAPTIVE COLOR (Untuk memastikan teks tetap terlihat di berbagai tema)
 ============================================================ */
+.text-adaptive-purple {
+    color: var(--islamic-purple-700);
+    transition: color 0.3s ease;
+}
 
+/* ============================================================
+NAV LINK & ICON
+============================================================ */
+.sidebar .nav-title {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin: 18px 14px 6px;
+    opacity: 0.65;
+}
+
+.sidebar-nav .nav-link {
+    border-radius: 10px;
+    margin: 3px 10px;
+    padding: 10px 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.sidebar-nav .nav-icon {
+    font-size: 1.1rem;
+    margin-right: 12px;
+    color: rgba(255, 255, 255, 0.75);
+    transition: all 0.2s ease;
+}
+
+.sidebar-nav .nav-link:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateX(4px);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.sidebar-nav .nav-link:hover .nav-icon {
+    color: #fff;
+    transform: scale(1.1);
+}
+
+.sidebar-nav .nav-link.active {
+    background: linear-gradient(
+        135deg,
+        var(--islamic-purple-500),
+        var(--islamic-purple-600)
+    );
+    color: #fff;
+    border-left: 3px solid var(--islamic-tosca-400);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.sidebar-nav .nav-link.active .nav-icon {
+    color: var(--islamic-tosca-200);
+}
+
+/* Narrow Sidebar Adjustments */
+.sidebar.sidebar-narrow .nav-link {
+    justify-content: center;
+    padding: 10px 0;
+}
+.sidebar.sidebar-narrow .nav-link span,
+.sidebar.sidebar-narrow .nav-title {
+    display: none;
+}
+.sidebar.sidebar-narrow .nav-icon {
+    margin-right: 0;
+    font-size: 1.25rem;
+}
+.sidebar.sidebar-narrow .nav-link:hover {
+    transform: none;
+}
+
+/* ============================================================
+ANIMASI & POSISI DROPDOWN USER (FIX)
+============================================================ */
+/* 1. Paksa dropdown turun menjauh dari header/foto profil */
+.header .dropdown-menu.show {
+    margin-top: 68px !important; /* Silakan ubah angka 12px jika dirasa kurang/lebih */
+}
+
+/* 2. Animasi elegan */
+.dropdown-animated {
+    /* Ubah ke top right agar efek membesarnya berpusat dari arah foto profil (kanan atas) */
+    transform-origin: top right;
+    animation: dropdownSlideDown 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+
+/* 3. Dark mode fix */
+[data-coreui-theme="dark"] .dropdown-menu .dropdown-header {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-bottom: 1px solid var(--cui-border-color);
+}
+
+/* Keyframes */
+@keyframes dropdownSlideDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ============================================================
+TOGGLE THEME iOS STYLE
+============================================================ */
+.theme-switch-btn {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    outline: none !important;
+    box-shadow: none !important; /* Mencegah shadow kotak bawaan bootstrap */
+    -webkit-tap-highlight-color: transparent; /* Menghilangkan kotak biru saat di-tap di HP */
+}
+
+/* Mematikan semua efek kotak saat tombol di-hover, di-klik, atau difokuskan */
+.theme-switch-btn:hover,
+.theme-switch-btn:focus,
+.theme-switch-btn:active,
+.theme-switch-btn:focus-visible {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.theme-switch-track * {
+    pointer-events: none; /* Memastikan klik selalu tembus ke tombol utama */
+}
+
+.theme-switch-track {
+    width: 64px;
+    height: 32px;
+    background-color: #e9ecef; /* Warna latar siang */
+    border-radius: 30px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    transition: background-color 0.4s ease;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.theme-switch-thumb {
+    width: 24px;
+    height: 24px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    /* Animasi meluncur yang bouncy khas iOS */
+    transition: transform 0.4s cubic-bezier(0.25, 1.2, 0.5, 1);
+    z-index: 2;
+}
+
+.theme-switch-track i {
+    font-size: 14px;
+    z-index: 1;
+    transition:
+        opacity 0.3s ease,
+        color 0.3s ease;
+}
+
+/* --- STATE: LIGHT MODE (SIANG) --- */
+.icon-dark {
+    opacity: 0.4;
+    color: #6c757d;
+}
+.icon-light {
+    opacity: 1;
+}
+
+/* --- STATE: DARK MODE (MALAM) --- */
+[data-coreui-theme="dark"] .theme-switch-track {
+    background-color: var(
+        --islamic-purple-600
+    ); /* Background ungu saat dark mode */
+}
+
+[data-coreui-theme="dark"] .theme-switch-thumb {
+    transform: translateX(32px); /* Menggeser lingkaran putih ke kanan */
+}
+
+[data-coreui-theme="dark"] .icon-light {
+    opacity: 0.4;
+    color: #ffffff !important;
+}
+[data-coreui-theme="dark"] .icon-dark {
+    opacity: 1;
+    color: #ffffff !important;
+}
+
+/* ============================================================
+WRAPPER & CONTENT (Dynamic Margin)
+============================================================ */
+.wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin-left: 260px;
+    transition: margin-left 0.3s ease;
+}
+
+.sidebar.sidebar-narrow ~ .wrapper {
+    margin-left: 72px;
+}
+
+.header {
+    background: var(--cui-body-bg);
+    border-bottom: 1px solid var(--cui-border-color);
+}
+
+/* ============================================================
+MAIN CONTENT BACKGROUND
+============================================================ */
 .main-content-bg {
     position: relative;
-
-    z-index: 0;
-
-    min-height: 100%;
-
     padding: 20px 0 30px;
-
-    overflow: hidden;
-
     background:
         radial-gradient(
             circle at 15% 20%,
@@ -397,216 +354,195 @@
             135deg,
             var(--islamic-purple-50),
             var(--islamic-purple-100),
-            var(--islamic-tosca-50),
-            #f8fbff
+            var(--islamic-tosca-50)
         );
 }
 
-/* animated pattern */
-
-.main-content-bg::before {
-    content: "";
-
-    position: absolute;
-    inset: -200px;
-
-    z-index: -1;
-
-    pointer-events: none;
-
-    background-image: url("data:image/svg+xml,%3Csvg width='150' height='150' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%235b3fc4' stroke-width='2' opacity='0.08'%3E%3Cpolygon points='60,0 78,18 102,18 102,42 120,60 102,78 102,102 78,102 60,120 42,102 18,102 18,78 0,60 18,42 18,18 42,18'/%3E%3C/g%3E%3C/svg%3E");
-
-    background-size: 120px;
-
-    animation: patternMove 160s linear infinite;
-}
-
-@keyframes patternMove {
-    0% {
-        transform: translate3d(0, 0, 0);
-    }
-    50% {
-        transform: translate3d(120px, 60px, 0);
-    }
-    100% {
-        transform: translate3d(0, 0, 0);
-    }
-}
-
-/* ============================================================
-   8. CONTENT CARD
-============================================================ */
-
 .content-card {
-    position: relative;
-
-    z-index: 1;
-
-    background: rgba(255, 255, 255, 0.92);
-
-    backdrop-filter: blur(12px);
-
-    border-radius: 18px;
-
-    border: 1px solid rgba(86, 64, 165, 0.08);
-
+    background: var(--cui-card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--cui-border-color);
+    backdrop-filter: blur(8px);
     box-shadow:
-        0 10px 30px rgba(86, 64, 165, 0.1),
+        0 10px 30px rgba(0, 0, 0, 0.08),
         0 4px 10px rgba(0, 0, 0, 0.04);
-
-    transition: all 0.3s ease;
-}
-
-.content-card:hover {
-    box-shadow:
-        0 18px 45px rgba(86, 64, 165, 0.15),
-        0 6px 16px rgba(0, 0, 0, 0.06);
-}
-
-/* prevent click blocking */
-
-.content-card::before,
-.content-card::after {
-    pointer-events: none;
-}
-
-/* ============================================================
-   9. DROPDOWN — COREUI SAFE FIX
-============================================================ */
-
-.header .dropdown-menu {
-    border: none;
-    border-radius: 14px;
-    padding: 8px 0;
-
-    box-shadow:
-        0 10px 25px rgba(0, 0, 0, 0.08),
-        0 4px 10px rgba(0, 0, 0, 0.04);
-
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.9);
-
-    margin-top: 10 !important;
-    top: calc(100%) !important;
-
-    opacity: 0;
-    transform: translateY(10px) scale(0.96);
-
-    transform-origin: top right;
-
-    visibility: hidden;
-    pointer-events: none;
-
-    transition:
-        opacity 0.22s ease,
-        transform 0.22s cubic-bezier(0.22, 0.61, 0.36, 1),
-        visibility 0.22s;
-}
-
-/* COREUI adds .show directly here */
-.header .dropdown-menu.show {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-
-    visibility: visible;
-    pointer-events: auto;
-    // animation: dropdownBounce 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-
-/* dropdown header */
-.header .dropdown-header {
-    padding: 12px 16px;
-
-    background: linear-gradient(
-        135deg,
-        rgba(91, 63, 196, 0.07),
-        rgba(19, 163, 179, 0.07)
-    );
-}
-
-/* dropdown item */
-.header .dropdown-item {
-    padding: 10px 16px;
-    border-radius: 10px;
-
-    margin: 0; /* penting */
-
-    transition: all 0.18s ease;
-}
-
-.header .dropdown-item:hover {
-    background: transparent;
-    padding: 10px 16px;
-
-    box-shadow: inset 0 0 0 999px rgba(91, 63, 196, 0.08);
-
-    border-radius: 10px;
-}
-
-/* avatar animation */
-.header .avatar {
     transition: all 0.25s ease;
 }
 
-.header .nav-link:hover .avatar {
-    // transform: scale(1.08);
-
-    box-shadow: 0 0 0 4px rgba(91, 63, 196, 0.12);
-}
-
-@keyframes dropdownBounce {
-    0% {
-        transform: translateY(8px) scale(0.96);
-    }
-
-    60% {
-        transform: translateY(-2px) scale(1.02);
-    }
-
-    100% {
-        transform: translateY(0) scale(1);
-    }
+.content-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
 }
 
 /* ============================================================
-   10. CARD
+COMPONENTS
 ============================================================ */
-
 .card {
-    border-radius: 12px;
-
-    border: none;
-
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.card:hover {
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    border-radius: 14px;
+    border: 1px solid var(--cui-border-color);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
 }
 
 .card-header {
     font-weight: 600;
-
     background: linear-gradient(
         90deg,
         var(--islamic-purple-600),
         var(--islamic-purple-400)
     );
+    color: #fff;
+}
 
-    color: white;
+.btn-light {
+    background: var(--islamic-purple-50);
+    color: var(--islamic-purple-700);
+    border: 1px solid var(--islamic-purple-200);
+}
+
+.btn-light:hover {
+    background: var(--islamic-purple-100);
+}
+
+.dropdown-menu {
+    border-radius: 12px;
+    background: var(--cui-dropdown-bg);
+    border: 1px solid var(--cui-border-color);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.modal-content {
+    border-radius: 16px;
+    border: 1px solid var(--cui-border-color);
+    background: var(--cui-modal-bg);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+    background: linear-gradient(
+        90deg,
+        var(--islamic-purple-600),
+        var(--islamic-tosca-500)
+    );
+    color: #fff;
+}
+
+/* Spotlight Card Container */
+.spotlight-card {
+    position: relative;
+    z-index: 1;
+}
+
+/* Lapisan cahaya yang mengikuti mouse */
+.spotlight-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(
+        600px circle at var(--mouse-x) var(--mouse-y),
+        rgba(111, 66, 193, 0.15),
+        /* Warna ungu spotlight */ transparent 40%
+    );
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+
+.spotlight-card:hover::before {
+    opacity: 1;
 }
 
 /* ============================================================
-   11. BADGE ROLE
+FIX DATATABLES DI DALAM CARD P-0
 ============================================================ */
+/* Memberi jarak pada tombol pagination (Previous/Next) di bawah tabel */
+#dashboard-users-table_wrapper .row:last-child {
+    padding: 1rem 1.5rem;
+    margin: 0;
+    border-top: 1px solid var(--cui-border-color);
+}
 
+/* Memperbaiki posisi pagination agar sejajar */
+#dashboard-users-table_wrapper .dataTables_paginate {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Mempercantik tombol pagination bawaan DataTables agar senada dengan tema */
+.page-item.active .page-link {
+    background-color: var(--islamic-purple-600) !important;
+    border-color: var(--islamic-purple-600) !important;
+    color: white !important;
+}
+.page-link {
+    color: var(--islamic-purple-600);
+    border-radius: 6px !important;
+    margin: 0 3px;
+}
+.page-link:hover {
+    background-color: var(--islamic-purple-100) !important;
+    border-color: var(--islamic-purple-200) !important;
+    color: var(--islamic-purple-700) !important;
+}
+
+/* =========================================================
+   KUSTOMISASI TABS PILLS (Juz & Rekap Tabs)
+   ========================================================= */
+#juzTabs .nav-link,
+#rekapTabs .nav-link {
+    color: var(--cui-secondary-color); /* Abu-abu default */
+    background-color: var(--cui-tertiary-bg); /* Background subtle */
+    border: 1px solid var(--cui-border-color);
+    border-radius: 50px; /* Bentuk Kapsul */
+    padding: 0.5rem 1.2rem;
+    margin-right: 8px;
+    transition: all 0.25s ease-in-out;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+/* Hover State: Langsung jadi Ungu */
+#juzTabs .nav-link:hover,
+#rekapTabs .nav-link:hover {
+    background-color: var(--islamic-purple-600);
+    color: #ffffff !important;
+    border-color: var(--islamic-purple-600);
+    transform: translateY(-1px); /* Efek melayang dikit */
+}
+
+/* Active State: Ungu Solid & Shadow */
+#juzTabs .nav-link.active,
+#rekapTabs .nav-link.active {
+    background-color: var(--islamic-purple-600) !important;
+    color: #ffffff !important;
+    border-color: var(--islamic-purple-600) !important;
+    box-shadow: 0 4px 10px rgba(111, 66, 193, 0.2);
+}
+
+/* Hilangkan Scrollbar tapi tetap bisa di-scroll (Opsional biar cantik) */
+.overflow-auto::-webkit-scrollbar {
+    display: none;
+}
+.overflow-auto {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+
+/* Penyesuaian Dark Mode */
+[data-coreui-theme="dark"] #juzTabs .nav-link {
+    background-color: #2c2c34;
+    border-color: #3e3e4a;
+}
+
+/* ============================================================
+BADGE ROLE
+============================================================ */
 .badge-role {
     font-size: 0.75rem;
     font-weight: 600;
-    border-radius: 0.5rem;
-    color: white;
+    border-radius: 6px;
+    color: #fff;
+    padding: 0.35em 0.65em;
 }
-
 .badge-role.ADMIN {
     background: #6f5efb;
 }
@@ -618,77 +554,181 @@
 }
 .badge-role.SANTRI {
     background: #ffc107;
+    color: #000;
 }
 .badge-role.MUSYRIF {
     background: #20c997;
 }
 
 /* ============================================================
-   12. MODAL — FINAL COREUI FIX
+DARK MODE
 ============================================================ */
-
-.modal-backdrop {
-    z-index: 1990 !important;
-
-    pointer-events: auto !important;
-
-    background: linear-gradient(
-        135deg,
-        rgba(64, 48, 122, 0.55),
-        rgba(19, 163, 179, 0.45)
-    );
+[data-coreui-theme="dark"] .main-content-bg {
+    background:
+        radial-gradient(
+            circle at 15% 20%,
+            rgba(19, 163, 179, 0.15),
+            transparent 45%
+        ),
+        radial-gradient(
+            circle at 85% 80%,
+            rgba(86, 64, 165, 0.25),
+            transparent 45%
+        ),
+        linear-gradient(135deg, #1e1b3a, #1b2432, #162027);
 }
 
-.modal-backdrop.show {
-    opacity: 0.35 !important;
+[data-coreui-theme="dark"] .sidebar {
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.modal {
-    position: fixed;
-
-    z-index: 2000 !important;
+[data-coreui-theme="dark"] #themeToggle {
+    background: #2b2f3a;
+    color: #fff;
+    border-color: #444;
 }
 
-.modal-dialog {
-    transition: all 0.25s ease;
-
-    transform: scale(0.96) translateY(10px);
+[data-coreui-theme="dark"] .text-adaptive-purple {
+    color: #ffffff !important;
 }
 
-.modal.show .modal-dialog {
-    transform: scale(1) translateY(0);
+/* ============================================================
+MOBILE RESPONSIVE
+============================================================ */
+@media (max-width: 991.98px) {
+    .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 260px !important;
+        max-width: 260px !important;
+        height: 100vh !important;
+        z-index: 9999 !important; /* Memaksa sidebar selalu paling depan, menutupi header */
+
+        /* Teknik animasi geser yang bersih */
+        transform: translateX(-100%) !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+        /* Reset margin dari sisa CoreUI */
+        margin: 0 !important;
+        border-right: none !important;
+    }
+
+    /* Saat tombol hamburger ditekan (class sidebar-open aktif di body) */
+    body.sidebar-open .sidebar {
+        transform: translateX(0) !important;
+        box-shadow: 5px 0 25px rgba(0, 0, 0, 0.25) !important; /* Efek bayangan agar terlihat melayang di atas konten */
+    }
+
+    /* Pastikan pembungkus konten utama tetap penuh di layar mobile */
+    .wrapper,
+    .sidebar.sidebar-narrow ~ .wrapper {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Mencegah layar mobile bisa digeser ke kanan-kiri (overflow) */
+    body {
+        overflow-x: hidden !important;
+    }
 }
 
-.modal-content {
-    border: none;
+// /* ============================================================
+// CSS LAMA / ALTERNATIF YANG TIDAK DIHAPUS (Sesuai Permintaan)
+// ============================================================ */
+// .app-layout {
+//     display: flex;
+//     min-height: 100vh;
+// }
+// .app-sidebar {
+//     width: 260px;
+//     min-width: 260px;
+//     max-width: 260px;
+// }
+// .sidebar-logo {
+//     max-height: 45px;
+//     width: 100%;
+//     max-width: 120px;
+//     height: auto;
+//     display: block;
+//     margin: auto;
+// }
+// .sidebar-nav ul {
+//     list-style: none;
+//     padding: 0;
+//     margin: 0;
+// }
+// .sidebar-nav li a {
+//     display: flex;
+//     align-items: center;
+//     padding: 12px 20px;
+//     color: #cbd5e1;
+//     text-decoration: none;
+//     transition: background 0.2s;
+// }
+// .sidebar-nav li a:hover {
+//     background: #334155;
+// }
+// .sidebar-nav i {
+//     font-size: 20px;
+//     width: 28px;
+// }
+// .sidebar-nav span {
+//     margin-left: 10px;
+// }
+// .sidebar-collapsed .app-sidebar {
+//     width: 70px;
+// }
+// .sidebar-collapsed .sidebar-nav span {
+//     display: none;
+// }
+// .sidebar-collapsed .sidebar-nav a {
+//     justify-content: center;
+// }
+// .app-main {
+//     flex: 1;
+//     min-width: 0;
+//     display: flex;
+//     flex-direction: column;
+// }
+// .app-header {
+//     height: 60px;
+//     display: flex;
+//     align-items: center;
+//     justify-content: space-between;
+//     padding: 0 20px;
+//     border-bottom: 1px solid #e5e7eb;
+// }
+// .app-content {
+//     flex: 1;
+//     padding: 25px;
+// }
+// .app-footer {
+//     padding: 10px 20px;
+//     border-top: 1px solid #e5e7eb;
+// }
 
-    border-radius: 16px;
-
-    background: rgba(255, 255, 255, 0.96);
-
-    backdrop-filter: blur(12px);
-
-    box-shadow:
-        0 20px 60px rgba(64, 48, 122, 0.25),
-        0 10px 25px rgba(0, 0, 0, 0.08);
-}
-
-.modal-header {
-    border: none;
-
-    background: linear-gradient(
-        90deg,
-        var(--islamic-purple-600),
-        var(--islamic-tosca-500)
-    );
-
-    color: white;
-}
-
-.modal-header .btn-close {
-    filter: invert(1);
-}
-
-.modal-footer {
-    border: none;
-}
+// @media (max-width: 992px) {
+//     .app-sidebar {
+//         position: fixed;
+//         left: -260px;
+//         top: 0;
+//         height: 100vh;
+//         z-index: 1000;
+//         transition: left 0.25s ease;
+//     }
+//     body.sidebar-open .app-sidebar {
+//         left: 0;
+//     }
+// }
+// body.sidebar-collapsed .app-sidebar {
+//     width: 72px;
+//     min-width: 72px;
+//     max-width: 72px;
+// }
+// body.sidebar-collapsed .sidebar-nav span {
+//     display: none;
+// }
+// body.sidebar-collapsed .sidebar-nav a {
+//     justify-content: center;
+// }

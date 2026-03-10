@@ -21,208 +21,95 @@ class SantriController extends Controller
 
     public function datatable(Request $request)
     {
-        if (!$request->ajax()) {
-            abort(404);
-        }
+        if (!$request->ajax()) abort(404);
 
         $musyrif = Musyrif::where('user_id', auth()->id())->firstOrFail();
 
-        // Target per juz (baseline progress: tahap harian)
+        // 1. Target harian per juz (Ambil sekali saja di luar loop)
         $targetPerJuz = HafalanTemplate::query()
             ->select('juz', DB::raw('COUNT(*) as target'))
             ->where('tahap', 'harian')
             ->groupBy('juz')
-            ->pluck('target', 'juz'); // [1=>..., 2=>..., ...]
+            ->pluck('target', 'juz');
 
-        $query = Santri::with('kelas')
+        $totalTargetGlobal = $targetPerJuz->sum();
+
+        // 2. Query Santri: FIX N+1 dengan Eager Loading
+        $query = Santri::with(['kelas', 'hafalans' => function ($q) {
+            $q->whereIn('status', ['lulus', 'ulang'])
+                ->whereHas('template', fn($t) => $t->where('tahap', 'harian'))
+                ->with('template:id,juz');
+        }])
             ->where('musyrif_id', $musyrif->id)
-            ->select('santris.*')
-            ->orderBy('nama');
+            ->select('santris.*');
 
         return DataTables::of($query)
             ->addIndexColumn()
+            ->addColumn('kelas', fn($row) => optional($row->kelas)->nama_kelas ?: '-')
 
-            ->addColumn('kelas', function ($row) {
-                return optional($row->kelas)->nama_kelas ?: '-';
+            ->editColumn('tanggal_lahir', fn($row) => $row->tanggal_lahir ? $row->tanggal_lahir->format('d-m-Y') : '-')
+
+            ->editColumn('jenis_kelamin', fn($row) => match ($row->jenis_kelamin) {
+                'L' => 'Laki-laki',
+                'P' => 'Perempuan',
+                default => '-'
             })
 
-            ->editColumn('tanggal_lahir', function ($row) {
-                return $row->tanggal_lahir
-                    ? $row->tanggal_lahir->format('d-m-Y')
-                    : '-';
-            })
+            // Kolom Progress Ringkas (Kalkulasi lokal, tanpa Query tambahan)
+            ->addColumn('progress_ringkas', function ($santri) use ($targetPerJuz, $totalTargetGlobal) {
+                $uniqueHafalans = $santri->hafalans->unique('hafalan_template_id');
+                $totalSetor = $uniqueHafalans->count();
 
-            ->editColumn('jenis_kelamin', function ($row) {
-                return match ($row->jenis_kelamin) {
-                    'L' => 'Laki-laki',
-                    'P' => 'Perempuan',
-                    default => '-',
-                };
-            })
+                // Rata-rata Nilai
+                $nilaiMap = ['mumtaz' => 95, 'jayyid_jiddan' => 85, 'jayyid' => 75];
+                $valid = $uniqueHafalans->whereIn('nilai_label', array_keys($nilaiMap));
+                $avg = $valid->count() ? round($valid->sum(fn($h) => $nilaiMap[$h->nilai_label]) / $valid->count(), 1) : 0;
 
-            ->addColumn('progress_ringkas', function ($santri) use ($targetPerJuz) {
-
-                // HANYA tahap harian
-                $hafalans = Hafalan::query()
-                    ->with(['template:id,juz,tahap'])
-                    ->where('santri_id', $santri->id)
-                    ->whereIn('status', ['lulus', 'ulang'])
-                    ->whereHas('template', function ($q) {
-                        $q->where('tahap', 'harian');
-                    })
-                    ->get(['id', 'nilai_label', 'hafalan_template_id']);
-
-                // pastikan tidak double
-                $uniqueTemplates = $hafalans->unique('hafalan_template_id')->values();
-
-                $totalSetor = $uniqueTemplates->count();
-
-                $nilaiMap = [
-                    'mumtaz' => 95,
-                    'jayyid_jiddan' => 85,
-                    'jayyid' => 75,
-                ];
-
-                $sum = 0;
-                $cnt = 0;
-
-                foreach ($uniqueTemplates as $h) {
-                    if (!empty($h->nilai_label) && isset($nilaiMap[$h->nilai_label])) {
-                        $sum += $nilaiMap[$h->nilai_label];
-                        $cnt++;
-                    }
-                }
-
-                $avg = $cnt ? round($sum / $cnt, 1) : 0;
-
-                $donePerJuz = [];
-
-                foreach ($uniqueTemplates as $h) {
-                    $juz = $h->template?->juz;
-                    if ($juz) {
-                        $donePerJuz[$juz] = ($donePerJuz[$juz] ?? 0) + 1;
-                    }
-                }
-
-                // hitung overall berdasarkan TARGET HARIAN
-                $sumPct = 0;
-                $juzCount = 0;
-
-                for ($j = 1; $j <= 30; $j++) {
-
-                    $target = (int) ($targetPerJuz[$j] ?? 0);
-
-                    if ($target <= 0)
-                        continue;
-
-                    $done = (int) ($donePerJuz[$j] ?? 0);
-
-                    $pct = min(100, round(($done / $target) * 100, 1));
-
-                    $sumPct += $pct;
-                    $juzCount++;
-                }
-
-                $overall = $juzCount ? round($sumPct / $juzCount, 1) : 0;
+                $overall = $totalTargetGlobal > 0 ? round(($totalSetor / $totalTargetGlobal) * 100, 1) : 0;
 
                 return '
-                <div class="progress" style="height: 10px;">
-                    <div class="progress-bar bg-primary"
-                        role="progressbar"
-                        style="width: ' . $overall . '%;">
-                    </div>
+                <div class="progress" style="height: 10px; border-radius:5px;">
+                    <div class="progress-bar bg-primary" style="width: ' . $overall . '%;"></div>
                 </div>
-
                 <div class="small text-muted mt-1">
-                    Setor Harian: <b>' . $totalSetor . '</b> |
-                    Rata-rata: <b>' . $avg . '</b> |
-                    Progress: <b>' . $overall . '%</b>
-                </div>
-            ';
+                    Setor: <b>' . $totalSetor . '</b> | Rata: <b>' . $avg . '</b> | Prog: <b>' . $overall . '%</b>
+                </div>';
             })
 
-
+            // Kolom Aksi (Kalkulasi modal detail)
             ->addColumn('aksi', function ($santri) use ($targetPerJuz) {
+                $uniqueHafalans = $santri->hafalans->unique('hafalan_template_id');
+                $donePerJuz = $uniqueHafalans->groupBy('template.juz')->map->count();
 
-                // HANYA tahap harian
-                $hafalans = Hafalan::query()
-                    ->with('template:id,juz,tahap')
-                    ->where('santri_id', $santri->id)
-                    ->whereIn('status', ['lulus', 'ulang'])
-                    ->whereHas('template', function ($q) {
-                        $q->where('tahap', 'harian');
-                    })
-                    ->get(['id', 'hafalan_template_id']);
-
-                // prevent double
-                $hafalans = $hafalans->unique('hafalan_template_id')->values();
-
-                $donePerJuz = [];
-
-                foreach ($hafalans as $h) {
-
-                    $juz = $h->template?->juz;
-
-                    if ($juz) {
-                        $donePerJuz[$juz] = ($donePerJuz[$juz] ?? 0) + 1;
-                    }
-                }
-
-                // build html
                 $rows = '';
-
-                for ($j = 1; $j <= 30; $j++) {
-
-                    $target = (int) ($targetPerJuz[$j] ?? 0);
-
-                    if ($target <= 0)
-                        continue;
-
-                    $done = (int) ($donePerJuz[$j] ?? 0);
-
-                    $pct = min(100, round(($done / $target) * 100, 1));
-
+                foreach ($targetPerJuz as $juz => $target) {
+                    $done = $donePerJuz[$juz] ?? 0;
+                    $pct = $target > 0 ? round(($done / $target) * 100, 1) : 0;
                     $rows .= '
-                    <div class="mb-2">
-
-                        <div class="d-flex justify-content-between small">
-                            <span>Juz ' . $j . '</span>
-                            <span>' . $done . '/' . $target . ' (' . $pct . '%)</span>
-                        </div>
-
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-primary"
-                                style="width: ' . $pct . '%;">
-                            </div>
-                        </div>
-
-                    </div>';
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between small">
+                        <span>Juz ' . $juz . '</span>
+                        <span>' . $done . '/' . $target . ' (' . $pct . '%)</span>
+                    </div>
+                    <div class="progress" style="height: 10px;"><div class="progress-bar bg-primary" style="width: ' . $pct . '%;"></div></div>
+                </div>';
                 }
 
-                $detailHtml = '<div>' .
-                    ($rows ?: '<div class="text-muted">Belum ada setoran harian.</div>')
-                    . '</div>';
+                $detailHtml = '<div>' . ($rows ?: '<div class="text-muted">Belum ada setoran harian.</div>') . '</div>';
 
                 return '
-                    <div class="d-flex gap-2 flex-wrap">
-                        <button type="button"
-                            class="btn btn-sm btn-outline-info btn-progress flex-grow-1"
-                            style="min-width: 70px;"
-                            data-nama="' . e($santri->nama) . '"
-                            data-kelas="' . e(optional($santri->kelas)->nama_kelas ?: '-') . '"
-                            data-detail_html="' . e($detailHtml) . '">
-                            <i class="fas fa-chart-line"></i> Lihat
-                        </button>
-
-                        <a class="btn btn-sm btn-outline-info flex-grow-1"
-                            style="min-width: 70px;"
-                            href="' . route('musyrif.santri.detail', $santri->id) . '">
-                            <i class="fas fa-user-circle"></i> Detail
-                        </a>
-                    </div>
-                    ';
+                <div class="d-flex gap-2 flex-nowrap">
+                    <button type="button" class="btn btn-sm btn-primary btn-progress" 
+                        data-nama="' . e($santri->nama) . '"
+                        data-kelas="' . e(optional($santri->kelas)->nama_kelas ?: '-') . '"
+                        data-detail_html="' . e($detailHtml) . '">
+                        <i class="bi bi-bar-chart" data-coreui-toggle="tooltip" title="Progress Harian"></i>
+                    </button>
+                    <a class="btn btn-sm btn-outline-primary" href="' . route('musyrif.santri.detail', $santri->id) . '">
+                        <i class="bi bi-eye" data-coreui-toggle="tooltip" title="Detail Lengkap"></i>
+                    </a>
+                </div>';
             })
-
             ->rawColumns(['progress_ringkas', 'aksi'])
             ->make(true);
     }

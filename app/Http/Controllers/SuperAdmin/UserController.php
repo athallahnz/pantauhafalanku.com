@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Musyrif;
 use App\Models\Santri;
+use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
@@ -34,10 +35,10 @@ class UserController extends Controller
 
     public function index()
     {
-        // View saja, data di-load lewat AJAX DataTables
-        return view('superadmin.users.index');
+        // Ambil data kelas untuk dropdown di modal
+        $kelas = Kelas::all();
+        return view('superadmin.users.index', compact('kelas'));
     }
-
 
     public function store(Request $request)
     {
@@ -206,11 +207,10 @@ class UserController extends Controller
 
     public function getData(Request $request)
     {
-        if (!$request->ajax())
-            abort(404);
+        if (!$request->ajax()) abort(404);
 
-        $role = $request->get('role'); // superadmin|admin|musyrif|santri|null
-        $query = User::query()->select(['id', 'name', 'email', 'nomor', 'role']);
+        $role = $request->get('role');
+        $query = User::query()->select(['id', 'name', 'email', 'nomor', 'role', 'is_approved']);
 
         if ($role) {
             $query->where('role', $role);
@@ -218,39 +218,134 @@ class UserController extends Controller
 
         return DataTables::of($query)
             ->addIndexColumn()
+            // Tambahkan di bagian awal penambahan kolom
+            ->addColumn('checkbox', function ($row) {
+                return '<input type="checkbox" class="form-check-input user-checkbox" value="' . $row->id . '">';
+            })
             ->editColumn('role', function ($row) {
-                $colors = [
-                    'superadmin' => 'danger',
-                    'admin' => 'primary',
-                    'musyrif' => 'success',
-                    'santri' => 'warning',
-                ];
+                $colors = ['superadmin' => 'danger', 'admin' => 'success', 'musyrif' => 'warning', 'santri' => 'primary', 'pimpinan' => 'info'];
                 $color = $colors[$row->role] ?? 'secondary';
-
-                return '<span class="badge bg-' . $color . '">'
-                    . strtoupper(e($row->role)) .
-                    '</span>';
+                return '<span class="badge bg-' . $color . ' rounded-pill px-3">' . strtoupper($row->role) . '</span>';
+            })
+            ->addColumn('status_badge', function ($row) {
+                return $row->is_approved
+                    ? '<span class="badge bg-light text-success border border-success rounded-pill px-3"><i class="bi bi-check-circle-fill me-1"></i> Aktif</span>'
+                    : '<span class="badge bg-light text-danger border border-danger rounded-pill px-3"><i class="bi bi-clock-history me-1"></i> Pending</span>';
             })
             ->addColumn('aksi', function ($row) {
-                return '
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-secondary btn-edit flex-sm-grow-0"
-                        data-id="' . $row->id . '"
-                        data-name="' . e($row->name) . '"
-                        data-email="' . e($row->email) . '"
-                        data-nomor="' . e($row->nomor) . '"
-                        data-role="' . e($row->role) . '">
-                        Edit
-                    </button>
+                $btnApprove = '';
+                // Jika Belum di-approve, munculkan tombol centang (Approve)
+                if (!$row->is_approved) {
+                    $btnApprove = '
+                        <button class="btn btn-sm btn-success text-white btn-approve shadow-sm"
+                            data-id="' . $row->id . '"
+                            data-name="' . e($row->name) . '"
+                            data-role="' . $row->role . '">
+                            <i class="bi bi-check-lg"></i>
+                        </button>';
+                }
 
-                    <button class="btn btn-sm btn-outline-danger btn-delete flex-sm-grow-0"
-                        data-id="' . $row->id . '">
-                        Hapus
+                return '
+                <div class="d-flex justify-content-end gap-2">
+                    ' . $btnApprove . '
+                    <button class="btn btn-sm btn-warning text-white btn-edit shadow-sm"
+                        data-id="' . $row->id . '" data-name="' . e($row->name) . '"
+                        data-email="' . e($row->email) . '" data-nomor="' . e($row->nomor) . '"
+                        data-role="' . e($row->role) . '">
+                        <i class="bi bi-pencil"></i>
                     </button>
-                </div>
-            ';
+                    <button class="btn btn-sm btn-danger text-white btn-delete shadow-sm" data-id="' . $row->id . '">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>';
             })
-            ->rawColumns(['role', 'aksi'])
+            ->rawColumns(['checkbox', 'role', 'status_badge', 'aksi'])
             ->make(true);
+    }
+
+    public function approve(Request $request)
+    {
+        // 1. Validasi Input
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'role'    => 'required',
+            'kelas_id' => 'required_if:role,santri'
+        ]);
+
+        return DB::transaction(function () use ($request) {
+            $user = User::findOrFail($request->user_id);
+
+            // 2. Update Status User (PASTIKAN is_approved ada di $fillable Model User)
+            $user->update(['is_approved' => true]);
+
+            // 3. Logika Role: SANTRI
+            if ($user->role === 'santri') {
+                Santri::updateOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'nama' => $user->name,
+                        'kelas_id' => $request->kelas_id // Diambil dari input modal approval
+                    ]
+                );
+            }
+
+            // 4. Logika Role: MUSYRIF (Tambahkan ini agar MATCH dengan logic update Mas)
+            if ($user->role === 'musyrif') {
+                $musyrif = Musyrif::updateOrCreate(
+                    ['user_id' => $user->id],
+                    ['nama' => $user->name]
+                );
+
+                // Generate kode hanya jika belum punya kode
+                if (!$musyrif->kode) {
+                    $musyrif->kode = $this->generateKode($musyrif->nama, $musyrif->id);
+                    $musyrif->save();
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Akun ' . $user->name . ' berhasil diaktifkan!'
+            ]);
+        });
+    }
+
+    public function bulkApprove(Request $request)
+    {
+        // 1. Validasi input
+        $ids = $request->input('ids');
+        if (!$ids || !is_array($ids)) {
+            return response()->json(['message' => 'Tidak ada user yang dipilih.'], 400);
+        }
+
+        // 2. Gunakan kolom is_approved sesuai database Mas
+        // Kita set ke 1 (True) dan isi email_verified_at agar bisa login (jika perlu)
+        $updated = User::whereIn('id', $ids)->update([
+            'is_approved'       => 1,
+            'email_verified_at' => now(), // Opsional: agar user dianggap verified
+            'updated_at'        => now()
+        ]);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => $updated . ' user berhasil disetujui dan diaktifkan.'
+        ]);
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $ids = $request->ids;
+
+        if (!$ids || !is_array($ids)) {
+            return response()->json(['message' => 'Pilih data terlebih dahulu'], 400);
+        }
+
+        // Hapus masal
+        User::whereIn('id', $ids)->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => count($ids) . ' user berhasil dihapus permanen.'
+        ]);
     }
 }

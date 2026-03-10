@@ -4,222 +4,323 @@
 
 @section('content')
     <style>
-        /* ===== Badge mode ===== */
+        /* ================= TEMA ISLAMIC PURPLE & MODERN UI ================= */
+        .text-adaptive-purple {
+            color: var(--islamic-purple-700);
+        }
+
+        /* FIX: Header Page & Teks Ungu di Dark Mode */
+        [data-coreui-theme="dark"] .text-adaptive-purple,
+        [data-coreui-theme="dark"] h4,
+        [data-coreui-theme="dark"] .fw-bold {
+            color: #ececec !important;
+        }
+
+        .main-card {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            background-color: var(--cui-card-bg);
+        }
+
+        /* ================= FIX HEADER TABEL DARKMODE ================= */
+        .table thead th {
+            background-color: var(--cui-tertiary-bg);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+            color: var(--cui-secondary-color);
+            padding: 15px;
+            border-bottom: 1px solid var(--cui-border-color);
+        }
+
+        [data-coreui-theme="dark"] .table thead th {
+            background-color: #2a2a35 !important;
+            /* Warna gelap yang lebih kontras */
+            color: #d1d1d1 !important;
+            border-bottom: 1px solid #3c3c4b;
+        }
+
+        /* ================= FIX CALENDAR DATE ROW ================= */
+        .calendar-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            border: 1px solid var(--cui-border-color);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        /* Header Hari (Ahd, Sen, dst) di Dark Mode */
+        [data-coreui-theme="dark"] .calendar-table thead th {
+            background-color: #2a2a35 !important;
+            color: #ffffff !important;
+        }
+
+        .calendar-day-box {
+            height: 100px;
+            transition: all 0.2s ease;
+            vertical-align: top !important;
+            padding: 10px !important;
+            border-color: var(--cui-border-color-translucent) !important;
+        }
+
+        /* Angka Tanggal di Dark Mode */
+        .day-number {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--cui-body-color);
+        }
+
+        [data-coreui-theme="dark"] .day-number {
+            color: #ffffff !important;
+            /* Pastikan angka putih di mode gelap */
+        }
+
+        /* Tanggal di luar bulan aktif agar tidak terlalu terang */
+        [data-coreui-theme="dark"] .calendar-day-box.bg-light {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+        }
+
+        [data-coreui-theme="dark"] .text-muted {
+            color: #8a8a95 !important;
+        }
+
+        /* Hover effect di dark mode */
+        [data-coreui-theme="dark"] .calendar-day-box:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        /* Badge Mode Responsive */
         .badge-dot {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             display: inline-block;
         }
 
-        /* Desktop: tampil teks */
-        .badge-text {
-            display: inline-block;
+        .badge-pill-custom {
+            font-size: 0.65rem;
+            padding: 3px 8px;
+            border-radius: 50px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        /* Mobile: sembunyikan teks, tampil dot */
         @media (max-width: 576px) {
-            .badge-text {
+            .badge-text-hide {
                 display: none !important;
             }
 
             .badge-dot {
                 display: inline-block !important;
             }
+
+            .calendar-day-box {
+                height: 70px;
+                padding: 5px !important;
+            }
+        }
+
+        /* ================= FIX TOMBOL KEMBALI ================= */
+
+        /* Warna Tombol di Dark Mode */
+        [data-coreui-theme="dark"] .btn-light {
+            background-color: #32323e !important;
+            border-color: #464652 !important;
+            color: #ffffff !important;
+        }
+
+        [data-coreui-theme="dark"] .btn-light:hover {
+            background-color: #3d3d4b !important;
+        }
+
+        /* Logika Tombol Hanya Ikon di Mobile */
+        @media (max-width: 576px) {
+            .btn-back-responsive {
+                width: 42px;
+                height: 42px;
+                padding: 0 !important;
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50% !important;
+                /* Jadi bulat di HP */
+            }
+
+            .btn-back-responsive span {
+                display: none !important;
+                /* Sembunyikan teks 'Kembali' */
+            }
+
+            .btn-back-responsive i {
+                margin: 0 !important;
+                font-size: 1.25rem;
+            }
         }
     </style>
-    <div class="container py-4">
-        <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
-            <div>
-                <h4 class="mb-1">Riwayat Absensi</h4>
-                <div class="text-muted">
-                    Musyrif: <span class="fw-semibold">{{ $musyrif->nama }}</span>
-                    @if ($musyrif->user)
-                        <span class="mx-2">•</span>
-                        <span class="small">{{ $musyrif->user->email }}</span>
-                    @endif
-                </div>
-            </div>
-            <div class="d-flex gap-2">
-                <a href="{{ route('admin.musyrif.index') }}" class="btn btn-outline-secondary">Kembali</a>
-            </div>
+
+    {{-- HEADER --}}
+    <div class="row mb-4 align-items-center px-3 px-md-0 g-2">
+        <div class="col">
+            <h4 class="fw-bold text-adaptive-purple mb-1">Riwayat Absensi</h4>
+            <p class="text-muted small mb-0 d-none d-md-block"> {{-- Detail musyrif sembunyi di mobile agar lega --}}
+                <i class="bi bi-person-circle me-1"></i> {{ $musyrif->nama }}
+                <span class="mx-2">|</span>
+                <i class="bi bi-hash me-1"></i> {{ $musyrif->kode ?? 'No Code' }}
+            </p>
+            <p class="text-muted small mb-0 d-block d-md-none">
+                {{ $musyrif->nama }}
+            </p>
         </div>
-
-        @if (session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
-
-        @if ($errors->any())
-            <div class="alert alert-danger">
-                <div class="fw-bold mb-1">Terjadi kesalahan:</div>
-                <ul class="mb-0">
-                    @foreach ($errors->all() as $e)
-                        <li>{{ $e }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        {{-- FILTERS --}}
-        <div class="card shadow-sm mb-3">
-            <div class="card-body">
-                <form class="row g-2 align-items-end" method="GET">
-                    <div class="col-md-3">
-                        <label class="form-label">Bulan</label>
-                        <input type="month" name="month" class="form-control"
-                            value="{{ request('month', now()->format('Y-m')) }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Sesi</label>
-                        <select name="type" class="form-select">
-                            <option value="">Semua</option>
-                            <option value="morning" @selected(request('type') === 'morning')>Pagi</option>
-                            <option value="afternoon" @selected(request('type') === 'afternoon')>Malam</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Status</label>
-                        <select name="status" class="form-select">
-                            <option value="">Semua</option>
-                            <option value="valid" @selected(request('status') === 'valid')>Valid</option>
-                            <option value="suspect" @selected(request('status') === 'suspect')>Suspect</option>
-                            <option value="rejected" @selected(request('status') === 'rejected')>Rejected</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 d-flex gap-2">
-                        <button class="btn btn-primary w-100" type="submit">Filter</button>
-                        <a class="btn btn-outline-secondary w-100"
-                            href="{{ route('admin.musyrif.attendances', $musyrif->id) }}">Reset</a>
-                    </div>
-                </form>
-            </div>
+        <div class="col-auto">
+            <a href="{{ route('admin.musyrif.index') }}"
+                class="btn btn-light btn-back-responsive rounded-pill px-4 fw-bold shadow-sm"
+                title="Kembali ke Daftar Musyrif">
+                <i class="bi bi-arrow-left me-md-1"></i>
+                <span>Kembali</span>
+            </a>
         </div>
+    </div>
 
-        @php
-            $daysOfWeek = ['Ahd', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    @if (session('success'))
+        <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4">{{ session('success') }}</div>
+    @endif
 
-            $badgeClass = function ($status) {
-                return match ($status) {
-                    'valid' => 'bg-success',
-                    'suspect' => 'bg-warning text-dark',
-                    'rejected' => 'bg-danger',
-                    default => 'bg-secondary',
-                };
-            };
-
-            $gridStart = \Carbon\Carbon::parse($start)->startOfWeek(\Carbon\Carbon::SUNDAY);
-            $gridEnd = \Carbon\Carbon::parse($end)->endOfWeek(\Carbon\Carbon::SATURDAY);
-        @endphp
-        <div class="card shadow-sm mb-3">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div class="fw-semibold">Kalender Absensi
-                        ({{ \Carbon\Carbon::createFromFormat('Y-m', $month)->translatedFormat('F Y') }})</div>
+    {{-- FILTER CARD --}}
+    <div class="card main-card mb-4">
+        <div class="card-body p-4">
+            <form class="row g-3 align-items-end" method="GET">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">PERIODE BULAN</label>
+                    <input type="month" name="month" class="form-control rounded-3"
+                        value="{{ request('month', now()->format('Y-m')) }}">
                 </div>
-
-                <div class="table-responsive">
-                    <table class="table table-bordered align-middle mb-0"">
-                        <thead class="table-light">
-                            <tr>
-                                @foreach ($daysOfWeek as $d)
-                                    <th class="text-center small">{{ $d }}</th>
-                                @endforeach
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @php $cursor = $gridStart->copy(); @endphp
-
-                            @while ($cursor <= $gridEnd)
-                                <tr>
-                                    @for ($i = 0; $i < 7; $i++)
-                                        @php
-                                            $dayKey = $cursor->format('Y-m-d');
-                                            $inMonth = $cursor->month === \Carbon\Carbon::parse($start)->month;
-
-                                            $mor = $calendar[$dayKey]['morning'] ?? null;
-                                            $aft = $calendar[$dayKey]['afternoon'] ?? null;
-                                        @endphp
-
-                                        <td class="p-2" style="height: 92px;">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div class="{{ $inMonth ? 'fw-semibold' : 'text-muted' }}">
-                                                    {{ $cursor->day }}
-                                                </div>
-
-                                                {{-- highlight today --}}
-                                                @if ($cursor->isToday())
-                                                    <span class="badge bg-primary badge-text">Hari ini</span>
-                                                    <span class="badge-dot bg-primary d-none"></span>
-                                                @endif
-                                            </div>
-
-                                            <div class="mt-2 d-flex flex-column gap-1">
-                                                {{-- Pagi --}}
-                                                @if ($mor)
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        {{-- mobile: dot --}}
-                                                        <span class="badge-dot {{ $badgeClass($mor) }} d-none"></span>
-
-                                                        {{-- desktop: text --}}
-                                                        <span class="badge {{ $badgeClass($mor) }} badge-text">
-                                                            Pagi: {{ strtoupper($mor) }}
-                                                        </span>
-                                                    </div>
-                                                @endif
-
-                                                {{-- Malam --}}
-                                                @if ($aft)
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        {{-- mobile: dot --}}
-                                                        <span class="badge-dot {{ $badgeClass($aft) }} d-none"></span>
-
-                                                        {{-- desktop: text --}}
-                                                        <span class="badge {{ $badgeClass($aft) }} badge-text">
-                                                            Malam: {{ strtoupper($aft) }}
-                                                        </span>
-                                                    </div>
-                                                @endif
-
-                                                {{-- Kosong --}}
-                                                @if (!$mor && !$aft)
-                                                    <span class="text-muted small badge-text">—</span>
-                                                    <span class="badge-dot bg-light border d-none"></span>
-                                                @endif
-                                            </div>
-                                        </td>
-
-                                        @php $cursor->addDay(); @endphp
-                                    @endfor
-                                </tr>
-                            @endwhile
-                        </tbody>
-                    </table>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">SESI</label>
+                    <select name="type" class="form-select rounded-3">
+                        <option value="">Semua Sesi</option>
+                        <option value="morning" @selected(request('type') === 'morning')>Pagi</option>
+                        <option value="afternoon" @selected(request('type') === 'afternoon')>Malam</option>
+                    </select>
                 </div>
-                <div class="small text-muted mt-2">
-                    Legend:
-                    <span class="badge bg-primary">TODAY</span>
-                    <span class="badge bg-success">VALID</span>
-                    <span class="badge bg-warning text-dark">SUSPECT</span>
-                    <span class="badge bg-danger">REJECT</span>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">STATUS</label>
+                    <select name="status" class="form-select rounded-3">
+                        <option value="">Semua Status</option>
+                        <option value="valid" @selected(request('status') === 'valid')>Valid</option>
+                        <option value="suspect" @selected(request('status') === 'suspect')>Suspect</option>
+                        <option value="rejected" @selected(request('status') === 'rejected')>Rejected</option>
+                    </select>
                 </div>
-                <div class="small text-muted mt-2">
-                    Catatan: Kalender menampilkan status terakhir per hari untuk sesi Pagi/Malam sesuai filter.
+                <div class="col-md-3 d-flex gap-2">
+                    <button class="btn btn-primary rounded-pill w-100 fw-bold shadow-sm" type="submit">
+                        <i class="bi bi-filter me-1"></i> Filter
+                    </button>
+                    <a class="btn btn-outline-secondary rounded-pill w-100 fw-bold"
+                        href="{{ route('admin.musyrif.attendances', $musyrif->id) }}">Reset</a>
                 </div>
-            </div>
+            </form>
         </div>
+    </div>
 
-        {{-- TABLE --}}
-        <div class="card shadow-sm">
-            <div class="card-body table-responsive">
-                <table class="table align-middle">
+    {{-- KALENDER CARD --}}
+    <div class="card main-card mb-4">
+        <div class="card-header bg-white py-3 px-4 border-bottom-0">
+            <h6 class="fw-bold text-white mb-0">
+                <i class="bi bi-calendar3 me-2"></i>Kalender Absensi -
+                {{ \Carbon\Carbon::createFromFormat('Y-m', $month)->translatedFormat('F Y') }}
+            </h6>
+        </div>
+        <div class="card-body px-4 pb-4">
+            <div class="table-responsive">
+                <table class="table calendar-table align-middle mb-0">
                     <thead>
                         <tr>
-                            <th style="width:140px;">Waktu</th>
-                            <th style="width:110px;">Sesi</th>
-                            <th style="width:160px;">Status</th>
-                            <th>Lokasi</th>
-                            <th style="width:90px;">Foto</th>
-                            <th style="width:220px;">Aksi</th>
+                            @foreach (['Ahd', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'] as $d)
+                                <th class="text-center">{{ $d }}</th>
+                            @endforeach
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php
+                            $cursor = \Carbon\Carbon::parse($start)->startOfWeek(\Carbon\Carbon::SUNDAY);
+                            $gridEnd = \Carbon\Carbon::parse($end)->endOfWeek(\Carbon\Carbon::SATURDAY);
+                            $badgeClass = fn($s) => match ($s) {
+                                'valid' => 'bg-success',
+                                'suspect' => 'bg-warning text-dark',
+                                'rejected' => 'bg-danger',
+                                default => 'bg-secondary',
+                            };
+                        @endphp
+
+                        @while ($cursor <= $gridEnd)
+                            <tr>
+                                @for ($i = 0; $i < 7; $i++)
+                                    @php
+                                        $dayKey = $cursor->format('Y-m-d');
+                                        $inMonth = $cursor->month === \Carbon\Carbon::parse($start)->month;
+                                        $mor = $calendar[$dayKey]['morning'] ?? null;
+                                        $aft = $calendar[$dayKey]['afternoon'] ?? null;
+                                    @endphp
+                                    <td class="calendar-day-box {{ !$inMonth ? 'bg-light bg-opacity-50' : '' }}">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span
+                                                class="day-number {{ $cursor->isToday() ? 'badge bg-primary text-white rounded-circle' : ($inMonth ? 'text-dark' : 'text-muted') }}"
+                                                style="{{ $cursor->isToday() ? 'width:24px; height:24px; display:flex; align-items:center; justify-content:center;' : '' }}">
+                                                {{ $cursor->day }}
+                                            </span>
+                                        </div>
+                                        <div class="d-flex flex-column gap-1">
+                                            @if ($mor)
+                                                <span class="badge-pill-custom {{ $badgeClass($mor) }}">
+                                                    <span class="badge-dot bg-white"></span>
+                                                    <span class="badge-text-hide">Pagi: {{ strtoupper($mor) }}</span>
+                                                </span>
+                                            @endif
+                                            @if ($aft)
+                                                <span class="badge-pill-custom {{ $badgeClass($aft) }}">
+                                                    <span class="badge-dot bg-white"></span>
+                                                    <span class="badge-text-hide">Malam: {{ strtoupper($aft) }}</span>
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    @php $cursor->addDay(); @endphp
+                                @endfor
+                            </tr>
+                        @endwhile
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-3 d-flex flex-wrap gap-3 justify-content-center border-top pt-3">
+                <small class="text-muted"><span class="badge-dot bg-success me-1"></span> Valid</small>
+                <small class="text-muted"><span class="badge-dot bg-warning me-1"></span> Suspect</small>
+                <small class="text-muted"><span class="badge-dot bg-danger me-1"></span> Rejected</small>
+                <small class="text-muted"><span class="badge-dot bg-primary me-1"></span> Hari Ini</small>
+            </div>
+        </div>
+    </div>
+
+    {{-- LOG TABLE CARD --}}
+    <div class="card main-card">
+        <div class="card-header bg-white py-3 px-4 border-bottom-0">
+            <h6 class="fw-bold text-white mb-0"><i class="bi bi-list-ul me-2"></i>Log Aktivitas Absensi</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-nowrap">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Waktu</th>
+                            <th>Sesi</th>
+                            <th>Status</th>
+                            <th>Lokasi / Koordinat</th>
+                            <th>Foto</th>
+                            <th class="text-end pe-4">Verifikasi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -231,241 +332,67 @@
                                     'rejected' => 'bg-danger',
                                     default => 'bg-secondary',
                                 };
-                                $typeLabel = $row->type === 'morning' ? 'Morning' : 'Afternoon';
                             @endphp
                             <tr>
-                                <td>
-                                    <div class="fw-semibold">{{ $row->attendance_at->format('d/m/Y') }}</div>
+                                <td class="ps-4">
+                                    <div class="fw-bold">{{ $row->attendance_at->format('d M Y') }}</div>
                                     <div class="text-muted small">{{ $row->attendance_at->format('H:i') }} WIB</div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-light text-dark border">{{ $typeLabel }}</span>
+                                    <span class="badge bg-light text-dark border-0 px-3 py-2 rounded-pill small">
+                                        {{ $row->type === 'morning' ? 'Pagi' : 'Malam' }}
+                                    </span>
                                 </td>
                                 <td>
-                                    <span class="badge {{ $badge }}">{{ strtoupper($row->status) }}</span>
-                                    @if ($row->notes)
-                                        <div class="text-muted small mt-1"
-                                            style="max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                                            {{ $row->notes }}
-                                        </div>
-                                    @endif
-                                </td>
-                                <td class="small">
-                                    @if ($row->latitude && $row->longitude)
-                                        <div>{{ $row->latitude }}, {{ $row->longitude }}</div>
-                                        <div class="text-muted">Acc: {{ $row->accuracy ?? '-' }} m</div>
-                                        @if ($row->address_text)
-                                            <div class="text-muted"
-                                                style="max-width:360px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                                                {{ $row->address_text }}
-                                            </div>
-                                        @endif
-                                    @else
-                                        <span class="text-muted">—</span>
-                                    @endif
+                                    <span
+                                        class="badge {{ $badge }} px-3 py-2 rounded-pill small">{{ strtoupper($row->status) }}</span>
                                 </td>
                                 <td>
-                                    @php $url = asset('storage/'.$row->photo_path); @endphp
-                                    <button type="button" class="btn btn-sm btn-outline-secondary btnPreview"
-                                        data-photo="{{ $url }}">
-                                        Lihat
+                                    <div class="small fw-semibold">{{ $row->latitude }}, {{ $row->longitude }}</div>
+                                    <div class="text-muted truncate-text" style="max-width: 250px;">
+                                        {{ $row->address_text ?? 'Alamat tidak terdeteksi' }}</div>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3 btnPreview"
+                                        data-photo="{{ asset('storage/' . $row->photo_path) }}">
+                                        <i class="bi bi-image me-1"></i> Foto
                                     </button>
                                 </td>
-                                <td>
-                                    <div class="d-flex flex-wrap gap-1">
-                                        <button type="button" class="btn btn-sm btn-success text-white btnUpdateStatus"
+                                <td class="text-end pe-4">
+                                    <div class="btn-group shadow-sm rounded-pill overflow-hidden">
+                                        <button class="btn btn-sm btn-success text-white btnUpdateStatus"
                                             data-id="{{ $row->id }}" data-status="valid"
-                                            data-type="{{ $typeLabel }}"
-                                            data-time="{{ $row->attendance_at->format('d/m/Y H:i') }}"
+                                            data-type="{{ $row->type }}" data-time="{{ $row->attendance_at }}"
                                             data-current="{{ $row->status }}">
-                                            Approve
+                                            <i class="bi bi-check-lg"></i>
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-warning text-white btnUpdateStatus"
+                                        <button class="btn btn-sm btn-warning text-white btnUpdateStatus"
                                             data-id="{{ $row->id }}" data-status="suspect"
-                                            data-type="{{ $typeLabel }}"
-                                            data-time="{{ $row->attendance_at->format('d/m/Y H:i') }}"
+                                            data-type="{{ $row->type }}" data-time="{{ $row->attendance_at }}"
                                             data-current="{{ $row->status }}">
-                                            Suspect
+                                            <i class="bi bi-exclamation-triangle"></i>
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-danger text-white btnUpdateStatus"
+                                        <button class="btn btn-sm btn-danger text-white btnUpdateStatus"
                                             data-id="{{ $row->id }}" data-status="rejected"
-                                            data-type="{{ $typeLabel }}"
-                                            data-time="{{ $row->attendance_at->format('d/m/Y H:i') }}"
+                                            data-type="{{ $row->type }}" data-time="{{ $row->attendance_at }}"
                                             data-current="{{ $row->status }}">
-                                            Reject
+                                            <i class="bi bi-x-lg"></i>
                                         </button>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted">Belum ada data.</td>
+                                <td colspan="6" class="text-center py-5 text-muted">Belum ada riwayat absensi untuk
+                                    periode ini.</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
-
+            </div>
+            <div class="px-4 py-3">
                 {{ $data->links() }}
             </div>
         </div>
     </div>
 @endsection
-
-@push('modals')
-    {{-- MODAL: Preview Photo --}}
-    <div class="modal fade" id="photoModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Preview Foto</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-                </div>
-                <div class="modal-body">
-                    <img id="photoModalImg" src="" alt="Foto absensi" class="img-fluid rounded border">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- MODAL: Update Status --}}
-    <div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <form method="POST" id="statusForm">
-                    @csrf
-                    @method('PATCH')
-
-                    <div class="modal-header">
-                        <h5 class="modal-title">Update Status Absensi</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-                    </div>
-
-                    <div class="modal-body">
-                        <div class="border rounded p-3 bg-light mb-3">
-                            <div class="small text-muted">Sesi</div>
-                            <div class="fw-semibold" id="mType">-</div>
-                            <div class="small text-muted mt-2">Waktu</div>
-                            <div class="fw-semibold" id="mTime">-</div>
-                            <div class="small text-muted mt-2">Status saat ini</div>
-                            <div class="fw-semibold" id="mCurrent">-</div>
-                        </div>
-
-                        <input type="hidden" name="status" id="statusInput">
-
-                        <div class="mb-2">
-                            <label class="form-label fw-semibold">Alasan (wajib)</label>
-                            <textarea name="reason" id="reasonInput" class="form-control" rows="4" minlength="5" maxlength="500"
-                                required placeholder="Contoh: GPS melenceng karena akurasi buruk, selfie sesuai, di-approve."></textarea>
-                            <div class="small text-muted mt-1">Minimal 5 karakter.</div>
-                        </div>
-                    </div>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-@endpush
-
-@push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-
-            /* ========================================
-               PREVIEW PHOTO MODAL
-            ======================================== */
-
-            const photoModalEl = document.getElementById('photoModal');
-            const photoModalImg = document.getElementById('photoModalImg');
-
-            let photoModal = null;
-
-            if (photoModalEl) {
-                photoModal = new bootstrap.Modal(photoModalEl);
-            }
-
-            document.querySelectorAll('.btnPreview').forEach(btn => {
-
-                btn.addEventListener('click', function() {
-
-                    if (!photoModal) return;
-
-                    const photoUrl = this.dataset.photo || '';
-
-                    photoModalImg.src = photoUrl;
-
-                    photoModal.show();
-
-                });
-
-            });
-
-
-            /* ========================================
-               UPDATE STATUS MODAL
-            ======================================== */
-
-            const statusModalEl = document.getElementById('statusModal');
-
-            let statusModal = null;
-
-            if (statusModalEl) {
-                statusModal = new bootstrap.Modal(statusModalEl);
-            }
-
-            const statusForm = document.getElementById('statusForm');
-            const statusInput = document.getElementById('statusInput');
-            const reasonInput = document.getElementById('reasonInput');
-
-            const mType = document.getElementById('mType');
-            const mTime = document.getElementById('mTime');
-            const mCurrent = document.getElementById('mCurrent');
-
-
-            document.querySelectorAll('.btnUpdateStatus').forEach(btn => {
-
-                btn.addEventListener('click', function() {
-
-                    if (!statusModal) return;
-
-                    const id = this.dataset.id;
-                    const nextStatus = this.dataset.status;
-                    const type = this.dataset.type || '-';
-                    const time = this.dataset.time || '-';
-                    const current = this.dataset.current || '-';
-
-
-                    /* set form action */
-                    statusForm.action =
-                        "{{ route('admin.musyrif.attendances.update_status', 'ATT_ID') }}"
-                        .replace('ATT_ID', id);
-
-
-                    /* set hidden status */
-                    statusInput.value = nextStatus;
-
-
-                    /* set modal content */
-                    mType.textContent = type;
-                    mTime.textContent = time + ' WIB';
-                    mCurrent.textContent = current.toUpperCase();
-
-
-                    /* reset reason */
-                    reasonInput.value = '';
-
-
-                    /* show modal */
-                    statusModal.show();
-
-                });
-
-            });
-
-
-        });
-    </script>
-@endpush

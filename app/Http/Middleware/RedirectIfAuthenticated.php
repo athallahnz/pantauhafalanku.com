@@ -10,18 +10,36 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RedirectIfAuthenticated
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
     public function handle(Request $request, Closure $next, string ...$guards): Response
     {
         $guards = empty($guards) ? [null] : $guards;
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
-                return redirect(RouteServiceProvider::HOME);
+                $user = Auth::user();
+
+                // 1. Jika belum di-approve (kecuali superadmin/admin) arahkan ke halaman pending
+                if (!$user->is_approved && !in_array($user->role, ['superadmin', 'admin'])) {
+                    // Pastikan Mas punya route 'pending' atau arahkan ke halaman pemberitahuan
+                    // return redirect()->route('pending');
+                    // Sementara kita arahkan ke halaman logout atau home dengan pesan
+                    Auth::logout();
+                    return redirect()->route('waiting.approval');
+                }
+
+                // 2. Redirect dinamis berdasarkan Role
+                switch ($user->role) {
+                    case 'superadmin':
+                        return redirect('/superadmin/dashboard');
+                    case 'admin':
+                        return redirect('/admin/dashboard');
+                    case 'musyrif':
+                        return redirect('/musyrif/dashboard');
+                    case 'santri':
+                        return redirect('/santri/dashboard');
+                    default:
+                        return redirect('/login');
+                }
             }
         }
 

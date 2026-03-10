@@ -133,7 +133,7 @@ class LaporanController extends Controller
                 $btn = '<button type="button" class="btn btn-sm btn-primary btn-detail-santri"
                         data-id="' . $row->id . '"
                         data-nama="' . e($row->nama) . '">
-                        Detail
+                        <i class="bi bi-eye" data-toggle="tooltip" data-placement="top" title="Lihat Detail"></i>
                     </button>';
                 return $btn;
             })

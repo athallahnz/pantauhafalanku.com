@@ -21,7 +21,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (app()->environment('local')) {
+        // Deteksi pintar: Hanya paksa HTTPS JIKA diakses lewat Ngrok / server yang pakai HTTPS
+        if (request()->header('x-forwarded-proto') === 'https' || app()->environment('production')) {
             URL::forceScheme('https');
         }
 
