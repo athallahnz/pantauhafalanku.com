@@ -1,4 +1,7 @@
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/simn6414/public_html/laravel_project
-    - /bin/cp -R * $DEPLOYPATH
+    - export DEPLOYPATH=/home/simn6414/public_html/simdatta.online
+    - /bin/rsync -av --exclude='.env' ./ $DEPLOYPATH
+    - cd $DEPLOYPATH
+    - php artisan config:clear
+    - php artisan cache:clear
