@@ -17,7 +17,7 @@
 
 <li class="nav-item mb-1">
     <a class="nav-link {{ request()->routeIs('kelas.*') ? 'active' : '' }}" href="{{ route('kelas.index') }}">
-        <i class="nav-icon bi bi-houses-fill"></i> <span>Kelas</span>
+        <i class="nav-icon bi bi-easel2-fill"></i> <span>Kelas</span>
     </a>
 </li>
 

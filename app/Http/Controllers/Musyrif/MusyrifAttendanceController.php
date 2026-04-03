@@ -5,10 +5,15 @@ namespace App\Http\Controllers\Musyrif;
 use App\Http\Controllers\Controller;
 use App\Models\Musyrif;
 use App\Models\MusyrifAttendance;
+use App\Events\MusyrifAbsenEvent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
+use Intervention\Image\Laravel\Facades\Image;
+use Intervention\Image\Encoders\JpegEncoder;
+use Intervention\Image\Encoders\PngEncoder;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class MusyrifAttendanceController extends Controller
@@ -51,7 +56,7 @@ class MusyrifAttendanceController extends Controller
 
         $validated = $request->validate([
             'type' => ['required', Rule::in(['morning', 'afternoon'])],
-            'photo' => ['required', 'string'], // dataURL base64 dari canvas
+            'photo' => ['required', 'string'],
             'latitude' => ['nullable', 'numeric'],
             'longitude' => ['nullable', 'numeric'],
             'accuracy' => ['nullable', 'numeric'],
@@ -65,7 +70,6 @@ class MusyrifAttendanceController extends Controller
         $lat = $validated['latitude'] ?? null;
         $lng = $validated['longitude'] ?? null;
 
-        // Jika GPS tidak ada → tandai suspect (atau tolak sesuai kebijakan)
         if ($lat === null || $lng === null) {
             $status = 'suspect';
             $notesExtra = 'GPS tidak tersedia.';
@@ -78,13 +82,11 @@ class MusyrifAttendanceController extends Controller
             );
 
             if ($dist > $this->geoRadiusM) {
-                // Pilih salah satu kebijakan:
-                $status = 'rejected'; // atau 'suspect' jika masih mau diterima tapi ditandai
+                $status = 'rejected';
                 $notesExtra = 'Di luar radius geofence (' . round($dist) . ' m).';
             }
         }
 
-        // Opsional: aturan anti double dalam hari yang sama
         $today = now()->toDateString();
         $already = MusyrifAttendance::where('musyrif_id', $musyrif->id)
             ->whereDate('attendance_at', $today)
@@ -93,32 +95,33 @@ class MusyrifAttendanceController extends Controller
 
         if ($already) {
             return back()->withErrors([
-                'type' => 'Anda sudah melakukan absensi ' . ($validated['type'] === 'in' ? 'Masuk' : 'Pulang') . ' hari ini.'
+                'type' => 'Anda sudah melakukan absensi ' . ($validated['type'] === 'morning' ? 'Pagi' : 'Malam') . ' hari ini.'
             ])->withInput();
         }
 
-        // Simpan selfie dari base64
         $photoPath = $this->storeBase64Photo($validated['photo'], $musyrif->id);
 
-        DB::transaction(function () use ($musyrif, $validated, $photoPath, $request, $status, $notesExtra, $lat, $lng) {
-            MusyrifAttendance::create([
+        // Gunakan variabel untuk menangkap hasil data absensi
+        $attendance = DB::transaction(function () use ($musyrif, $validated, $photoPath, $request, $status, $notesExtra, $lat, $lng) {
+            return MusyrifAttendance::create([
                 'musyrif_id' => $musyrif->id,
                 'type' => $validated['type'],
                 'attendance_at' => now(),
                 'photo_path' => $photoPath,
-
                 'latitude' => $lat,
                 'longitude' => $lng,
                 'accuracy' => isset($validated['accuracy']) ? (int) round($validated['accuracy']) : null,
                 'address_text' => $validated['address_text'] ?? null,
-
                 'ip_address' => $request->ip(),
                 'device_info' => (string) $request->userAgent(),
-
                 'status' => $status,
                 'notes' => trim(($validated['notes'] ?? '') . ($notesExtra ? "\n" . $notesExtra : '')) ?: null,
             ]);
         });
+
+        // TRIGGER EVENT REALTIME KE DASHBOARD
+        // Diluar closure transaction agar tidak dikirim jika DB error
+        event(new MusyrifAbsenEvent($musyrif->id, $musyrif->nama, $status));
 
         return redirect()->route('musyrif.absensi.index')->with('success', 'Absensi berhasil disimpan.');
     }
@@ -167,29 +170,12 @@ class MusyrifAttendanceController extends Controller
                 'attendance_at'
             ]);
 
-
-        /*
-        Struktur hasil:
-
-        $calendar = [
-            '2026-02-01' => [
-                'morning' => 'valid',
-                'afternoon' => 'suspect'
-            ]
-        ];
-    */
-
         $calendar = [];
-
         foreach ($rows as $row) {
-
             $day = $row->attendance_at->format('Y-m-d');
-
             $type = $row->type; // morning / afternoon
-
             // ambil record terbaru saja
             if (!isset($calendar[$day][$type])) {
-
                 $calendar[$day][$type] = $row->status;
             }
         }
@@ -218,30 +204,33 @@ class MusyrifAttendanceController extends Controller
         ]);
     }
 
-
     private function resolveMusyrif(Request $request): Musyrif
     {
         // Skema A (umum): musyrifs punya kolom user_id
         $user = $request->user();
-
         $musyrif = Musyrif::where('user_id', $user->id)->first();
-
         // Skema B: kalau tidak pakai user_id, Anda bisa fallback via session/guard khusus
         if (!$musyrif) {
             abort(403, 'Akun ini belum terhubung dengan data Musyrif.');
         }
-
         return $musyrif;
     }
 
     private function storeBase64Photo(string $dataUrl, int $musyrifId): string
     {
-        // Expect: data:image/jpeg;base64,....
+        // 1. Validasi awal Format DataURL
         if (!str_starts_with($dataUrl, 'data:image/')) {
             abort(422, 'Format foto tidak valid.');
         }
 
-        [$meta, $content] = explode(',', $dataUrl, 2);
+        // 2. Pecah metadata dan content
+        // Pastikan explode menghasilkan array [$meta, $content]
+        if (!str_contains($dataUrl, ',')) {
+            abort(422, 'Format DataURL tidak valid (Missing comma).');
+        }
+
+        [$meta, $content] = explode(',', $dataUrl, 2); // <--- VARIABEL $content DIDEFINISIKAN DI SINI
+
         $isJpeg = str_contains($meta, 'image/jpeg') || str_contains($meta, 'image/jpg');
         $isPng = str_contains($meta, 'image/png');
 
@@ -249,23 +238,46 @@ class MusyrifAttendanceController extends Controller
             abort(422, 'Foto harus JPEG atau PNG.');
         }
 
-        $binary = base64_decode($content, true);
+        // 3. Decode Base64 ke Binary
+        $binary = base64_decode($content, true); // <--- Sekarang $content sudah ada
         if ($binary === false) {
             abort(422, 'Gagal decode foto.');
         }
 
-        // Batas ukuran (misal 2MB)
+        // 4. Batas ukuran (2MB)
         if (strlen($binary) > 2 * 1024 * 1024) {
             abort(422, 'Ukuran foto terlalu besar (maks 2MB).');
         }
 
-        $ext = $isPng ? 'png' : 'jpg';
-        $filename = 'musyrif_' . $musyrifId . '_' . now()->format('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+        $binary = base64_decode($content, true);
 
-        $path = 'attendances/musyrif/' . $filename;
+        try {
+            // 5. Membaca gambar (v3)
+            $img = Image::read($binary);
 
-        Storage::disk('public')->put($path, $binary);
+            // 6. Koreksi Orientasi & Resize
+            $img->orient();
+            $img->scale(width: 1200);
 
-        return $path;
+            // 7. Nama File & Path
+            $ext = $isPng ? 'png' : 'jpg';
+            $filename = 'musyrif_' . $musyrifId . '_' . now()->format('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            $path = 'attendances/musyrif/' . $filename;
+
+            // 8. Encoding (Cara yang lebih disukai Intelephense di v3)
+            // Menggunakan method encode() dengan encoder spesifik
+            $encoded = $isPng
+                ? $img->encode(new PngEncoder())
+                : $img->encode(new JpegEncoder(quality: 85));
+
+            // 9. Simpan ke Storage
+            // Cast ke string karena $encoded adalah objek ImageInterface
+            Storage::disk('public')->put($path, (string) $encoded);
+
+            return $path;
+        } catch (\Exception $e) {
+            Log::error('Gagal memproses foto absensi: ' . $e->getMessage());
+            abort(500, 'Gagal memproses foto.');
+        }
     }
 }

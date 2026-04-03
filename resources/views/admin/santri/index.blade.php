@@ -137,6 +137,8 @@
         <div class="modal-dialog modal-dialog-centered">
             <form id="formSantri" class="w-100">
                 @csrf
+                {{-- Tambahkan ini sebagai placeholder, nanti JS yang akan mengubahnya --}}
+                <input type="hidden" name="_method" id="form_method" value="POST">
                 <input type="hidden" name="id" id="santri_id">
                 <div class="modal-content border-0 shadow rounded-4 overflow-hidden">
                     <div class="modal-header border-bottom-0 px-4">
@@ -147,6 +149,12 @@
                             data-coreui-dismiss="modal"></button>
                     </div>
                     <div class="modal-body p-4">
+                        {{-- Info box tambahan --}}
+                        <div
+                            class="alert alert-info py-2 small d-flex align-items-center gap-2 border-0 bg-info bg-opacity-10 text-info-emphasis rounded-3 mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span>Santri dapat login menggunakan <b>NIS</b>, <b>Nomor WA</b>, atau <b>Email</b>.</span>
+                        </div>
                         <div class="mb-3">
                             <label class="form-label">Nama Lengkap</label>
                             <div class="input-group">
@@ -301,28 +309,34 @@
     <div class="modal fade" id="modalUserSantri" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <form id="formUserSantri" class="w-100">
-                @csrf @method('PUT')
+                @csrf
                 <input type="hidden" name="santri_id" id="user_santri_id">
                 <div class="modal-content border-0 shadow rounded-4 overflow-hidden">
                     <div class="modal-header border-bottom-0 px-4">
                         <h5 class="modal-title fw-bold text-white d-flex align-items-center gap-2">
                             <i class="bi bi-shield-check"></i> Akun Akses Santri
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                     </div>
                     <div class="modal-body p-4">
+                        {{-- Info box tambahan --}}
+                        <div
+                            class="alert alert-info py-2 small d-flex align-items-center gap-2 border-0 bg-info bg-opacity-10 text-info-emphasis rounded-3 mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span>Santri dapat login menggunakan <b>NIS</b>, <b>Nomor WA</b>, atau <b>Email</b>.</span>
+                        </div>
                         <div class="mb-3">
                             <label class="form-label small">Nama User</label>
                             <input type="text" class="form-control bg-light" name="name" id="user_name" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small">Nomor WhatsApp (Username)</label>
-                            <input type="text" class="form-control" name="nomor" id="user_nomor" required
+                            <label class="form-label small">Nomor WhatsApp (Optional)</label>
+                            <input type="text" class="form-control" name="nomor" id="user_nomor"
                                 placeholder="0812...">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small">E-mail</label>
-                            <input type="email" class="form-control" name="email" id="user_email" required>
+                            <label class="form-label small">E-mail (Optional)</label>
+                            <input type="email" class="form-control" name="email" id="user_email">
                         </div>
                         <div class="mb-0">
                             <label class="form-label small d-flex justify-content-between">
@@ -338,7 +352,9 @@
                     </div>
                     <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
                         <button type="submit" class="btn text-white w-100 rounded-pill"
-                            style="background: var(--islamic-purple-600);">Update Akun Santri</button>
+                            style="background: var(--islamic-purple-600);">
+                            Update Akun Santri
+                        </button>
                     </div>
                 </div>
             </form>
@@ -424,17 +440,19 @@
 @endpush
 
 @push('scripts')
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // === 1. MODAL INSTANCES (CoreUI & Bootstrap) ===
             const modalSantri = new coreui.Modal(document.getElementById('modalSantri'));
             const modalImport = new coreui.Modal(document.getElementById('modalImportSantri'));
-            const modalUser = new bootstrap.Modal(document.getElementById('modalUserSantri'));
+            const modalDetail = new coreui.Modal(document.getElementById('modalDetailSantri'));
+            const modalUser = new coreui.Modal(document.getElementById('modalUserSantri'));
 
             let selectedKelas = '';
 
-            // ================================
-            // INIT DATATABLES
-            // ================================
+            // === 2. DATATABLES INITIALIZATION ===
             const table = $('#santri-table').DataTable({
                 processing: true,
                 serverSide: true,
@@ -452,9 +470,7 @@
                     },
                     {
                         data: 'nama',
-                        name: 'santris.nama',
-                        orderable: true,
-                        searchable: true,
+                        name: 'santris.nama'
                     },
                     {
                         data: 'akun',
@@ -463,13 +479,11 @@
                     },
                     {
                         data: 'kelas',
-                        name: 'kelas.nama_kelas',
-                        orderable: true,
-                        searchable: true,
+                        name: 'kelas.nama_kelas'
                     },
                     {
                         data: 'musyrif',
-                        name: 'musyrifs.nama',
+                        name: 'musyrifs.nama'
                     },
                     {
                         data: 'aksi',
@@ -493,7 +507,7 @@
                 }
             });
 
-            // Filter Tabs
+            // Filter Tabs logic
             $('#kelasTabs').on('click', '.nav-link', function() {
                 $('#kelasTabs .nav-link').removeClass('active');
                 $(this).addClass('active');
@@ -501,224 +515,182 @@
                 table.ajax.reload();
             });
 
-            // Add Santri
+            // === 3. CORE FUNCTIONS (SANTRI CRUD) ===
+
+            // Trigger Add Modal
             $('#btnAddSantri').on('click', () => {
                 $('#formSantri')[0].reset();
                 $('#santri_id').val('');
                 $('#modalSantriTitle').html('<i class="bi bi-person-plus-fill"></i> Tambah Santri Baru');
+                $('#musyrif_id').html('<option value="">-- Pilih Kelas Terlebih Dahulu --</option>');
                 modalSantri.show();
             });
 
-            // ============================================================
-            // 7) LOGIK DETAIL SANTRI (POPULATE MODAL)
-            // ============================================================
-            $(document).on('click', '.btn-detail', function() {
-                const d = $(this).data(); // Ambil semua data-* dari tombol
-
-                // Mapping data ke elemen Modal
-                $('#detail_nama').text(d.nama || '-');
-                $('#detail_nis').text(d.nis || '-');
-                $('#detail_tanggal_lahir').text(d.tanggal_lahir || '-');
-
-                // Formatting Jenis Kelamin agar lebih manusiawi
-                let jk = '-';
-                if (d.jenis_kelamin === 'L') jk = 'Laki-laki';
-                else if (d.jenis_kelamin === 'P') jk = 'Perempuan';
-                $('#detail_jenis_kelamin').text(jk);
-
-                $('#detail_kelas').text(d.kelas || '-');
-                $('#detail_musyrif').text(d.musyrif || '-');
-
-                // Logik Akun User (Jika ada gabungkan Nama + Nomor)
-                let userDisplay = '-';
-                if (d.userName) {
-                    userDisplay = d.userName + (d.userNomor ? ` (${d.userNomor})` : '');
-                }
-                $('#detail_user').text(userDisplay);
-                $('#detail_email').text(d.userEmail || '-');
-
-                // Tampilkan Modal (Gunakan instance CoreUI)
-                const modalDetail = new coreui.Modal(document.getElementById('modalDetailSantri'));
-                modalDetail.show();
-            });
-
-            let isEditMode = false; // Flag untuk mendeteksi mode
-
-            // ============================================================
-            // LOGIK AUTO-SELECT MUSYRIF BERDASARKAN KELAS
-            // ============================================================
-            $('#kelas_id').on('change', function() {
-                const kelasId = $(this).val();
-                const musyrifSelect = $('#musyrif_id');
-                const btnSubmit = $('#formSantri button[type="submit"]');
-
-                // 1. Reset Dropdown Musyrif setiap kali kelas ganti
-                musyrifSelect.html('<option value="">-- Memuat Musyrif... --</option>');
-                musyrifSelect.removeClass('is-invalid');
-
-                if (!kelasId) {
-                    musyrifSelect.html('<option value="">-- Pilih Kelas Terlebih Dahulu --</option>');
-                    return;
-                }
-
-                // 2. Ambil data Musyrif via AJAX
-                $.get("{{ route('santri.master.get_by_kelas', '') }}/" + kelasId)
-                    .done(function(res) {
-                        musyrifSelect.empty(); // Kosongkan loader
-
-                        if (res.status === 'empty') {
-                            musyrifSelect.append('<option value="">-- Tidak ada Musyrif --</option>');
-                            musyrifSelect.addClass('is-invalid');
-                            $('#error-musyrif').text(res.message);
-
-                            // Opsional: Kunci tombol simpan jika wajib ada Musyrif
-                            btnSubmit.prop('disabled', true);
-                        } else {
-                            musyrifSelect.append('<option value="">-- Pilih Musyrif --</option>');
-
-                            // 3. Loop data dan masukkan ke dropdown
-                            res.data.forEach(m => {
-                                musyrifSelect.append(
-                                    `<option value="${m.id}">${m.nama}</option>`);
-                            });
-
-                            musyrifSelect.removeClass('is-invalid');
-                            btnSubmit.prop('disabled', false);
-                        }
-                    })
-                    .fail(function() {
-                        AppAlert.error('Gagal mengambil data Musyrif.');
-                    });
-            });
-
-            // ============================================================
-            // UPDATE HANDLER EDIT SANTRI
-            // ============================================================
+            // Trigger Edit Modal (Refactored to handle Async Dropdown)
             $(document).on('click', '.btn-edit', function() {
-                let d = $(this).data();
-                isEditMode = true; // Kunci fungsi auto-select
-
-                // Reset Form
+                const d = $(this).data();
                 $('#formSantri')[0].reset();
                 $('#modalSantriTitle').html('<i class="bi bi-pencil-square"></i> Edit Data Santri');
 
-                // Populate Fields Dasar
+                // Populate Static Fields
                 $('#santri_id').val(d.id);
                 $('#nama').val(d.nama);
                 $('#nis').val(d.nis);
                 $('#tanggal_lahir').val(d.tanggal_lahir);
                 $('#jenis_kelamin').val(d.jenis_kelamin);
-
-                // 1. Set Kelas terlebih dahulu agar dropdown Musyrif terisi sesuai kelas
                 $('#kelas_id').val(d.kelas_id);
-                $('#musyrif_id').val(d.musyrif_id);
 
-                // 2. Triger manual change agar dropdown Musyrif terisi
-                // Tapi kita butuh jeda agar AJAX getByKelas selesai dulu
-                $('#kelas_id').trigger('change');
+                // Populate Dynamic Dropdown (Musyrif)
+                const musyrifSelect = $('#musyrif_id');
+                musyrifSelect.html('<option value="">-- Memuat Musyrif... --</option>');
+
+                $.get("{{ route('santri.master.get_by_kelas', '') }}/" + d.kelas_id)
+                    .done(function(res) {
+                        musyrifSelect.empty().append('<option value="">-- Pilih Musyrif --</option>');
+                        if (res.data) {
+                            res.data.forEach(m => {
+                                musyrifSelect.append(
+                                    `<option value="${m.id}">${m.nama}</option>`);
+                            });
+                            // SET VALUE MUSYRIF setelah data dipastikan termuat
+                            musyrifSelect.val(d.musyrif_id);
+                        }
+                    });
+
                 modalSantri.show();
-
-                // 3. Beri sedikit delay untuk set nilai Musyrif-nya setelah dropdown terisi, agar tidak tertimpa oleh event change kelas
-                // Kembalikan ke mode normal setelah modal tampil sepenuhnya
-                setTimeout(() => {
-                    $('#musyrif_id').val(d.musyrif_id);
-                    isEditMode = false;
-                }, 500);
             });
 
-            // Assign User Modal
-            $(document).on('click', '.btn-user', function() {
-                let d = $(this).data();
-                $('#user_santri_id').val(d.id);
-                $('#user_name').val(d.user_name || d.nama);
-                $('#user_nomor').val(d.user_nomor || '');
-                $('#user_email').val(d.user_email || '');
-                $('#user_password').val('');
-                $('#formUserSantri').attr('action', d.route);
-                modalUser.show();
-            });
+            // Handle Kelas Change (Auto-populate Musyrif)
+            $('#kelas_id').on('change', function() {
+                const kelasId = $(this).val();
+                const musyrifSelect = $('#musyrif_id');
+                if (!kelasId) return musyrifSelect.html(
+                    '<option value="">-- Pilih Kelas Terlebih Dahulu --</option>');
 
-            $('#formUserSantri').on('submit', function(e) {
-                e.preventDefault();
-                $.ajax({
-                    url: $(this).attr('action'),
-                    type: 'PUT',
-                    data: $(this).serialize(),
-                    success: (res) => {
-                        modalUser.hide();
-                        table.ajax.reload(null, false);
-                        if (window.AppAlert) AppAlert.success(res.message);
-                    },
-                    error: (xhr) => {
-                        if (window.AppAlert) AppAlert.error(xhr.responseJSON?.message ||
-                            'Error');
+                musyrifSelect.html('<option value="">-- Memuat Musyrif... --</option>');
+                $.get("{{ route('santri.master.get_by_kelas', '') }}/" + kelasId).done(function(res) {
+                    musyrifSelect.empty();
+                    if (res.status === 'empty') {
+                        musyrifSelect.append('<option value="">-- Tidak ada Musyrif --</option>');
+                    } else {
+                        musyrifSelect.append('<option value="">-- Pilih Musyrif --</option>');
+                        res.data.forEach(m => musyrifSelect.append(
+                            `<option value="${m.id}">${m.nama}</option>`));
                     }
                 });
             });
 
-            // ============================================================
-            // 8) EKSESKUSI SIMPAN (CREATE & UPDATE SANTRI)
-            // ============================================================
             $('#formSantri').on('submit', function(e) {
                 e.preventDefault();
 
+                // 1. Ambil ID
                 const id = $('#santri_id').val();
-                // Jika ada ID berarti Update (PUT), jika kosong berarti Create (POST)
-                const url = id ? "{{ url('santri-master') }}/" + id : "{{ route('santri.master.store') }}";
-                const method = id ? "PUT" : "POST";
-
-                // Beri efek loading pada tombol simpan
                 const btnSubmit = $(this).find('button[type="submit"]');
-                const originalBtnText = btnSubmit.html();
+                const originalText = btnSubmit.html();
+
+                // 2. URL Dinamis
+                let url = id ? "{{ url('santri-master') }}/" + id : "{{ route('santri.master.store') }}";
+
+                // 3. Siapkan data form dalam bentuk Array (lebih aman dari .serialize() biasa)
+                let dataArray = $(this).serializeArray();
+
+                // BERSIHKAN jika ada _method yang nyangkut/terselip dari HTML
+                dataArray = dataArray.filter(item => item.name !== '_method');
+
+                // 4. Tambahkan Spoofing PUT secara manual JIKA HANYA ada ID (Edit Mode)
+                if (id && id !== "") {
+                    dataArray.push({
+                        name: "_method",
+                        value: "PUT"
+                    });
+                }
+
                 btnSubmit.prop('disabled', true).html(
-                    '<span class="spinner-border spinner-border-sm"></span> Menyimpan...');
+                    '<span class="spinner-border spinner-border-sm"></span>');
 
                 $.ajax({
                     url: url,
-                    type: method,
-                    data: $(this).serialize(), // Mengambil semua input form
+                    type: "POST", // Tetap POST
+                    data: $.param(dataArray), // Convert kembali jadi string aman
                     success: function(res) {
-                        modalSantri.hide(); // Tutup modal
-                        table.ajax.reload(null, false); // Reload datatable tanpa reset paging
-
-                        if (window.AppAlert) {
-                            AppAlert.success(res.message ?? 'Data santri berhasil diperbarui.');
-                        }
+                        modalSantri.hide();
+                        table.ajax.reload(null, false);
+                        if (window.AppAlert) AppAlert.success(res.message);
                     },
                     error: function(xhr) {
                         let msg = 'Gagal menyimpan data.';
-
-                        // Cek jika ada error validasi (Laravel error 422)
                         if (xhr.status === 422) {
-                            const errors = xhr.responseJSON.errors;
-                            msg = Object.values(errors).map(e => e[0]).join('\n');
-                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                            msg = xhr.responseJSON.message;
+                            msg = Object.values(xhr.responseJSON.errors).map(e => e[0]).join(
+                                '\n');
+                        } else if (xhr.status === 405) {
+                            msg =
+                                `Error 405: Sistem mencoba mengakses [${url}] dengan Method yang salah.`;
+                            console.error("405 Payload Data:", $.param(dataArray));
                         }
-
-                        if (window.AppAlert) {
-                            AppAlert.error(msg);
-                        }
+                        if (window.AppAlert) AppAlert.error(msg);
                     },
                     complete: function() {
-                        // Kembalikan tombol ke kondisi semula
-                        btnSubmit.prop('disabled', false).html(originalBtnText);
+                        btnSubmit.prop('disabled', false).html(originalText);
                     }
                 });
             });
 
-            // Delete Santri
+            // === 4. DETAIL & DELETE FUNCTIONS ===
+            $(document).on('click', '.btn-detail', function() {
+                const btn = $(this); // Gunakan $(this) langsung
+
+                // Ambil data menggunakan fungsi .data('nama-atribut') secara spesifik
+                const nama = btn.data('nama') || '-';
+                const nis = btn.data('nis') || '-';
+                const tglLahir = btn.data('tanggal_lahir') || '-';
+                const jk = btn.data('jenis_kelamin');
+                const kelas = btn.data('kelas') || '-';
+                const musyrif = btn.data('musyrif') || '-';
+
+                // Akun User (Perhatikan pemanggilan data attribute yang pakai strip)
+                const userName = btn.data('user-name');
+                const userNomor = btn.data('user-nomor');
+                const userEmail = btn.data('user-email') || '-';
+
+                // 1. Set Profil Utama
+                $('#detail_nama').text(nama);
+                $('#detail_nis').text(nis);
+                $('#detail_tanggal_lahir').text(tglLahir);
+                $('#detail_kelas').text(kelas);
+                $('#detail_musyrif').text(musyrif);
+
+                // 2. Format Jenis Kelamin
+                let jkText = '-';
+                if (jk === 'L') jkText = 'Laki-laki';
+                else if (jk === 'P') jkText = 'Perempuan';
+                $('#detail_jenis_kelamin').text(jkText);
+
+                // 3. Format Tampilan Akun User
+                let userDisplay = '-';
+                if (userName) {
+                    userDisplay = userName;
+                    if (userNomor) {
+                        userDisplay += ` (${userNomor})`; // Gabungkan nama dan nomor
+                    }
+                }
+                $('#detail_user').text(userDisplay);
+                $('#detail_email').text(userEmail);
+
+                // 4. Tampilkan Modal
+                modalDetail.show();
+            });
+
             $(document).on('click', '.btn-delete', function() {
                 const id = $(this).data('id');
-                if (!window.AppAlert) return;
-                AppAlert.warning('Data santri dan riwayatnya akan hilang!', 'Hapus Santri?')
+                AppAlert.warning('Data santri dan riwayatnya akan dihapus permanen!', 'Hapus Santri?')
                     .then(result => {
                         if (!result.isConfirmed) return;
                         $.ajax({
                             url: "{{ url('santri-master') }}/" + id,
-                            type: "DELETE",
+                            type: "POST",
                             data: {
-                                _token: "{{ csrf_token() }}"
+                                _token: "{{ csrf_token() }}",
+                                _method: "DELETE"
                             },
                             success: (res) => {
                                 table.ajax.reload();
@@ -728,9 +700,93 @@
                     });
             });
 
-            // ==============================
-            // LOGIK IMPORT EXCEL (Refactored UI)
-            // ==============================
+            // === 5. USER ACCOUNT FUNCTIONS ===
+            $(document).on('click', '.btn-user', function() {
+                const d = $(this).data();
+
+                // Set field values (Perhatikan format camelCase dari atribut data-user-* HTML)
+                $('#user_santri_id').val(d.id);
+                $('#user_name').val(d.userName || d.nama); // Fallback ke nama santri jika belum punya akun
+                $('#user_nomor').val(d.userNomor || '');
+                $('#user_email').val(d.userEmail || '');
+                $('#user_password').val('');
+
+                // --- LOGIKA UI CERDAS (CREATE vs UPDATE) ---
+                const isUpdate = !!d.userId; // Jika d.userId ada isinya, berarti Update
+                const btnSubmit = $('#formUserSantri').find('button[type="submit"]');
+                const passwordLabel = $('#user_password').closest('.mb-0').find('.text-muted');
+
+                if (isUpdate) {
+                    // Mode UPDATE
+                    btnSubmit.html('Update Akun Santri');
+                    $('#user_password').removeAttr('required'); // Password opsional saat update
+                    passwordLabel.html('(kosongkan jika tidak ganti)');
+                } else {
+                    // Mode CREATE
+                    btnSubmit.html('Buat Akun Santri');
+                    $('#user_password').attr('required', true); // Password wajib saat bikin akun baru
+                    passwordLabel.html('(wajib diisi untuk akun baru)');
+                }
+                // ------------------------------------------
+
+                // Set URL action secara manual di state/variabel
+                const updateUrl = "{{ url('santri-master') }}/" + d.id + "/assign-user";
+                $('#formUserSantri').data('action-url', updateUrl);
+
+                modalUser.show();
+            });
+
+            // Submit Form (Tetap sama seperti milik Anda)
+            $('#formUserSantri').on('submit', function(e) {
+                e.preventDefault();
+
+                const btnSubmit = $(this).find('button[type="submit"]');
+                const originalText = btnSubmit.html();
+                const targetUrl = $(this).data('action-url');
+
+                if (!targetUrl) {
+                    return AppAlert.error("Error sistem: URL Update User tidak ditemukan.");
+                }
+
+                btnSubmit.prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm"></span> Menyimpan...');
+
+                let formData = $(this).serialize();
+                formData += "&_method=PUT";
+
+                $.ajax({
+                    url: targetUrl,
+                    type: 'POST',
+                    data: formData,
+                    success: (res) => {
+                        modalUser.hide();
+                        table.ajax.reload(null, false);
+                        if (window.AppAlert) AppAlert.success(res.message);
+                    },
+                    error: (xhr) => {
+                        let msg = 'Gagal update akun.';
+                        if (xhr.status === 422) {
+                            msg = Object.values(xhr.responseJSON.errors).map(e => e[0]).join(
+                                '\n');
+                        } else if (xhr.status === 405) {
+                            msg = "Method 405: URL tidak sesuai dengan Route PUT.";
+                        }
+                        if (window.AppAlert) AppAlert.error(msg);
+                    },
+                    complete: function() {
+                        btnSubmit.prop('disabled', false).html(originalText);
+                    }
+                });
+            });
+
+            $('#togglePassword').on('click', function() {
+                const input = $('#user_password');
+                const type = input.attr('type') === 'password' ? 'text' : 'password';
+                input.attr('type', type);
+                $(this).find('i').toggleClass('bi-eye bi-eye-slash');
+            });
+
+            // === 6. IMPORT EXCEL FUNCTIONS ===
             $('#btnImportSantri').on('click', () => modalImport.show());
 
             $('#formImportUpload').on('submit', function(e) {
@@ -777,15 +833,9 @@
                 $(`.kelas-select[data-index="${idx}"]`).prop('disabled', !$(this).is(':checked'));
             });
 
-            // ============================================================
-            // 6) PREVIEW IMPORT (JS UNTUK ISI #importPreviewBody)
-            // ============================================================
             $('#btnPreviewImport').on('click', function() {
-                const filePath = $('#import_file_path').val();
                 const selections = {};
                 let hasSelection = false;
-
-                // Kumpulkan sheet yang dicentang + kelas yang dipilih
                 $('.sheet-check:checked').each(function() {
                     const idx = $(this).data('index');
                     const kelasId = $(`.kelas-select[data-index="${idx}"]`).val();
@@ -797,59 +847,36 @@
                     }
                 });
 
-                if (!hasSelection) {
-                    return AppAlert?.error('Pilih minimal satu sheet dan tentukan kelasnya!');
-                }
+                if (!hasSelection) return AppAlert?.error('Pilih sheet dan kelasnya!');
 
-                // Tampilkan loading kecil di tombol biar user tahu sistem kerja
                 const btn = $(this);
                 const originalText = btn.html();
-                btn.html('<span class="spinner-border spinner-border-sm"></span> Loading...').prop(
-                    'disabled', true);
+                btn.html('<span class="spinner-border spinner-border-sm"></span>').prop('disabled', true);
 
                 $.ajax({
                     url: "{{ route('santri.master.import.preview') }}",
                     type: "POST",
                     data: {
                         _token: "{{ csrf_token() }}",
-                        file_path: filePath,
+                        file_path: $('#import_file_path').val(),
                         selections: selections
                     },
                     success: function(res) {
-                        // Tampilkan error jika ada validasi dari Excel (misal kolom nama kosong)
-                        if (res.errors && res.errors.length > 0) {
-                            $('#importErrorBox').removeClass('d-none').html(
-                                '<strong>Peringatan:</strong><br><ul>' +
-                                res.errors.map(e => `<li>${e}</li>`).join('') +
-                                '</ul>'
-                            );
+                        if (res.errors?.length > 0) {
+                            $('#importErrorBox').removeClass('d-none').html('<ul>' + res.errors
+                                .map(e => `<li>${e}</li>`).join('') + '</ul>');
                         } else {
                             $('#importErrorBox').addClass('d-none');
                         }
-
-                        // ISI TABEL PREVIEW
                         const pb = $('#importPreviewBody').html('');
                         (res.preview || []).forEach(row => {
-                            pb.append(`
-                    <tr>
-                        <td class="small">${row.sheet}</td>
-                        <td class="small fw-bold text-primary">${row.kelas_nama ?? 'ID:'+row.kelas_id}</td>
-                        <td>${row.nama || '-'}</td>
-                        <td class="text-muted small">${row.nis || '-'}</td>
-                        <td><span class="badge bg-light text-dark">${row.jenis_kelamin || '-'}</span></td>
-                    </tr>
-                `);
+                            pb.append(
+                                `<tr><td class="small">${row.sheet}</td><td class="small fw-bold text-primary">${row.kelas_nama ?? 'ID:'+row.kelas_id}</td><td>${row.nama || '-'}</td><td class="text-muted small">${row.nis || '-'}</td><td><span class="badge bg-light text-dark">${row.jenis_kelamin || '-'}</span></td></tr>`
+                            );
                         });
-
-                        if (window.AppAlert) AppAlert.success('Preview berhasil dimuat!');
+                        AppAlert.success('Preview dimuat!');
                     },
-                    error: function(xhr) {
-                        if (window.AppAlert) AppAlert.error(xhr.responseJSON?.message ||
-                            'Gagal memuat preview.');
-                    },
-                    complete: function() {
-                        btn.html(originalText).prop('disabled', false);
-                    }
+                    complete: () => btn.html(originalText).prop('disabled', false)
                 });
             });
 

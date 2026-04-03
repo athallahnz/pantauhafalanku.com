@@ -241,7 +241,7 @@ class SantriController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'nomor' => 'required|string|max:20|unique:users,nomor,' . ($santri->user_id ?? 'NULL'),
+            'nomor' => 'nullable|string|max:20|unique:users,nomor,' . ($santri->user_id ?? 'NULL'),
             'email' => 'nullable|email|unique:users,email,' . ($santri->user_id ?? 'NULL'),
             'password' => $isUpdate ? 'nullable|string|min:6' : 'required|string|min:6',
         ]);

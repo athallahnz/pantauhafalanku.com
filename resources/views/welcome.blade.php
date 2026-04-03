@@ -1,59 +1,84 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="id" data-coreui-theme="light">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sistem Informasi Pantau Hafalanku | Solusi Manajemen Pesantren</title>
 
-    <title>Laravel</title>
+    {{-- Fonts: Plus Jakarta Sans --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,600&display=swap" rel="stylesheet" />
+    {{-- Icons & Libraries --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
-    <!-- Scripts -->
-    @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    {{-- Mencegah Flash Theme --}}
+    <script>
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-coreui-theme', savedTheme);
+    </script>
 
-    <!-- Styles -->
     <style>
-        /* ! tailwindcss v3.2.4 | MIT License | https://tailwindcss.com */
-        *,
-        ::after,
-        ::before {
-            box-sizing: border-box;
-            border-width: 0;
-            border-style: solid;
-            border-color: #e5e7eb
+        /* ============================================================
+           1. COLOR SYSTEM & VARIABLES (LIGHT & DARK)
+        ============================================================ */
+        :root {
+            --islamic-purple-400: #917aff;
+            --islamic-purple-500: #6b4eff;
+            --islamic-purple-600: #5640a5;
+            --islamic-purple-700: #40307a;
+            --islamic-purple-900: #1b143a;
+            --islamic-tosca-400: #39c1cc;
+            --islamic-tosca-500: #13a3b3;
+
+            --bg-main: #f8fafc;
+            --bg-section: #ffffff;
+            --bg-section-alt: #f1f5f9;
+            --text-heading: #0f172a;
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --card-bg: #ffffff;
+            --border-color: rgba(0, 0, 0, 0.06);
+            --nav-bg: rgba(255, 255, 255, 0.85);
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            --shadow-glow: 0 20px 40px -10px rgba(86, 64, 165, 0.2);
         }
 
-        ::after,
-        ::before {
-            --tw-content: ''
+        [data-coreui-theme="dark"] {
+            --bg-main: #0f172a;
+            --bg-section: #16202c;
+            --bg-section-alt: #0f172a;
+            --text-heading: #ffffff;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --card-bg: #1e293b;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --nav-bg: rgba(15, 23, 42, 0.95);
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            --shadow-glow: 0 20px 40px -10px rgba(86, 64, 165, 0.4);
+        }
+
+        /* ============================================================
+           2. GLOBAL STYLES & TYPOGRAPHY
+        ============================================================ */
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            overflow-x: hidden;
+            transition: background-color 0.4s ease, color 0.4s ease;
         }
 
         html {
-            line-height: 1.5;
-            -webkit-text-size-adjust: 100%;
-            -moz-tab-size: 4;
-            tab-size: 4;
-            font-family: Figtree, sans-serif;
-            font-feature-settings: normal
-        }
-
-        body {
-            margin: 0;
-            line-height: inherit
-        }
-
-        hr {
-            height: 0;
-            color: inherit;
-            border-top-width: 1px
-        }
-
-        abbr:where([title]) {
-            -webkit-text-decoration: underline dotted;
-            text-decoration: underline dotted
+            scroll-behavior: smooth;
         }
 
         h1,
@@ -62,949 +87,1440 @@
         h4,
         h5,
         h6 {
-            font-size: inherit;
-            font-weight: inherit
+            color: var(--text-heading);
+            font-weight: 700;
+            letter-spacing: -0.02em;
         }
 
-        a {
-            color: inherit;
-            text-decoration: inherit
+        .text-muted {
+            color: var(--text-muted) !important;
         }
 
-        b,
-        strong {
-            font-weight: bolder
-        }
-
-        code,
-        kbd,
-        pre,
-        samp {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: 1em
-        }
-
-        small {
-            font-size: 80%
-        }
-
-        sub,
-        sup {
-            font-size: 75%;
-            line-height: 0;
-            position: relative;
-            vertical-align: baseline
-        }
-
-        sub {
-            bottom: -.25em
-        }
-
-        sup {
-            top: -.5em
-        }
-
-        table {
-            text-indent: 0;
-            border-color: inherit;
-            border-collapse: collapse
-        }
-
-        button,
-        input,
-        optgroup,
-        select,
-        textarea {
-            font-family: inherit;
-            font-size: 100%;
-            font-weight: inherit;
-            line-height: inherit;
-            color: inherit;
-            margin: 0;
-            padding: 0
-        }
-
-        button,
-        select {
-            text-transform: none
-        }
-
-        [type=button],
-        [type=reset],
-        [type=submit],
-        button {
-            -webkit-appearance: button;
-            background-color: transparent;
-            background-image: none
-        }
-
-        :-moz-focusring {
-            outline: auto
-        }
-
-        :-moz-ui-invalid {
-            box-shadow: none
-        }
-
-        progress {
-            vertical-align: baseline
-        }
-
-        ::-webkit-inner-spin-button,
-        ::-webkit-outer-spin-button {
-            height: auto
-        }
-
-        [type=search] {
-            -webkit-appearance: textfield;
-            outline-offset: -2px
-        }
-
-        ::-webkit-search-decoration {
-            -webkit-appearance: none
-        }
-
-        ::-webkit-file-upload-button {
-            -webkit-appearance: button;
-            font: inherit
-        }
-
-        summary {
-            display: list-item
-        }
-
-        blockquote,
-        dd,
-        dl,
-        figure,
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6,
-        hr,
-        p,
-        pre {
-            margin: 0
-        }
-
-        fieldset {
-            margin: 0;
-            padding: 0
-        }
-
-        legend {
-            padding: 0
-        }
-
-        menu,
-        ol,
-        ul {
-            list-style: none;
-            margin: 0;
-            padding: 0
-        }
-
-        textarea {
-            resize: vertical
-        }
-
-        input::placeholder,
-        textarea::placeholder {
-            opacity: 1;
-            color: #9ca3af
-        }
-
-        [role=button],
-        button {
-            cursor: pointer
-        }
-
-        :disabled {
-            cursor: default
-        }
-
-        audio,
-        canvas,
-        embed,
-        iframe,
-        img,
-        object,
-        svg,
-        video {
-            display: block;
-            vertical-align: middle
-        }
-
-        img,
-        video {
-            max-width: 100%;
-            height: auto
-        }
-
-        [hidden] {
-            display: none
-        }
-
-        *,
-        ::before,
-        ::after {
-            --tw-border-spacing-x: 0;
-            --tw-border-spacing-y: 0;
-            --tw-translate-x: 0;
-            --tw-translate-y: 0;
-            --tw-rotate: 0;
-            --tw-skew-x: 0;
-            --tw-skew-y: 0;
-            --tw-scale-x: 1;
-            --tw-scale-y: 1;
-            --tw-pan-x: ;
-            --tw-pan-y: ;
-            --tw-pinch-zoom: ;
-            --tw-scroll-snap-strictness: proximity;
-            --tw-ordinal: ;
-            --tw-slashed-zero: ;
-            --tw-numeric-figure: ;
-            --tw-numeric-spacing: ;
-            --tw-numeric-fraction: ;
-            --tw-ring-inset: ;
-            --tw-ring-offset-width: 0px;
-            --tw-ring-offset-color: #fff;
-            --tw-ring-color: rgb(59 130 246 / 0.5);
-            --tw-ring-offset-shadow: 0 0 #0000;
-            --tw-ring-shadow: 0 0 #0000;
-            --tw-shadow: 0 0 #0000;
-            --tw-shadow-colored: 0 0 #0000;
-            --tw-blur: ;
-            --tw-brightness: ;
-            --tw-contrast: ;
-            --tw-grayscale: ;
-            --tw-hue-rotate: ;
-            --tw-invert: ;
-            --tw-saturate: ;
-            --tw-sepia: ;
-            --tw-drop-shadow: ;
-            --tw-backdrop-blur: ;
-            --tw-backdrop-brightness: ;
-            --tw-backdrop-contrast: ;
-            --tw-backdrop-grayscale: ;
-            --tw-backdrop-hue-rotate: ;
-            --tw-backdrop-invert: ;
-            --tw-backdrop-opacity: ;
-            --tw-backdrop-saturate: ;
-            --tw-backdrop-sepia:
-        }
-
-        ::-webkit-backdrop {
-            --tw-border-spacing-x: 0;
-            --tw-border-spacing-y: 0;
-            --tw-translate-x: 0;
-            --tw-translate-y: 0;
-            --tw-rotate: 0;
-            --tw-skew-x: 0;
-            --tw-skew-y: 0;
-            --tw-scale-x: 1;
-            --tw-scale-y: 1;
-            --tw-pan-x: ;
-            --tw-pan-y: ;
-            --tw-pinch-zoom: ;
-            --tw-scroll-snap-strictness: proximity;
-            --tw-ordinal: ;
-            --tw-slashed-zero: ;
-            --tw-numeric-figure: ;
-            --tw-numeric-spacing: ;
-            --tw-numeric-fraction: ;
-            --tw-ring-inset: ;
-            --tw-ring-offset-width: 0px;
-            --tw-ring-offset-color: #fff;
-            --tw-ring-color: rgb(59 130 246 / 0.5);
-            --tw-ring-offset-shadow: 0 0 #0000;
-            --tw-ring-shadow: 0 0 #0000;
-            --tw-shadow: 0 0 #0000;
-            --tw-shadow-colored: 0 0 #0000;
-            --tw-blur: ;
-            --tw-brightness: ;
-            --tw-contrast: ;
-            --tw-grayscale: ;
-            --tw-hue-rotate: ;
-            --tw-invert: ;
-            --tw-saturate: ;
-            --tw-sepia: ;
-            --tw-drop-shadow: ;
-            --tw-backdrop-blur: ;
-            --tw-backdrop-brightness: ;
-            --tw-backdrop-contrast: ;
-            --tw-backdrop-grayscale: ;
-            --tw-backdrop-hue-rotate: ;
-            --tw-backdrop-invert: ;
-            --tw-backdrop-opacity: ;
-            --tw-backdrop-saturate: ;
-            --tw-backdrop-sepia:
-        }
-
-        ::backdrop {
-            --tw-border-spacing-x: 0;
-            --tw-border-spacing-y: 0;
-            --tw-translate-x: 0;
-            --tw-translate-y: 0;
-            --tw-rotate: 0;
-            --tw-skew-x: 0;
-            --tw-skew-y: 0;
-            --tw-scale-x: 1;
-            --tw-scale-y: 1;
-            --tw-pan-x: ;
-            --tw-pan-y: ;
-            --tw-pinch-zoom: ;
-            --tw-scroll-snap-strictness: proximity;
-            --tw-ordinal: ;
-            --tw-slashed-zero: ;
-            --tw-numeric-figure: ;
-            --tw-numeric-spacing: ;
-            --tw-numeric-fraction: ;
-            --tw-ring-inset: ;
-            --tw-ring-offset-width: 0px;
-            --tw-ring-offset-color: #fff;
-            --tw-ring-color: rgb(59 130 246 / 0.5);
-            --tw-ring-offset-shadow: 0 0 #0000;
-            --tw-ring-shadow: 0 0 #0000;
-            --tw-shadow: 0 0 #0000;
-            --tw-shadow-colored: 0 0 #0000;
-            --tw-blur: ;
-            --tw-brightness: ;
-            --tw-contrast: ;
-            --tw-grayscale: ;
-            --tw-hue-rotate: ;
-            --tw-invert: ;
-            --tw-saturate: ;
-            --tw-sepia: ;
-            --tw-drop-shadow: ;
-            --tw-backdrop-blur: ;
-            --tw-backdrop-brightness: ;
-            --tw-backdrop-contrast: ;
-            --tw-backdrop-grayscale: ;
-            --tw-backdrop-hue-rotate: ;
-            --tw-backdrop-invert: ;
-            --tw-backdrop-opacity: ;
-            --tw-backdrop-saturate: ;
-            --tw-backdrop-sepia:
-        }
-
-        .relative {
-            position: relative
-        }
-
-        .mx-auto {
-            margin-left: auto;
-            margin-right: auto
-        }
-
-        .mx-6 {
-            margin-left: 1.5rem;
-            margin-right: 1.5rem
-        }
-
-        .ml-4 {
-            margin-left: 1rem
-        }
-
-        .mt-16 {
-            margin-top: 4rem
-        }
-
-        .mt-6 {
-            margin-top: 1.5rem
-        }
-
-        .mt-4 {
-            margin-top: 1rem
-        }
-
-        .-mt-px {
-            margin-top: -1px
-        }
-
-        .mr-1 {
-            margin-right: 0.25rem
-        }
-
-        .flex {
-            display: flex
-        }
-
-        .inline-flex {
-            display: inline-flex
-        }
-
-        .grid {
-            display: grid
-        }
-
-        .h-16 {
-            height: 4rem
-        }
-
-        .h-7 {
-            height: 1.75rem
-        }
-
-        .h-6 {
-            height: 1.5rem
-        }
-
-        .h-5 {
-            height: 1.25rem
-        }
-
-        .min-h-screen {
-            min-height: 100vh
-        }
-
-        .w-auto {
-            width: auto
-        }
-
-        .w-16 {
-            width: 4rem
-        }
-
-        .w-7 {
-            width: 1.75rem
-        }
-
-        .w-6 {
-            width: 1.5rem
-        }
-
-        .w-5 {
-            width: 1.25rem
-        }
-
-        .max-w-7xl {
-            max-width: 80rem
-        }
-
-        .shrink-0 {
-            flex-shrink: 0
-        }
-
-        .scale-100 {
-            --tw-scale-x: 1;
-            --tw-scale-y: 1;
-            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
-        }
-
-        .grid-cols-1 {
-            grid-template-columns: repeat(1, minmax(0, 1fr))
-        }
-
-        .items-center {
-            align-items: center
-        }
-
-        .justify-center {
-            justify-content: center
-        }
-
-        .gap-6 {
-            gap: 1.5rem
-        }
-
-        .gap-4 {
-            gap: 1rem
-        }
-
-        .self-center {
-            align-self: center
-        }
-
-        .rounded-lg {
-            border-radius: 0.5rem
-        }
-
-        .rounded-full {
-            border-radius: 9999px
-        }
-
-        .bg-gray-100 {
-            --tw-bg-opacity: 1;
-            background-color: rgb(243 244 246 / var(--tw-bg-opacity))
-        }
-
+        .bg-light,
         .bg-white {
-            --tw-bg-opacity: 1;
-            background-color: rgb(255 255 255 / var(--tw-bg-opacity))
+            background-color: var(--bg-section) !important;
         }
 
-        .bg-red-50 {
-            --tw-bg-opacity: 1;
-            background-color: rgb(254 242 242 / var(--tw-bg-opacity))
+        .bg-alt {
+            background-color: var(--bg-section-alt) !important;
         }
 
-        .bg-dots-darker {
-            background-image: url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z' fill='rgba(0,0,0,0.07)'/%3E%3C/svg%3E")
+        .text-gradient {
+            background: linear-gradient(135deg, var(--islamic-purple-500), var(--islamic-tosca-400));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
         }
 
-        .from-gray-700\/50 {
-            --tw-gradient-from: rgb(55 65 81 / 0.5);
-            --tw-gradient-to: rgb(55 65 81 / 0);
-            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to)
+        .section-label {
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--islamic-purple-600);
+            display: block;
+            margin-bottom: 0.5rem;
         }
 
-        .via-transparent {
-            --tw-gradient-to: rgb(0 0 0 / 0);
-            --tw-gradient-stops: var(--tw-gradient-from), transparent, var(--tw-gradient-to)
+        [data-coreui-theme="dark"] .section-label {
+            color: var(--islamic-tosca-400);
         }
 
-        .bg-center {
-            background-position: center
+        /* ============================================================
+        3. NAVIGATION (SOLID & SEAMLESS)
+        ============================================================ */
+        .navbar-glass {
+            background: transparent;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding-top: 1.2rem;
+            padding-bottom: 1.2rem;
         }
 
-        .stroke-red-500 {
-            stroke: #ef4444
+        .navbar-brand span,
+        .nav-link {
+            color: var(--text-heading) !important;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
 
-        .stroke-gray-400 {
-            stroke: #9ca3af
+        .navbar-glass.scrolled,
+        .navbar-glass:has(.navbar-collapse.show) {
+            background: var(--nav-bg) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding-top: 0.8rem;
+            padding-bottom: 0.8rem;
+            box-shadow: var(--shadow-sm);
         }
 
-        .p-6 {
-            padding: 1.5rem
+        .navbar-glass.scrolled .nav-link,
+        .navbar-glass.scrolled .navbar-brand span,
+        .navbar-glass:has(.navbar-collapse.show) .nav-link,
+        .navbar-glass:has(.navbar-collapse.show) .navbar-brand span {
+            color: var(--islamic-purple-700) !important;
+            text-shadow: none !important;
         }
 
-        .px-6 {
-            padding-left: 1.5rem;
-            padding-right: 1.5rem
+        [data-coreui-theme="dark"] .navbar-glass.scrolled .nav-link,
+        [data-coreui-theme="dark"] .navbar-glass.scrolled .navbar-brand span,
+        [data-coreui-theme="dark"] .navbar-glass:has(.navbar-collapse.show) .nav-link,
+        [data-coreui-theme="dark"] .navbar-glass:has(.navbar-collapse.show) .navbar-brand span {
+            color: #ffffff !important;
         }
 
-        .text-center {
-            text-align: center
+        .nav-link:hover {
+            color: var(--islamic-purple-700) !important;
+            transform: translateY(-1px);
         }
 
-        .text-right {
-            text-align: right
+        [data-coreui-theme="dark"] .nav-link:hover {
+            color: var(--islamic-tosca-400) !important;
         }
 
-        .text-xl {
-            font-size: 1.25rem;
-            line-height: 1.75rem
+        /* Apple-style Toggle Switch */
+        .apple-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
         }
 
-        .text-sm {
-            font-size: 0.875rem;
-            line-height: 1.25rem
+        .apple-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
 
-        .font-semibold {
-            font-weight: 600
+        .apple-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e5e5ea;
+            transition: .4s;
+            border-radius: 34px;
         }
 
-        .leading-relaxed {
-            line-height: 1.625
+        .apple-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        .text-gray-600 {
-            --tw-text-opacity: 1;
-            color: rgb(75 85 99 / var(--tw-text-opacity))
+        input:checked+.apple-slider {
+            background-color: var(--islamic-purple-600, #34c759);
         }
 
-        .text-gray-900 {
-            --tw-text-opacity: 1;
-            color: rgb(17 24 39 / var(--tw-text-opacity))
+        input:focus+.apple-slider {
+            box-shadow: 0 0 1px var(--islamic-purple-600, #34c759);
         }
 
-        .text-gray-500 {
-            --tw-text-opacity: 1;
-            color: rgb(107 114 128 / var(--tw-text-opacity))
+        input:checked+.apple-slider:before {
+            transform: translateX(22px);
         }
 
-        .underline {
-            -webkit-text-decoration-line: underline;
-            text-decoration-line: underline
+        /* Style dasar untuk tombol outline purple */
+        .btn-outline-purple {
+            border: 2px solid var(--islamic-purple-500);
+            color: var(--islamic-purple-600);
+            background-color: transparent;
+            transition: all 0.3s ease;
         }
 
-        .antialiased {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale
+        /* Efek saat kursor diarahkan (hover) */
+        .btn-outline-purple:hover {
+            background-color: var(--islamic-purple-600);
+            transform: translateY(-1px);
+            color: #ffffff !important;
         }
 
-        .shadow-2xl {
-            --tw-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-            --tw-shadow-colored: 0 25px 50px -12px var(--tw-shadow-color);
-            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+        /* Penyesuaian saat mode gelap (Dark Mode) aktif */
+        [data-coreui-theme="dark"] .btn-outline-purple {
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
         }
 
-        .shadow-gray-500\/20 {
-            --tw-shadow-color: rgb(107 114 128 / 0.2);
-            --tw-shadow: var(--tw-shadow-colored)
+        [data-coreui-theme="dark"] .btn-outline-purple:hover {
+            background-color: var(--islamic-tosca-400);
+            border-color: var(--islamic-tosca-400);
+            color: #0f172a !important;
         }
 
-        .transition-all {
-            transition-property: all;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 150ms
-        }
+        @media (max-width: 991.98px) {
+            .navbar-collapse {
+                background: rgba(255, 255, 255, 0.98);
+                margin-top: 15px;
+                padding: 20px;
+                border-radius: 20px;
+                box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+                border: 1px solid rgba(0, 0, 0, 0.05);
+            }
 
-        .selection\:bg-red-500 *::selection {
-            --tw-bg-opacity: 1;
-            background-color: rgb(239 68 68 / var(--tw-bg-opacity))
-        }
+            [data-coreui-theme="dark"] .navbar-collapse {
+                background: rgba(15, 23, 42, 0.98);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
 
-        .selection\:text-white *::selection {
-            --tw-text-opacity: 1;
-            color: rgb(255 255 255 / var(--tw-text-opacity))
-        }
+            .nav-link {
+                text-align: left !important;
+                padding: 12px 0 !important;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+                width: 100%;
+                text-shadow: none !important;
+            }
 
-        .selection\:bg-red-500::selection {
-            --tw-bg-opacity: 1;
-            background-color: rgb(239 68 68 / var(--tw-bg-opacity))
-        }
-
-        .selection\:text-white::selection {
-            --tw-text-opacity: 1;
-            color: rgb(255 255 255 / var(--tw-text-opacity))
-        }
-
-        .hover\:text-gray-900:hover {
-            --tw-text-opacity: 1;
-            color: rgb(17 24 39 / var(--tw-text-opacity))
-        }
-
-        .hover\:text-gray-700:hover {
-            --tw-text-opacity: 1;
-            color: rgb(55 65 81 / var(--tw-text-opacity))
-        }
-
-        .focus\:rounded-sm:focus {
-            border-radius: 0.125rem
-        }
-
-        .focus\:outline:focus {
-            outline-style: solid
-        }
-
-        .focus\:outline-2:focus {
-            outline-width: 2px
-        }
-
-        .focus\:outline-red-500:focus {
-            outline-color: #ef4444
-        }
-
-        .group:hover .group-hover\:stroke-gray-600 {
-            stroke: #4b5563
-        }
-
-        .z-10 {
-            z-index: 10
-        }
-
-        @media (prefers-reduced-motion: no-preference) {
-            .motion-safe\:hover\:scale-\[1\.01\]:hover {
-                --tw-scale-x: 1.01;
-                --tw-scale-y: 1.01;
-                transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
+            [data-coreui-theme="dark"] .nav-link {
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             }
         }
 
-        @media (prefers-color-scheme: dark) {
-            .dark\:bg-gray-900 {
-                --tw-bg-opacity: 1;
-                background-color: rgb(17 24 39 / var(--tw-bg-opacity))
+        @media (min-width: 992px) {
+            .navbar-nav {
+                gap: 0.5rem;
             }
 
-            .dark\:bg-gray-800\/50 {
-                background-color: rgb(31 41 55 / 0.5)
-            }
-
-            .dark\:bg-red-800\/20 {
-                background-color: rgb(153 27 27 / 0.2)
-            }
-
-            .dark\:bg-dots-lighter {
-                background-image: url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z' fill='rgba(255,255,255,0.07)'/%3E%3C/svg%3E")
-            }
-
-            .dark\:bg-gradient-to-bl {
-                background-image: linear-gradient(to bottom left, var(--tw-gradient-stops))
-            }
-
-            .dark\:stroke-gray-600 {
-                stroke: #4b5563
-            }
-
-            .dark\:text-gray-400 {
-                --tw-text-opacity: 1;
-                color: rgb(156 163 175 / var(--tw-text-opacity))
-            }
-
-            .dark\:text-white {
-                --tw-text-opacity: 1;
-                color: rgb(255 255 255 / var(--tw-text-opacity))
-            }
-
-            .dark\:shadow-none {
-                --tw-shadow: 0 0 #0000;
-                --tw-shadow-colored: 0 0 #0000;
-                box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
-            }
-
-            .dark\:ring-1 {
-                --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-                --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-                box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)
-            }
-
-            .dark\:ring-inset {
-                --tw-ring-inset: inset
-            }
-
-            .dark\:ring-white\/5 {
-                --tw-ring-color: rgb(255 255 255 / 0.05)
-            }
-
-            .dark\:hover\:text-white:hover {
-                --tw-text-opacity: 1;
-                color: rgb(255 255 255 / var(--tw-text-opacity))
-            }
-
-            .group:hover .dark\:group-hover\:stroke-gray-400 {
-                stroke: #9ca3af
+            .navbar-nav .nav-link {
+                padding-left: 1.25rem !important;
+                padding-right: 1.25rem !important;
             }
         }
 
-        @media (min-width: 640px) {
-            .sm\:fixed {
-                position: fixed
-            }
+        /* ============================================================
+           4. HERO SECTION & AURORA BACKGROUND
+        ============================================================ */
+        .hero-section {
+            position: relative;
+            padding: 180px 0 100px;
+            min-height: 95vh;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
 
-            .sm\:top-0 {
-                top: 0px
-            }
+        .btn-hero-outline {
+            color: var(--text-heading);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
 
-            .sm\:right-0 {
-                right: 0px
-            }
+        [data-coreui-theme="dark"] .btn-hero-outline {
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
 
-            .sm\:ml-0 {
-                margin-left: 0px
-            }
+        #aurora-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: #ffffff;
+            transition: background 0.5s ease;
+        }
 
-            .sm\:flex {
-                display: flex
-            }
+        [data-coreui-theme="dark"] #aurora-bg {
+            background: #080514;
+        }
 
-            .sm\:items-center {
-                align-items: center
-            }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
 
-            .sm\:justify-center {
-                justify-content: center
-            }
+        .hero-title {
+            font-size: clamp(2.8rem, 5.5vw, 4.5rem);
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+            color: var(--text-heading);
+            transition: color 0.3s ease;
+        }
 
-            .sm\:justify-between {
-                justify-content: space-between
-            }
+        [data-coreui-theme="dark"] .hero-title {
+            color: #ffffff;
+            text-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
 
-            .sm\:text-left {
-                text-align: left
-            }
+        .hero-subtitle {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            max-width: 90%;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
 
-            .sm\:text-right {
-                text-align: right
+        [data-coreui-theme="dark"] .hero-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .hero-badge {
+            background: #ffffff;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(107, 78, 255, 0.2);
+            color: var(--islamic-purple-700);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        [data-coreui-theme="dark"] .hero-badge {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        /* ============================================================
+        GLOBAL CARD VARIABLES & GLASSMORPHISM
+        ============================================================ */
+        :root {
+            --card-width: 350px;
+            --card-height: 480px;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(0, 0, 0, 0.05);
+            --glass-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+            --text-main: var(--text-heading);
+        }
+
+        [data-coreui-theme="dark"] {
+            --glass-bg: rgba(15, 23, 42, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.4);
+            --text-main: #ffffff;
+        }
+
+        .glass-pane,
+        .card-swap-container .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            box-shadow: var(--glass-shadow);
+            color: var(--text-main);
+            padding: 2.5rem 2rem;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* ============================================================
+        SWIPER 3D CARDS (Optimized)
+        ============================================================ */
+        .swiper-cards-container {
+            width: 100%;
+            max-width: 350px;
+            height: 480px;
+            margin: 0 auto;
+            padding: 20px 0;
+            overflow: visible !important;
+        }
+
+        .swiper-cards-container .swiper-slide {
+            transform-origin: center center !important;
+            will-change: transform, opacity;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: transform 0.6s ease, opacity 0.4s ease;
+        }
+
+        .glass-pane {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            box-shadow: var(--glass-shadow);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 2.5rem 2rem;
+        }
+
+        .card-swap-container {
+            position: relative;
+            perspective: 1200px;
+            width: var(--card-width);
+            height: var(--card-height);
+            margin: 0 auto;
+        }
+
+        .card-swap-container .card {
+            position: absolute;
+            inset: 0;
+            transform-style: preserve-3d;
+            backface-visibility: hidden;
+        }
+
+        @media (max-width: 768px) {
+
+            .card-swap-container,
+            .swiper-cards-container {
+                transform: scale(0.85);
             }
         }
 
-        @media (min-width: 768px) {
-            .md\:grid-cols-2 {
-                grid-template-columns: repeat(2, minmax(0, 1fr))
+        /* ============================================================
+        6. FLOATING STATS SECTION
+        ============================================================ */
+        .stats-wrapper {
+            position: relative;
+            z-index: 10;
+            margin-top: -80px;
+            background: linear-gradient(135deg, var(--islamic-purple-600) 0%, var(--islamic-purple-900) 100%);
+            border-radius: 30px;
+            padding: 3.5rem 2rem;
+            color: white;
+            box-shadow: 0 30px 60px -12px rgba(86, 64, 165, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stats-wrapper:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 40px 70px -10px rgba(86, 64, 165, 0.55);
+        }
+
+        [data-coreui-theme="dark"] .stats-wrapper {
+            background: linear-gradient(135deg, #4c1d95 0%, #1e1b4b 100%);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .stats-number {
+            font-size: clamp(2.5rem, 4.5vw, 3.8rem);
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to bottom, #ffffff 30%, #c4b5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .stats-label {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #ffffff;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .stats-desc {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 400;
+        }
+
+        @media (min-width: 992px) {
+            .stats-divider {
+                position: relative;
+            }
+
+            .stats-divider::after {
+                content: "";
+                position: absolute;
+                right: 0;
+                top: 20%;
+                height: 60%;
+                width: 1px;
+                background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.2), transparent);
             }
         }
 
-        @media (min-width: 1024px) {
-            .lg\:gap-8 {
-                gap: 2rem
+        @media (max-width: 991px) {
+            .stats-wrapper {
+                margin-top: -50px;
+                padding: 2.5rem 1.5rem;
             }
+        }
 
-            .lg\:p-8 {
-                padding: 2rem
+        /* ============================================================
+           7. FEATURES & TESTIMONIALS
+        ============================================================ */
+        .feature-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.5rem 2rem;
+            height: 100%;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--islamic-purple-400);
+        }
+
+        .icon-box {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, rgba(107, 78, 255, 0.1), rgba(57, 193, 204, 0.1));
+            color: var(--islamic-purple-600);
+        }
+
+        [data-coreui-theme="dark"] .icon-box {
+            color: var(--islamic-tosca-400);
+        }
+
+        .feature-card:hover .icon-box {
+            background: linear-gradient(135deg, var(--islamic-purple-500), var(--islamic-tosca-500));
+            color: #fff;
+            transform: scale(1.05) rotate(-5deg);
+        }
+
+        .testimonial-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* ============================================================
+           8. PRICING CARDS & PRO FIXES
+        ============================================================ */
+        .pricing-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
+            padding: 3rem 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .pricing-pro {
+            background: linear-gradient(135deg, var(--islamic-purple-700) 0%, var(--islamic-purple-900) 100%);
+            color: white;
+            box-shadow: var(--shadow-glow);
+            position: relative;
+            z-index: 2;
+        }
+
+        [data-coreui-theme="dark"] .pricing-pro {
+            background: linear-gradient(135deg, var(--islamic-purple-600) 0%, #110d26 100%);
+            border: 1px solid var(--islamic-purple-500);
+        }
+
+        .pricing-pro h4,
+        .pricing-pro h2,
+        .pricing-pro .text-muted {
+            color: white !important;
+        }
+
+        .pricing-pro .text-white-50 {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+
+        .pricing-card:not(.pricing-pro) li:not(.text-muted) {
+            color: var(--text-heading);
+            font-weight: 500;
+        }
+
+        .pricing-pro li:not(.text-muted) {
+            color: #ffffff !important;
+            font-weight: 500;
+        }
+
+        [data-coreui-theme="dark"] .pricing-card:not(.pricing-pro) li.text-muted {
+            color: rgba(255, 255, 255, 0.3) !important;
+        }
+
+        .pricing-pro li.text-muted {
+            color: rgba(255, 255, 255, 0.4) !important;
+        }
+
+        @media (min-width: 992px) {
+            .transform-scale {
+                transform: scale(1.06);
             }
+        }
+
+        /* ============================================================
+           9. FAQ ACCORDION
+        ============================================================ */
+        .custom-accordion .accordion-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px !important;
+            margin-bottom: 1.25rem;
+            overflow: hidden;
+        }
+
+        .custom-accordion .accordion-button {
+            color: var(--text-heading);
+            font-weight: 700;
+            padding: 1.5rem;
+            background: transparent;
+            box-shadow: none !important;
+        }
+
+        .custom-accordion .accordion-button:not(.collapsed) {
+            color: var(--islamic-purple-600);
+            background-color: rgba(107, 78, 255, 0.03);
+        }
+
+        [data-coreui-theme="dark"] .custom-accordion .accordion-button:not(.collapsed) {
+            color: var(--islamic-tosca-400);
+            background-color: rgba(57, 193, 204, 0.05);
+        }
+
+        [data-coreui-theme="dark"] .custom-accordion .accordion-body {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+
+        [data-coreui-theme="dark"] .accordion-button::after {
+            filter: invert(1);
+        }
+
+        /* ============================================================
+           10. UTILITY BUTTONS & BACK TO TOP
+        ============================================================ */
+        .btn {
+            font-weight: 700;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-login-portal {
+            color: var(--islamic-purple-700);
+            background-color: rgba(107, 78, 255, 0.08);
+            border: 1px solid rgba(107, 78, 255, 0.15);
+        }
+
+        .btn-login-portal:hover {
+            background-color: var(--islamic-purple-600);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(107, 78, 255, 0.3);
+        }
+
+        [data-coreui-theme="dark"] .btn-login-portal {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        [data-coreui-theme="dark"] .btn-login-portal:hover {
+            background: var(--islamic-tosca-400);
+            color: #0f172a;
+        }
+
+        .btn-back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            background: linear-gradient(135deg, var(--islamic-purple-500), var(--islamic-purple-700));
+            color: white;
+            border: none;
+            transform: translateY(20px);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .btn-back-to-top.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        [data-coreui-theme="dark"] .btn-back-to-top {
+            background: linear-gradient(135deg, var(--islamic-tosca-400), var(--islamic-tosca-500));
+            color: #0f172a;
+        }
+
+        [data-coreui-theme="dark"] .text-success {
+            color: #10b981 !important;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
+        [data-coreui-theme="dark"] .btn-light {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: #fff !important;
+            border-color: rgba(255, 255, 255, 0.15) !important;
         }
     </style>
 </head>
 
-<body class="antialiased">
-    <div
-        class="relative sm:flex sm:justify-center sm:items-center min-h-screen bg-dots-darker bg-center bg-gray-100 dark:bg-dots-lighter dark:bg-gray-900 selection:bg-red-500 selection:text-white">
-        @if (Route::has('login'))
-            <div class="sm:fixed sm:top-0 sm:right-0 p-6 text-right z-10">
-                @auth
-                    <a href="{{ url('/home') }}"
-                        class="font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Home</a>
-                @else
-                    <a href="{{ route('login') }}"
-                        class="font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Log
-                        in</a>
+<body>
+    {{-- NAVBAR --}}
+    <nav class="navbar navbar-expand-lg fixed-top navbar-glass">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+                <span class="fw-bold">Pantau Hafalanku</span>
+            </a>
 
-                    @if (Route::has('register'))
-                        <a href="{{ route('register') }}"
-                            class="ml-4 font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Register</a>
-                    @endif
-                @endauth
-            </div>
-        @endif
+            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarNav">
+                <i class="bi bi-list fs-2 text-primary"></i>
+            </button>
 
-        <div class="max-w-7xl mx-auto p-6 lg:p-8">
-            <div class="flex justify-center">
-                <svg viewBox="0 0 62 65" fill="none" xmlns="http://www.w3.org/2000/svg"
-                    class="h-16 w-auto bg-gray-100 dark:bg-gray-900">
-                    <path
-                        d="M61.8548 14.6253C61.8778 14.7102 61.8895 14.7978 61.8897 14.8858V28.5615C61.8898 28.737 61.8434 28.9095 61.7554 29.0614C61.6675 29.2132 61.5409 29.3392 61.3887 29.4265L49.9104 36.0351V49.1337C49.9104 49.4902 49.7209 49.8192 49.4118 49.9987L25.4519 63.7916C25.3971 63.8227 25.3372 63.8427 25.2774 63.8639C25.255 63.8714 25.2338 63.8851 25.2101 63.8913C25.0426 63.9354 24.8666 63.9354 24.6991 63.8913C24.6716 63.8838 24.6467 63.8689 24.6205 63.8589C24.5657 63.8389 24.5084 63.8215 24.456 63.7916L0.501061 49.9987C0.348882 49.9113 0.222437 49.7853 0.134469 49.6334C0.0465019 49.4816 0.000120578 49.3092 0 49.1337L0 8.10652C0 8.01678 0.0124642 7.92953 0.0348998 7.84477C0.0423783 7.8161 0.0598282 7.78993 0.0697995 7.76126C0.0884958 7.70891 0.105946 7.65531 0.133367 7.6067C0.152063 7.5743 0.179485 7.54812 0.20192 7.51821C0.230588 7.47832 0.256763 7.43719 0.290416 7.40229C0.319084 7.37362 0.356476 7.35243 0.388883 7.32751C0.425029 7.29759 0.457436 7.26518 0.498568 7.2415L12.4779 0.345059C12.6296 0.257786 12.8015 0.211853 12.9765 0.211853C13.1515 0.211853 13.3234 0.257786 13.475 0.345059L25.4531 7.2415H25.4556C25.4955 7.26643 25.5292 7.29759 25.5653 7.32626C25.5977 7.35119 25.6339 7.37362 25.6625 7.40104C25.6974 7.43719 25.7224 7.47832 25.7523 7.51821C25.7735 7.54812 25.8021 7.5743 25.8196 7.6067C25.8483 7.65656 25.8645 7.70891 25.8844 7.76126C25.8944 7.78993 25.9118 7.8161 25.9193 7.84602C25.9423 7.93096 25.954 8.01853 25.9542 8.10652V33.7317L35.9355 27.9844V14.8846C35.9355 14.7973 35.948 14.7088 35.9704 14.6253C35.9792 14.5954 35.9954 14.5692 36.0053 14.5405C36.0253 14.4882 36.0427 14.4346 36.0702 14.386C36.0888 14.3536 36.1163 14.3274 36.1375 14.2975C36.1674 14.2576 36.1923 14.2165 36.2272 14.1816C36.2559 14.1529 36.292 14.1317 36.3244 14.1068C36.3618 14.0769 36.3942 14.0445 36.4341 14.0208L48.4147 7.12434C48.5663 7.03694 48.7383 6.99094 48.9133 6.99094C49.0883 6.99094 49.2602 7.03694 49.4118 7.12434L61.3899 14.0208C61.4323 14.0457 61.4647 14.0769 61.5021 14.1055C61.5333 14.1305 61.5694 14.1529 61.5981 14.1803C61.633 14.2165 61.6579 14.2576 61.6878 14.2975C61.7103 14.3274 61.7377 14.3536 61.7551 14.386C61.7838 14.4346 61.8 14.4882 61.8199 14.5405C61.8312 14.5692 61.8474 14.5954 61.8548 14.6253ZM59.893 27.9844V16.6121L55.7013 19.0252L49.9104 22.3593V33.7317L59.8942 27.9844H59.893ZM47.9149 48.5566V37.1768L42.2187 40.4299L25.953 49.7133V61.2003L47.9149 48.5566ZM1.99677 9.83281V48.5566L23.9562 61.199V49.7145L12.4841 43.2219L12.4804 43.2194L12.4754 43.2169C12.4368 43.1945 12.4044 43.1621 12.3682 43.1347C12.3371 43.1097 12.3009 43.0898 12.2735 43.0624L12.271 43.0586C12.2386 43.0275 12.2162 42.9888 12.1887 42.9539C12.1638 42.9203 12.1339 42.8916 12.114 42.8567L12.1127 42.853C12.0903 42.8156 12.0766 42.7707 12.0604 42.7283C12.0442 42.6909 12.023 42.656 12.013 42.6161C12.0005 42.5688 11.998 42.5177 11.9931 42.4691C11.9881 42.4317 11.9781 42.3943 11.9781 42.3569V15.5801L6.18848 12.2446L1.99677 9.83281ZM12.9777 2.36177L2.99764 8.10652L12.9752 13.8513L22.9541 8.10527L12.9752 2.36177H12.9777ZM18.1678 38.2138L23.9574 34.8809V9.83281L19.7657 12.2459L13.9749 15.5801V40.6281L18.1678 38.2138ZM48.9133 9.14105L38.9344 14.8858L48.9133 20.6305L58.8909 14.8846L48.9133 9.14105ZM47.9149 22.3593L42.124 19.0252L37.9323 16.6121V27.9844L43.7219 31.3174L47.9149 33.7317V22.3593ZM24.9533 47.987L39.59 39.631L46.9065 35.4555L36.9352 29.7145L25.4544 36.3242L14.9907 42.3482L24.9533 47.987Z"
-                        fill="#FF2D20" />
-                </svg>
-            </div>
-
-            <div class="mt-16">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-                    <a href="https://laravel.com/docs"
-                        class="scale-100 p-6 bg-white dark:bg-gray-800/50 dark:bg-gradient-to-bl from-gray-700/50 via-transparent dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-2xl shadow-gray-500/20 dark:shadow-none flex motion-safe:hover:scale-[1.01] transition-all duration-250 focus:outline focus:outline-2 focus:outline-red-500">
-                        <div>
-                            <div
-                                class="h-16 w-16 bg-red-50 dark:bg-red-800/20 flex items-center justify-center rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.5" class="w-7 h-7 stroke-red-500">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                                </svg>
-                            </div>
-
-                            <h2 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Documentation</h2>
-
-                            <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                Laravel has wonderful documentation covering every aspect of the framework. Whether you
-                                are a newcomer or have prior experience with Laravel, we recommend reading our
-                                documentation from beginning to end.
-                            </p>
-                        </div>
-
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                            class="self-center shrink-0 stroke-red-500 w-6 h-6 mx-6">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" />
-                        </svg>
-                    </a>
-
-                    <a href="https://laracasts.com"
-                        class="scale-100 p-6 bg-white dark:bg-gray-800/50 dark:bg-gradient-to-bl from-gray-700/50 via-transparent dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-2xl shadow-gray-500/20 dark:shadow-none flex motion-safe:hover:scale-[1.01] transition-all duration-250 focus:outline focus:outline-2 focus:outline-red-500">
-                        <div>
-                            <div
-                                class="h-16 w-16 bg-red-50 dark:bg-red-800/20 flex items-center justify-center rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.5" class="w-7 h-7 stroke-red-500">
-                                    <path stroke-linecap="round"
-                                        d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
-                                </svg>
-                            </div>
-
-                            <h2 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Laracasts</h2>
-
-                            <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                Laracasts offers thousands of video tutorials on Laravel, PHP, and JavaScript
-                                development. Check them out, see for yourself, and massively level up your development
-                                skills in the process.
-                            </p>
-                        </div>
-
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                            class="self-center shrink-0 stroke-red-500 w-6 h-6 mx-6">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" />
-                        </svg>
-                    </a>
-
-                    <a href="https://laravel-news.com"
-                        class="scale-100 p-6 bg-white dark:bg-gray-800/50 dark:bg-gradient-to-bl from-gray-700/50 via-transparent dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-2xl shadow-gray-500/20 dark:shadow-none flex motion-safe:hover:scale-[1.01] transition-all duration-250 focus:outline focus:outline-2 focus:outline-red-500">
-                        <div>
-                            <div
-                                class="h-16 w-16 bg-red-50 dark:bg-red-800/20 flex items-center justify-center rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.5" class="w-7 h-7 stroke-red-500">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z" />
-                                </svg>
-                            </div>
-
-                            <h2 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Laravel News</h2>
-
-                            <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                Laravel News is a community driven portal and newsletter aggregating all of the latest
-                                and most important news in the Laravel ecosystem, including new package releases and
-                                tutorials.
-                            </p>
-                        </div>
-
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                            class="self-center shrink-0 stroke-red-500 w-6 h-6 mx-6">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" />
-                        </svg>
-                    </a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul
+                    class="navbar-nav ms-lg-auto align-items-start align-items-lg-center gap-3 gap-lg-4 text-nowrap pt-3 pt-lg-0">
+                    <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#home">Beranda</a></li>
+                    <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#fitur">Fitur</a></li>
+                    <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#harga">Paket</a></li>
+                    <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#faq">Tanya Jawab</a></li>
 
                     <div
-                        class="scale-100 p-6 bg-white dark:bg-gray-800/50 dark:bg-gradient-to-bl from-gray-700/50 via-transparent dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-2xl shadow-gray-500/20 dark:shadow-none flex motion-safe:hover:scale-[1.01] transition-all duration-250 focus:outline focus:outline-2 focus:outline-red-500">
-                        <div>
-                            <div
-                                class="h-16 w-16 bg-red-50 dark:bg-red-800/20 flex items-center justify-center rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.5" class="w-7 h-7 stroke-red-500">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M6.115 5.19l.319 1.913A6 6 0 008.11 10.36L9.75 12l-.387.775c-.217.433-.132.956.21 1.298l1.348 1.348c.21.21.329.497.329.795v1.089c0 .426.24.815.622 1.006l.153.076c.433.217.956.132 1.298-.21l.723-.723a8.7 8.7 0 002.288-4.042 1.087 1.087 0 00-.358-1.099l-1.33-1.108c-.251-.21-.582-.299-.905-.245l-1.17.195a1.125 1.125 0 01-.98-.314l-.295-.295a1.125 1.125 0 010-1.591l.13-.132a1.125 1.125 0 011.3-.21l.603.302a.809.809 0 001.086-1.086L14.25 7.5l1.256-.837a4.5 4.5 0 001.528-1.732l.146-.292M6.115 5.19A9 9 0 1017.18 4.64M6.115 5.19A8.965 8.965 0 0112 3c1.929 0 3.716.607 5.18 1.64" />
-                                </svg>
+                        class="d-flex flex-column flex-lg-row align-items-lg-center gap-3 w-100 w-lg-auto mt-2 mt-lg-0">
+                        {{-- Apple Style Dark Mode Toggle --}}
+                        <li class="nav-item d-flex align-items-center">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-sun-fill text-warning fs-5"></i>
+                                <label class="apple-switch mb-0" for="checkboxThemeToggle">
+                                    <input type="checkbox" id="checkboxThemeToggle">
+                                    <span class="apple-slider"></span>
+                                </label>
+                                <i class="bi bi-moon-stars-fill fs-6" style="color: var(--islamic-purple-600);"></i>
+                            </div>
+                        </li>
+
+                        <li class="nav-item flex-grow-1 flex-lg-grow-0 d-flex gap-2 w-100 w-lg-auto">
+                            @if (Route::has('login'))
+                                @auth
+                                    <a href="{{ url('/superadmin/dashboard') }}"
+                                        class="btn text-white rounded-pill px-4 shadow-sm w-100 fw-bold"
+                                        style="background: linear-gradient(135deg, var(--islamic-purple-500), var(--islamic-purple-700)); border: none;">
+                                        Dashboard
+                                    </a>
+                                @else
+                                    <a href="{{ route('login') }}"
+                                        class="btn btn-outline-purple rounded-pill px-4 w-100 fw-bold">
+                                        Masuk
+                                    </a>
+                                    <a href="{{ route('register') }}"
+                                        class="btn btn-login-portal text-white rounded-pill px-4 w-100 fw-bold"
+                                        style="background-color: var(--islamic-purple-600);">
+                                        Daftar
+                                    </a>
+                                @endauth
+                            @endif
+                        </li>
+                    </div>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {{-- HERO SECTION --}}
+    <section class="hero-section">
+        <div id="aurora-bg"></div>
+        <div class="container hero-content">
+            <div class="row align-items-center justify-content-between">
+                <div class="col-lg-6 mb-5 mb-lg-0 animate__animated animate__fadeInLeft">
+                    <div class="d-inline-block hero-badge rounded-pill px-3 py-2 mb-4">
+                        <span class="fw-bold small"><i class="bi bi-stars text-warning me-1"></i> Platform Digital
+                            Pesantren</span>
+                    </div>
+                    <h1 class="hero-title mb-4">
+                        Pantau Setoran Hafalan Lebih <span class="text-warning">Mudah & Akurat.</span>
+                    </h1>
+                    <p class="hero-subtitle mb-5">
+                        Tinggalkan rekap manual. Solusi cerdas terintegrasi untuk mengelola data musyrif, santri, hingga
+                        laporan perkembangan tahfidz secara real-time.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="{{ route('login') }}" class="btn btn-warning btn-lg rounded-pill px-5 shadow-lg">
+                            Mulai Sekarang <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+                        <a href="#fitur" class="btn btn-lg rounded-pill px-4 btn-hero-outline shadow-sm">
+                            Pelajari Fitur
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-5 animate__animated animate__fadeInRight">
+                    <div class="swiper swiper-cards-container">
+                        <div class="swiper-wrapper">
+                            <div class="swiper-slide glass-pane text-center">
+                                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-4"
+                                    style="width: 88px; height: 88px;">
+                                    <i class="bi bi-pie-chart-fill text-primary" style="font-size: 2.5rem;"></i>
+                                </div>
+                                <h4 class="fw-bold mb-3">Smart Dashboard</h4>
+                                <p class="small opacity-75 mb-4 px-2" style="line-height: 1.6;">Pantau grafik
+                                    perkembangan dan persentase kelulusan santri secara real-time.</p>
+                                <div class="progress bg-secondary bg-opacity-25 mb-3 rounded-pill"
+                                    style="height: 10px;">
+                                    <div class="progress-bar bg-warning rounded-pill" style="width: 85%"></div>
+                                </div>
+                                <div class="progress bg-secondary bg-opacity-25 rounded-pill" style="height: 10px;">
+                                    <div class="progress-bar bg-info rounded-pill" style="width: 60%"></div>
+                                </div>
                             </div>
 
-                            <h2 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Vibrant Ecosystem</h2>
+                            <div class="swiper-slide glass-pane text-center">
+                                <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-4"
+                                    style="width: 88px; height: 88px;">
+                                    <i class="bi bi-check2-square text-warning" style="font-size: 2.5rem;"></i>
+                                </div>
+                                <h4 class="fw-bold mb-3">Input Instan</h4>
+                                <p class="small opacity-75 mb-4 px-2" style="line-height: 1.6;">Musyrif dapat mengisi
+                                    setoran harian langsung dari smartphone hanya dalam 3 klik.</p>
+                                <button class="btn btn-primary w-100 rounded-pill fw-bold text-white py-3 shadow-sm">
+                                    <i class="bi bi-plus-lg me-2"></i> Input Setoran
+                                </button>
+                            </div>
 
-                            <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                Laravel's robust library of first-party tools and libraries, such as <a
-                                    href="https://forge.laravel.com"
-                                    class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Forge</a>,
-                                <a href="https://vapor.laravel.com"
-                                    class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Vapor</a>,
-                                <a href="https://nova.laravel.com"
-                                    class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Nova</a>,
-                                and <a href="https://envoyer.io"
-                                    class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Envoyer</a>
-                                help you take your projects to the next level. Pair them with powerful open source
-                                libraries like <a href="https://laravel.com/docs/billing"
-                                    class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Cashier</a>,
-                                <a href="https://laravel.com/docs/dusk"
-                                    class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Dusk</a>,
-                                <a href="https://laravel.com/docs/broadcasting"
-                                    class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Echo</a>,
-                                <a href="https://laravel.com/docs/horizon"
-                                    class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Horizon</a>,
-                                <a href="https://laravel.com/docs/sanctum"
-                                    class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Sanctum</a>,
-                                <a href="https://laravel.com/docs/telescope"
-                                    class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Telescope</a>,
-                                and more.
-                            </p>
+                            <div class="swiper-slide glass-pane text-center">
+                                <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-4"
+                                    style="width: 88px; height: 88px;">
+                                    <i class="bi bi-file-earmark-excel text-success" style="font-size: 2.5rem;"></i>
+                                </div>
+                                <h4 class="fw-bold mb-3">Import Otomatis</h4>
+                                <p class="small opacity-75 mb-4 px-2" style="line-height: 1.6;">Pindahkan ribuan data
+                                    santri lama Anda ke sistem baru menggunakan format Excel.</p>
+                                <div
+                                    class="d-flex justify-content-between align-items-center border-top border-secondary border-opacity-25 pt-4 mt-auto">
+                                    <span class="small fw-bold opacity-75">Status: Success</span>
+                                    <span class="badge bg-success rounded-pill px-3 py-2">400 Baris</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-4 text-white opacity-100 small fw-bold animate__animated animate__pulse animate__infinite"
+                        style="text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                        <i class="bi bi-arrows-collapse d-block fs-4 mb-1"></i>
+                        Geser kartu untuk melihat
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- STATS SECTION (FLOATING) --}}
+    <section class="stats-section">
+        <div class="container animate__animated animate__fadeInUp" style="animation-delay: 0.5s;">
+            <div class="stats-wrapper">
+                <div class="row g-4 text-center align-items-center">
+                    <div class="col-6 col-lg-3 stats-divider">
+                        <div class="stats-number"><span class="counter" data-target="50">0</span>+</div>
+                        <div class="stats-label">Lembaga Mitra</div>
+                        <div class="stats-desc mt-1">Pesantren & Madrasah</div>
+                    </div>
+                    <div class="col-6 col-lg-3 stats-divider">
+                        <div class="stats-number"><span class="counter" data-target="15">0</span>K+</div>
+                        <div class="stats-label">Santri Dikelola</div>
+                        <div class="stats-desc mt-1">Data Aman di Cloud</div>
+                    </div>
+                    <div class="col-6 col-lg-3 stats-divider">
+                        <div class="stats-number"><span class="counter" data-target="3">0</span> <span
+                                class="fs-4">Klik</span></div>
+                        <div class="stats-label">Proses Input</div>
+                        <div class="stats-desc mt-1">Setoran via Smartphone</div>
+                    </div>
+                    <div class="col-6 col-lg-3">
+                        <div class="stats-number"><span class="counter" data-target="100">0</span>%</div>
+                        <div class="stats-label">Laporan Otomatis</div>
+                        <div class="stats-desc mt-1">Generate PDF & Grafik</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- FEATURES SECTION --}}
+    <section id="fitur" class="py-5 my-5">
+        <div class="container py-5">
+            <div class="text-center mb-5 pb-3 animate__animated animate__fadeInUp">
+                <span class="section-label">Fitur Unggulan</span>
+                <h2 class="display-6 fw-bold mb-4">Kenapa Memilih Pantau Hafalanku?</h2>
+                <p class="text-muted mx-auto fs-5" style="max-width: 650px;">Dibangun dengan pemahaman mendalam
+                    tentang kebutuhan administratif pesantren dan madrasah modern.</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-6 col-xl-3">
+                    <div class="card feature-card">
+                        <div class="icon-box"><i class="bi bi-shield-lock-fill"></i></div>
+                        <h4 class="fs-5 mb-3">Manajemen Multi-Role</h4>
+                        <p class="text-muted small mb-0 lh-lg">Hak akses terstruktur rapi untuk SuperAdmin, Admin,
+                            Musyrif pembimbing, hingga akun khusus pantauan Wali Santri.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <div class="card feature-card">
+                        <div class="icon-box"><i class="bi bi-phone-vibrate-fill"></i></div>
+                        <h4 class="fs-5 mb-3">Tracking Real-time</h4>
+                        <p class="text-muted small mb-0 lh-lg">Input hafalan harian dengan sangat mudah melalui
+                            Floating Action Button (FAB) dari layar HP Musyrif.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <div class="card feature-card">
+                        <div class="icon-box"><i class="bi bi-file-earmark-spreadsheet-fill"></i></div>
+                        <h4 class="fs-5 mb-3">Import Cepat</h4>
+                        <p class="text-muted small mb-0 lh-lg">Migrasi data ribuan santri & musyrif hanya dengan
+                            beberapa klik menggunakan integrasi template file Excel.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <div class="card feature-card">
+                        <div class="icon-box"><i class="bi bi-award-fill"></i></div>
+                        <h4 class="fs-5 mb-3">Database Sertifikasi</h4>
+                        <p class="text-muted small mb-0 lh-lg">Lacak kualifikasi sertifikasi metode baca Qur'an musyrif
+                            (Ummi/Wafa) untuk plotting kelas yang tepat sasaran.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <div class="card feature-card">
+                        <div class="icon-box"><i class="bi bi-printer-fill"></i></div>
+                        <h4 class="fs-5 mb-3">Generate Laporan</h4>
+                        <p class="text-muted small mb-0 lh-lg">Hasilkan laporan perkembangan tahfidz berupa grafik
+                            analitik dan dokumen PDF instan untuk evaluasi bulanan.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <div class="card feature-card">
+                        <div class="icon-box"><i class="bi bi-people-fill"></i></div>
+                        <h4 class="fs-5 mb-3">Portal Wali Santri</h4>
+                        <p class="text-muted small mb-0 lh-lg">Transparansi penuh. Orang tua dapat memantau grafik
+                            hafalan anak dari rumah secara presisi tanpa bisa merubah data.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <div class="card feature-card">
+                        <div class="icon-box"><i class="bi bi-whatsapp"></i></div>
+                        <h4 class="fs-5 mb-3">Notifikasi WhatsApp</h4>
+                        <p class="text-muted small mb-0 lh-lg">Sistem dapat mengirimkan pesan otomatis ke nomor
+                            WhatsApp orang tua terkait pencapaian atau pengingat setoran.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <div class="card feature-card">
+                        <div class="icon-box"><i class="bi bi-cloud-check-fill"></i></div>
+                        <h4 class="fs-5 mb-3">Cloud & Backup Data</h4>
+                        <p class="text-muted small mb-0 lh-lg">Data tersimpan aman di server awan berstandar tinggi
+                            dengan sistem enkripsi dan pencadangan berkala.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- PRICING SECTION --}}
+    <section id="harga" class="py-5 bg-alt">
+        <div class="container py-5">
+            <div class="text-center mb-5 pb-3 animate__animated animate__fadeInUp">
+                <span class="section-label">Paket Langganan</span>
+                <h2 class="display-6 fw-bold mb-4">Pilih Investasi <span class="text-gradient">Terbaik</span></h2>
+                <p class="text-muted mx-auto fs-5" style="max-width: 600px;">Biaya operasional transparan tanpa biaya
+                    tersembunyi. Tingkatkan skala lembaga Anda kapan saja.</p>
+            </div>
+            <div class="row g-4 align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6">
+                    <div class="card pricing-card">
+                        <h4 class="fw-bold mb-2">Starter</h4>
+                        <p class="text-muted small mb-4">Cocok untuk TPQ / Madrasah Diniyah</p>
+                        <h2 class="display-5 fw-bold mb-4">Rp 149<span class="fs-5 text-muted fw-normal">.000<br><span
+                                    class="fs-6">/ bulan</span></span></h2>
+                        <ul class="list-unstyled mb-5 space-y-3">
+                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Maksimal 100
+                                Santri</li>
+                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Maksimal 5
+                                Musyrif</li>
+                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Pencatatan
+                                Hafalan Harian</li>
+                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Laporan
+                                Bulanan PDF</li>
+                            <li class="mb-3 text-muted"><i class="bi bi-dash-circle me-3"></i> Import Excel Massal
+                            </li>
+                            <li class="text-muted"><i class="bi bi-dash-circle me-3"></i> Notifikasi WhatsApp</li>
+                        </ul>
+                        <a href="{{ route('login') }}" class="btn btn-light border w-100 rounded-pill py-3">Mulai
+                            Gratis 7 Hari</a>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="card pricing-card pricing-pro transform-scale">
+                        <div
+                            class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-warning text-dark px-4 py-2 shadow">
+                            PALING DIMINATI
+                        </div>
+                        <h4 class="fw-bold mb-2 mt-2">Pesantren Pro</h4>
+                        <p class="text-white-50 small mb-4">Untuk Pondok Pesantren / Boarding School</p>
+                        <h2 class="display-5 fw-bold mb-4">Rp 349<span
+                                class="fs-5 text-white-50 fw-normal">.000<br><span class="fs-6">/
+                                    bulan</span></span></h2>
+                        <ul class="list-unstyled mb-5 space-y-3">
+                            <li class="mb-3"><i class="bi bi-check-circle-fill text-warning me-3"></i>
+                                <strong>Unlimited</strong> Santri
+                            </li>
+                            <li class="mb-3"><i class="bi bi-check-circle-fill text-warning me-3"></i>
+                                <strong>Unlimited</strong> Musyrif
+                            </li>
+                            <li class="mb-3"><i class="bi bi-check-circle-fill text-warning me-3"></i> Semua Fitur
+                                Starter</li>
+                            <li class="mb-3"><i class="bi bi-check-circle-fill text-warning me-3"></i> Import/Export
+                                Excel Massal</li>
+                            <li class="mb-3"><i class="bi bi-check-circle-fill text-warning me-3"></i> Manajemen
+                                Multi-Role</li>
+                            <li><i class="bi bi-check-circle-fill text-warning me-3"></i> Integrasi Notifikasi WhatsApp
+                            </li>
+                        </ul>
+                        <a href="{{ route('login') }}" class="btn btn-warning w-100 rounded-pill py-3 shadow">Pilih
+                            Paket Pro</a>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="card pricing-card">
+                        <h4 class="fw-bold mb-2">Yayasan Utama</h4>
+                        <p class="text-muted small mb-4">Untuk Yayasan Besar & Multi-Cabang</p>
+                        <h2 class="display-5 fw-bold mb-4 text-gradient">Custom</h2>
+                        <ul class="list-unstyled mb-5 space-y-3">
+                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Semua Fitur
+                                Pesantren Pro</li>
+                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Custom
+                                White-label Logo</li>
+                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Sub-domain
+                                Khusus Institusi</li>
+                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Modul
+                                Keuangan Terintegrasi</li>
+                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Dedicated
+                                Server Utama</li>
+                            <li><i class="bi bi-check-circle-fill text-success me-3"></i> Dukungan Teknis Prioritas
+                                24/7</li>
+                        </ul>
+                        <a href="#" class="btn btn-outline-primary w-100 rounded-pill py-3">Hubungi Tim Kami</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- TESTIMONI SECTION --}}
+    <section id="testimoni" class="py-5">
+        <div class="container py-5">
+            <div class="text-center mb-5 pb-3 animate__animated animate__fadeInUp">
+                <span class="section-label">Ulasan Pengguna</span>
+                <h2 class="display-6 fw-bold mb-3">Dipercaya oleh Lembaga Pendidikan</h2>
+            </div>
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="card testimonial-card">
+                        <div class="d-flex mb-4">
+                            <i class="bi bi-star-fill text-warning me-1"></i><i
+                                class="bi bi-star-fill text-warning me-1"></i><i
+                                class="bi bi-star-fill text-warning me-1"></i><i
+                                class="bi bi-star-fill text-warning me-1"></i><i
+                                class="bi bi-star-fill text-warning"></i>
+                        </div>
+                        <p class="text-muted mb-5 fs-6 lh-lg">"Dulu rekap setoran santri selalu numpuk di akhir bulan
+                            dan sering tercecer. Sejak pakai sistem ini, musyrif tinggal input via HP setiap habis
+                            halaqah. Sangat menghemat waktu!"</p>
+                        <div
+                            class="d-flex align-items-center mt-auto border-top pt-4 border-opacity-10 border-secondary">
+                            <img src="https://ui-avatars.com/api/?name=Ahmad+Hidayat&background=6b4eff&color=fff&rounded=true&bold=true"
+                                alt="Avatar" width="48" height="48" class="me-3">
+                            <div>
+                                <h6 class="fw-bold mb-1">Ust. Ahmad Hidayat</h6>
+                                <span class="small text-muted">Kepala TPQ Al-Huda</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="card testimonial-card">
+                        <div class="d-flex mb-4">
+                            <i class="bi bi-star-fill text-warning me-1"></i><i
+                                class="bi bi-star-fill text-warning me-1"></i><i
+                                class="bi bi-star-fill text-warning me-1"></i><i
+                                class="bi bi-star-fill text-warning me-1"></i><i
+                                class="bi bi-star-fill text-warning"></i>
+                        </div>
+                        <p class="text-muted mb-5 fs-6 lh-lg">"Fitur Import Excel-nya juara! Memasukkan data 400 santri
+                            baru di ajaran tahun ini cuma butuh hitungan detik. Hak akses Multi-role juga bikin kerja
+                            admin jauh lebih ringan."</p>
+                        <div
+                            class="d-flex align-items-center mt-auto border-top pt-4 border-opacity-10 border-secondary">
+                            <img src="https://ui-avatars.com/api/?name=Fatimah+Az-Zahra&background=39c1cc&color=fff&rounded=true&bold=true"
+                                alt="Avatar" width="48" height="48" class="me-3">
+                            <div>
+                                <h6 class="fw-bold mb-1">Fatimah Az-Zahra</h6>
+                                <span class="small text-muted">Admin Pondok Pesantren</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="card testimonial-card">
+                        <div class="d-flex mb-4">
+                            <i class="bi bi-star-fill text-warning me-1"></i><i
+                                class="bi bi-star-fill text-warning me-1"></i><i
+                                class="bi bi-star-fill text-warning me-1"></i><i
+                                class="bi bi-star-fill text-warning me-1"></i><i
+                                class="bi bi-star-fill text-warning"></i>
+                        </div>
+                        <p class="text-muted mb-5 fs-6 lh-lg">"Sebagai pengurus yayasan, saya sekarang bisa memantau
+                            tren perkembangan tahfidz seluruh cabang secara real-time dari Dashboard. Laporannya sangat
+                            profesional."</p>
+                        <div
+                            class="d-flex align-items-center mt-auto border-top pt-4 border-opacity-10 border-secondary">
+                            <img src="https://ui-avatars.com/api/?name=Dr.+H.+Ridwan&background=10b981&color=fff&rounded=true&bold=true"
+                                alt="Avatar" width="48" height="48" class="me-3">
+                            <div>
+                                <h6 class="fw-bold mb-1">Dr. H. Ridwan</h6>
+                                <span class="small text-muted">Direktur Yayasan Pendidikan</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <div class="flex justify-center mt-16 px-0 sm:items-center sm:justify-between">
-                <div class="text-center text-sm sm:text-left">
-                    &nbsp;
+    {{-- FAQ SECTION --}}
+    <section id="faq" class="py-5 bg-alt">
+        <div class="container py-5">
+            <div class="row align-items-center">
+                <div class="col-lg-5 mb-5 mb-lg-0 animate__animated animate__fadeInLeft pe-lg-5">
+                    <span class="section-label">Tanya Jawab</span>
+                    <h2 class="display-6 fw-bold mb-4">Pertanyaan yang Sering Diajukan</h2>
+                    <p class="text-muted mb-4 fs-5">Masih ragu atau punya pertanyaan teknis seputar Sistem Informasi
+                        Hafalan Santri? Temukan jawabannya di sini.</p>
                 </div>
-
-                <div class="text-center text-sm text-gray-500 dark:text-gray-400 sm:text-right sm:ml-0">
-                    Laravel v{{ Illuminate\Foundation\Application::VERSION }} (PHP v{{ PHP_VERSION }})
+                <div class="col-lg-7 animate__animated animate__fadeInRight">
+                    <div class="accordion custom-accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#faq1">
+                                    Apakah data santri dan nilai hafalan aman?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse show"
+                                data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Alhamdulillah, ya. Kami menggunakan server cloud yang tangguh dengan enkripsi
+                                    standar industri dan backup data berkala. Hanya pengurus berwenang yang memiliki
+                                    akses.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#faq2">
+                                    Apakah Musyrif bisa menginput hafalan lewat HP?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Sangat bisa! Sistem ini dirancang 100% <em>Mobile-Responsive</em>. Musyrif cukup
+                                    login melalui browser di HP masing-masing dan menggunakan tombol pintar (FAB) untuk
+                                    mencatat setoran santri.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#faq3">
+                                    Apakah wali santri bisa memantau perkembangan anaknya?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Bisa. Sistem kami memiliki hak akses (Role) khusus untuk Santri/Wali Santri agar
+                                    dapat memantau grafik hafalan anaknya tanpa bisa memanipulasi data nilai.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
+
+    {{-- BACK TO TOP BUTTON --}}
+    <button class="btn-back-to-top" id="backToTop" title="Kembali ke atas">
+        <i class="bi bi-arrow-up fs-4"></i>
+    </button>
+
+    {{-- CTA & FOOTER --}}
+    <footer class="pt-5" style="background-color: var(--bg-section);">
+        <div class="container text-center mb-5 py-5">
+            <h2 class="display-6 fw-bold mb-4">Siap Mendigitalkan Lembaga Anda?</h2>
+            <p class="text-muted mb-5 mx-auto fs-5" style="max-width: 600px;">Bergabunglah dan tingkatkan efisiensi
+                pengelolaan data hafalan santri di lembaga Anda sekarang juga.</p>
+            <a href="{{ route('register') }}" class="btn px-5 py-3 rounded-pill fw-bold text-white shadow-lg"
+                style="background: linear-gradient(135deg, var(--islamic-purple-500), var(--islamic-tosca-400)); border: none;">
+                Daftar Sekarang <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+        </div>
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center py-4 border-top border-opacity-10"
+            style="border-color: var(--border-color) !important;">
+            <div class="mb-3 mb-md-0 fw-bold d-flex align-items-center gap-2" style="color: var(--text-heading);">
+                <span>Pantau Hafalanku</span>
+            </div>
+            <div class="small text-muted fw-medium">
+                &copy; {{ date('Y') }} Hak Cipta Dilindungi.
+                Created by <span class="fw-bold" style="color: var(--islamic-purple-500);">AnzArt Studio</span>
+            </div>
+        </div>
+    </footer>
+
+    {{-- SCRIPTS --}}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // --- 1 & 2. SWIPER ---
+            const swiperContainer = document.querySelector('.swiper-cards-container');
+            if (swiperContainer) {
+                const swiper = new Swiper('.swiper-cards-container', {
+                    effect: 'cards',
+                    grabCursor: true,
+                    loop: true,
+                    speed: 800,
+                    cardsEffect: {
+                        slideShadows: false,
+                        perSlideOffset: 12,
+                        perSlideRotate: 4,
+                    },
+                    autoplay: {
+                        delay: 3500,
+                        disableOnInteraction: false
+                    },
+                });
+
+                swiper.on('touchEnd', () => {
+                    setTimeout(() => {
+                        if (swiper.autoplay && !swiper.autoplay.running) swiper.autoplay.start();
+                    }, 500);
+                });
+
+                let hasPeeked = false;
+                window.addEventListener('scroll', () => {
+                    const rect = swiperContainer.getBoundingClientRect();
+                    if (rect.top < window.innerHeight && !hasPeeked) {
+                        swiperContainer.classList.add('is-peeking');
+                        setTimeout(() => swiperContainer.classList.remove('is-peeking'), 1500);
+                        hasPeeked = true;
+                    }
+                });
+            }
+
+            // --- 3. LOGIKA SCROLL (NAVBAR & BACK TO TOP) ---
+            const navbar = document.querySelector('.navbar-glass');
+            const backToTopBtn = document.getElementById("backToTop");
+
+            window.addEventListener('scroll', () => {
+                const scrollPos = window.scrollY;
+                if (navbar) {
+                    if (scrollPos > 40) navbar.classList.add('scrolled');
+                    else navbar.classList.remove('scrolled');
+                }
+                if (backToTopBtn) {
+                    if (scrollPos > 300) backToTopBtn.classList.add('show');
+                    else backToTopBtn.classList.remove('show');
+                }
+            });
+
+            if (backToTopBtn) {
+                backToTopBtn.addEventListener("click", () => window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                }));
+            }
+
+            // --- 4. ANIMASI COUNTER STATS ---
+            const statsSection = document.querySelector('.stats-section');
+            const counters = document.querySelectorAll('.counter');
+
+            if (statsSection && counters.length > 0) {
+                const counterObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            counters.forEach(counter => {
+                                const target = +counter.getAttribute('data-target');
+                                const duration = 2000;
+                                const startTime = performance.now();
+
+                                const update = (currentTime) => {
+                                    const elapsed = currentTime - startTime;
+                                    const progress = Math.min(elapsed / duration, 1);
+                                    const easeOut = progress * (2 - progress);
+                                    counter.innerText = Math.floor(easeOut * target);
+
+                                    if (progress < 1) requestAnimationFrame(update);
+                                    else counter.innerText = target;
+                                };
+                                requestAnimationFrame(update);
+                            });
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, {
+                    threshold: 0.5
+                });
+                counterObserver.observe(statsSection);
+            }
+        });
+    </script>
+
+    <script type="module">
+        import {
+            Renderer,
+            Program,
+            Mesh,
+            Color,
+            Triangle
+        } from 'https://esm.sh/ogl';
+
+        const VERT = `#version 300 es
+        in vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }`;
+
+        const FRAG = `#version 300 es
+        precision highp float;
+        uniform float uTime; uniform float uAmplitude; uniform vec3 uColorStops[3]; uniform vec2 uResolution; uniform float uBlend;
+        out vec4 fragColor;
+        vec3 permute(vec3 x) { return mod(((x * 34.0) + 1.0) * x, 289.0); }
+        float snoise(vec2 v){
+            const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+            vec2 i = floor(v + dot(v, C.yy));
+            vec2 x0 = v - i + dot(i, C.xx);
+            vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+            vec4 x12 = x0.xyxy + C.xxzz; x12.xy -= i1; i = mod(i, 289.0);
+            vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+            vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);
+            m = m * m; m = m * m;
+            vec3 x = 2.0 * fract(p * C.www) - 1.0; vec3 h = abs(x) - 0.5;
+            vec3 ox = floor(x + 0.5); vec3 a0 = x - ox;
+            m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
+            vec3 g; g.x = a0.x * x0.x + h.x * x0.y; g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+            return 130.0 * dot(m, g);
+        }
+        void main() {
+            vec2 uv = gl_FragCoord.xy / uResolution;
+            int index = (uv.x < 0.5) ? 0 : 1;
+            float lerpFactor = (uv.x - (index == 0 ? 0.0 : 0.5)) / 0.5;
+            vec3 rampColor = mix(uColorStops[index], uColorStops[index+1], lerpFactor);
+            float height = snoise(vec2(uv.x * 2.0 + uTime * 0.1, uTime * 0.25)) * 0.5 * uAmplitude;
+            height = exp(height); height = (uv.y * 2.0 - height + 0.2);
+            float intensity = 0.6 * height;
+            float auroraAlpha = smoothstep(0.2 - uBlend * 0.5, 0.2 + uBlend * 0.5, intensity);
+            fragColor = vec4(rampColor * auroraAlpha, auroraAlpha);
+        }`;
+
+        const container = document.getElementById('aurora-bg');
+
+        if (container) {
+            const renderer = new Renderer({
+                alpha: true,
+                premultipliedAlpha: true,
+                antialias: true
+            });
+            const gl = renderer.gl;
+            container.appendChild(gl.canvas);
+
+            function getColors() {
+                const isDark = document.documentElement.getAttribute('data-coreui-theme') === 'dark';
+                return isDark ? ['#1b143a', '#40307a', '#0f172a'] : ['#ede9fe', '#c4b5fd', '#ddd6fe'];
+            }
+
+            const geometry = new Triangle(gl);
+            const program = new Program(gl, {
+                vertex: VERT,
+                fragment: FRAG,
+                uniforms: {
+                    uTime: {
+                        value: 0
+                    },
+                    uAmplitude: {
+                        value: 1.4
+                    },
+                    uBlend: {
+                        value: 0.6
+                    },
+                    uColorStops: {
+                        value: getColors().map(hex => {
+                            const c = new Color(hex);
+                            return [c.r, c.g, c.b];
+                        })
+                    },
+                    uResolution: {
+                        value: [container.offsetWidth, container.offsetHeight]
+                    }
+                }
+            });
+
+            const mesh = new Mesh(gl, {
+                geometry,
+                program
+            });
+
+            function resize() {
+                renderer.setSize(container.offsetWidth, container.offsetHeight);
+                program.uniforms.uResolution.value = [container.offsetWidth, container.offsetHeight];
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            function update(t) {
+                requestAnimationFrame(update);
+                program.uniforms.uTime.value = t * 0.0004;
+                renderer.render({
+                    scene: mesh
+                });
+            }
+            requestAnimationFrame(update);
+
+            // --- THEME TOGGLE LOGIC (DIPERBAIKI) ---
+            const themeToggle = document.getElementById('checkboxThemeToggle');
+
+            if (themeToggle) {
+                // Set state awal checkbox berdasarkan localstorage
+                const currentTheme = document.documentElement.getAttribute('data-coreui-theme');
+                themeToggle.checked = currentTheme === 'dark';
+
+                themeToggle.addEventListener('change', (e) => {
+                    const newTheme = e.target.checked ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-coreui-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+
+                    // Update Shader Colors
+                    const newStops = getColors();
+                    program.uniforms.uColorStops.value = newStops.map(hex => {
+                        const c = new Color(hex);
+                        return [c.r, c.g, c.b];
+                    });
+                });
+            }
+        }
+
+        // Handle Scroll Lock when Mobile Menu is Open (Dilengkapi Pengecekan)
+        const navbarCollapse = document.getElementById('navbarNav');
+        if (navbarCollapse) {
+            navbarCollapse.addEventListener('show.bs.collapse', () => document.body.style.overflow = 'hidden');
+            navbarCollapse.addEventListener('hide.bs.collapse', () => document.body.style.overflow = 'auto');
+        }
+    </script>
 </body>
 
 </html>

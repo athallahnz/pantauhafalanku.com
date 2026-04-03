@@ -180,16 +180,19 @@
                     <form method="POST" action="{{ route('login') }}" id="loginForm">
                         @csrf
                         <div class="mb-4">
-                            <label class="form-label small fw-bold text-muted">Email atau Nomor</label>
+                            {{-- UBAH LABEL INI --}}
+                            <label class="form-label small fw-bold text-muted">Email, Nomor, atau NIS</label>
+
+                            {{-- UBAH PLACEHOLDER INI --}}
                             <input type="text" name="login" class="form-control glass-input"
-                                value="{{ old('login') }}" placeholder="user@example.com" required autofocus>
+                                value="{{ old('login') }}" placeholder="Masukkan Email, Nomor, atau NIS" required autofocus>
                         </div>
 
                         <div class="mb-4">
                             <label class="form-label small fw-bold text-muted">Password</label>
                             <div class="position-relative">
                                 <input id="password" type="password" name="password" class="form-control glass-input pe-5"
-                                    placeholder="••••••••" required>
+                                    placeholder="Masukkan Password" required>
                                 <button type="button" id="togglePassword"
                                     class="btn btn-link p-0 position-absolute top-50 translate-middle-y text-muted"
                                     style="right: 1.2rem; z-index: 10;">

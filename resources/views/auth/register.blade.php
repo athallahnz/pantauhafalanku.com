@@ -163,12 +163,12 @@
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-muted">Nama Lengkap</label>
                                 <input type="text" name="name" class="form-control glass-input"
-                                    value="{{ old('name') }}" placeholder="Ahmad Fulan" required>
+                                    value="{{ old('name') }}" placeholder="Masukkan Nama Lengkap" required>
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-muted">E-Mail</label>
                                 <input type="email" name="email" class="form-control glass-input"
-                                    value="{{ old('email') }}" placeholder="email@example.com" required>
+                                    value="{{ old('email') }}" placeholder="Masukkan E-Mail" required>
                             </div>
 
                             {{-- PASSWORD --}}

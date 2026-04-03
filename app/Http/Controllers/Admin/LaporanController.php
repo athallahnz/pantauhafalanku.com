@@ -88,6 +88,26 @@ class LaporanController extends Controller
 
         $avgNilai = $avgNilai ? round($avgNilai, 2) : 0;
 
+        // ===== TAMBAHAN UNTUK KPI MUSYRIF =====
+        // Hitung total musyrif sesuai filter
+        $totalMusyrif = Musyrif::when($musyrifId, fn($q) => $q->where('id', $musyrifId))->count();
+
+        // Hitung persentase kehadiran (Valid / Total Absensi) di periode tersebut
+        $attendanceQuery = DB::table('musyrif_attendances')
+            ->when($musyrifId, fn($q) => $q->where('musyrif_id', $musyrifId));
+
+        if ($startDate && $endDate) {
+            $attendanceQuery->whereBetween('attendance_at', [
+                $startDate . ' 00:00:00',
+                $endDate . ' 23:59:59'
+            ]);
+        }
+
+        $totalAttendances = $attendanceQuery->count();
+        $validAttendances = (clone $attendanceQuery)->where('status', 'valid')->count();
+        $kehadiranMusyrif = $totalAttendances > 0 ? round(($validAttendances / $totalAttendances) * 100) : 0;
+        // ======================================
+
         $hafalanAgg = Hafalan::query()
             ->select(
                 'santri_id',
@@ -145,6 +165,9 @@ class LaporanController extends Controller
                     'hadir_tidak_setor' => $totalHadirTidakSetor,
                     'alpha' => $totalAlpha,
                     'avg_nilai' => $avgNilai,
+                    // Tambahkan 2 key ini untuk dikirim ke Frontend
+                    'total_musyrif'     => $totalMusyrif,
+                    'kehadiran_musyrif' => $kehadiranMusyrif,
                 ]
             ])
             ->make(true);
@@ -569,6 +592,103 @@ class LaporanController extends Controller
 
             return [null, null];
         }
+    }
+
+    /**
+     * Rekap Histori Absensi Musyrif (server-side DataTables)
+     */
+    public function getAbsensiMusyrif(Request $request)
+    {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        $musyrifId    = $request->input('musyrif_id');
+        $periode      = $request->input('periode');
+        $waktuAbsensi = $request->input('waktu_absensi'); // 'today', 'periode', 'all'
+
+        $query = DB::table('musyrif_attendances as ma')
+            ->join('musyrifs as m', 'm.id', '=', 'ma.musyrif_id')
+            ->select(
+                'ma.id',
+                'ma.attendance_at',
+                'ma.type',
+                'ma.status',
+                'ma.latitude',
+                'ma.longitude',
+                'ma.address_text',
+                'ma.accuracy',
+                'ma.photo_path',
+                'm.nama as musyrif_nama'
+            )
+            ->when($musyrifId, fn($q) => $q->where('ma.musyrif_id', $musyrifId));
+
+        // Logic Filter Waktu Khusus Absensi
+        if ($waktuAbsensi === 'today') {
+            // Gunakan Carbon untuk mengambil tanggal hari ini
+            $query->whereDate('ma.attendance_at', Carbon::today());
+        } elseif ($waktuAbsensi === 'all') {
+            // Biarkan kosong, tidak ada filter tanggal sama sekali (Semua Riwayat ditarik)
+        } else {
+            // Default: 'periode' -> Ikuti filter bulan global di halaman Laporan
+            [$startDate, $endDate] = $this->getRangeFromPeriode($periode);
+            if ($startDate && $endDate) {
+                $query->whereBetween('ma.attendance_at', [
+                    $startDate . ' 00:00:00',
+                    $endDate . ' 23:59:59'
+                ]);
+            }
+        }
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->editColumn('attendance_at', function ($row) {
+                return Carbon::parse($row->attendance_at)->translatedFormat('d M Y, H:i');
+            })
+            ->editColumn('type', function ($row) {
+                if ($row->type === 'morning') {
+                    return '<span class="badge bg-info text-dark rounded-pill px-3"><i class="bi bi-brightness-alt-high-fill me-1"></i> Pagi</span>';
+                }
+                return '<span class="badge bg-warning text-dark rounded-pill px-3"><i class="bi bi-moon-stars-fill me-1"></i> Sore</span>';
+            })
+            ->addColumn('location', function ($row) {
+                $latlng = "{$row->latitude}, {$row->longitude}";
+                $gmapsLink = "https://www.google.com/maps?q={$latlng}";
+                $addr = \Illuminate\Support\Str::limit($row->address_text, 35);
+
+                return "
+                <div class='mb-1'>{$addr}</div>
+                <div class='d-flex gap-2 align-items-center mt-1'>
+                    <a href='{$gmapsLink}' target='_blank' class='text-decoration-none small fw-semibold' title='Buka di Tab Baru'>
+                        <i class='bi bi-geo-alt text-danger'></i> {$latlng}
+                    </a>
+                    <button class='btn btn-sm btn-outline-secondary py-0 px-2 btn-preview-map'
+                        data-lat='{$row->latitude}' data-lng='{$row->longitude}' title='Preview Maps di Sini'>
+                        <i class='bi bi-map'></i>
+                    </button>
+                </div>
+            ";
+            })
+            ->editColumn('status', function ($row) {
+                if ($row->status == 'valid') return '<span class="badge bg-success">Valid</span>';
+                if ($row->status == 'suspect') return '<span class="badge bg-warning text-dark">Suspect</span>';
+                return '<span class="badge bg-danger">Rejected</span>';
+            })
+            ->addColumn('photo', function ($row) {
+                if ($row->photo_path) {
+                    $url = asset('storage/' . $row->photo_path);
+                    return "
+                    <button type='button' class='btn btn-sm btn-outline-primary btn-preview-photo' data-url='{$url}'>
+                        <i class='bi bi-image me-1'></i> Foto
+                    </button>
+                    <div class='mt-1 small text-muted'>Akurasi: {$row->accuracy}m</div>
+                ";
+                }
+                return "<span class='text-muted small'>Tidak ada foto</span>";
+            })
+            // JANGAN LUPA tambahkan 'type' ke rawColumns
+            ->rawColumns(['type', 'location', 'status', 'photo'])
+            ->make(true);
     }
 
     // Raw data fetchers for export (Excel/PDF)

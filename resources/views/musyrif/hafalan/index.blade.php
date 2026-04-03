@@ -205,10 +205,12 @@
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">TANGGAL SETORAN</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0"><i
-                                            class="bi bi-calendar-check"></i></span>
+                                    <span class="input-group-text bg-body-tertiary border-end-0">
+                                        <i class="bi bi-calendar-check"></i>
+                                    </span>
                                     <input type="text" name="tanggal_setoran" id="tanggal_create"
-                                        class="form-control bg-light border-start-0" readonly>
+                                        class="form-control bg-body-tertiary border-start-0" placeholder="Pilih Tanggal..."
+                                        readonly>
                                 </div>
                             </div>
 
@@ -247,8 +249,7 @@
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-primary">SURAH : AYAT (TEMPLATES)</label>
                                 <select name="hafalan_template_id" id="create_template_id"
-                                    class="form-select border-primary border-opacity-25"
-                                    style="background-color: #f8f9ff;">
+                                    class="form-select border-primary border-opacity-25 adaptive-select">
                                     <option value="">-- Pilih Juz & Tahapan dulu --</option>
                                 </select>
                             </div>
@@ -274,7 +275,7 @@
                             </div>
 
                             <div class="col-12">
-                                <label class="form-label small fw-bold">CATATAN MUSYRIF</label>
+                                <label class="form-label small fw-bold">CATATAN MUSYRIF (OPTIONAL)</label>
                                 <textarea name="catatan" id="create_catatan" class="form-control" rows="2"
                                     placeholder="Catatan tajwid, kelancaran, adab, dll."></textarea>
                             </div>

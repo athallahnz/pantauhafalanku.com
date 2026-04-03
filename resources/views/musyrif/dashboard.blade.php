@@ -275,7 +275,7 @@
         {{-- Chart 1: Setoran per Santri --}}
         <div class="col-lg-6">
             <div class="card kpi-card spotlight-card border-0 h-100">
-                <div class="card-header-custom">
+                <div class="card-header-custom text-adaptive-purple">
                     <i class="bi bi-bar-chart-fill"></i> Setoran Hafalan per Santri (Top 7)
                 </div>
                 <div class="card-body">
@@ -287,7 +287,7 @@
         {{-- Chart 2: Distribusi Status --}}
         <div class="col-lg-6">
             <div class="card kpi-card spotlight-card border-0 h-100">
-                <div class="card-header-custom">
+                <div class="card-header-custom text-adaptive-purple">
                     <i class="bi bi-pie-chart-fill"></i> Distribusi Status Hafalan
                 </div>
                 <div class="card-body d-flex align-items-center">
@@ -299,7 +299,7 @@
         {{-- Chart 3: Distribusi Juz --}}
         <div class="col-lg-8">
             <div class="card kpi-card spotlight-card border-0">
-                <div class="card-header-custom">
+                <div class="card-header-custom text-adaptive-purple">
                     <i class="bi bi-graph-up-arrow"></i> Distribusi Setoran per Juz
                 </div>
                 <div class="card-body">
@@ -311,7 +311,7 @@
         {{-- Chart 4: Nilai per Santri --}}
         <div class="col-lg-4">
             <div class="card kpi-card spotlight-card border-0">
-                <div class="card-header-custom">
+                <div class="card-header-custom text-adaptive-purple">
                     <i class="bi bi-award-fill"></i> Rata-rata Nilai (Top 7)
                 </div>
                 <div class="card-body">
@@ -323,7 +323,7 @@
         {{-- Agenda Table --}}
         <div class="col-12">
             <div class="card kpi-card spotlight-card border-0 mb-4">
-                <div class="card-header-custom justify-content-between">
+                <div class="card-header-custom text-adaptive-purple justify-content-between">
                     <div class="d-flex align-items-center gap-2">
                         <i class="bi bi-calendar-event-fill"></i> Real-time Setoran Santri Hari Ini
                     </div>

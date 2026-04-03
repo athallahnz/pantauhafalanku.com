@@ -16,8 +16,8 @@ class LoginResponse implements LoginResponseContract
             'admin' => route('admin.dashboard'),
             'musyrif' => route('musyrif.dashboard'),
             'santri' => route('santri.dashboard'),
-            'pimpinan' => route('admin.laporan.index'), // misal pimpinan lihat laporan saja
-            default => '/dashboard',                  // fallback
+            'pimpinan' => route('admin.laporan.index'),
+            default => '/dashboard',
         };
 
         return redirect()->intended($redirectTo)

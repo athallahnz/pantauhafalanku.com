@@ -87,7 +87,7 @@
     </div>
 
     <div class="row mb-4">
-        <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="col mx-auto">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-transparent py-3 fw-semibold d-flex align-items-center">
                     <i class="bi bi-person-lines-fill fs-5 me-2" style="color: var(--islamic-purple-500);"></i> Detail Profil
@@ -189,7 +189,7 @@
                             </button>
                             <button type="submit" class="btn text-white px-4"
                                 style="background: var(--islamic-purple-600);">
-                                <i class="bi bi-save me-1"></i> Simpan Perubahan
+                                <i class="bi bi-save me-1"></i> Simpan
                             </button>
                         </div>
 

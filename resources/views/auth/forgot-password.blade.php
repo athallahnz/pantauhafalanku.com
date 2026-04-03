@@ -87,14 +87,23 @@
                         @csrf
                         <div class="mb-4">
                             <label class="form-label small fw-bold text-muted">Alamat E-Mail</label>
-                            <input type="email" name="email" class="form-control glass-input"
+                            <input type="email" name="email"
+                                class="form-control glass-input @error('email') is-invalid @enderror"
                                 value="{{ old('email') }}" placeholder="name@example.com" required autofocus>
+
+                            @error('email')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
                         </div>
 
                         <div class="d-grid mb-4">
                             <button class="btn btn-primary btn-lg rounded-4 shadow-sm fw-bold py-3" type="submit"
-                                style="background: linear-gradient(135deg, #6f42c1, #4b2291); border: none;">
-                                Kirim Link Reset <i class="bi bi-send ms-1"></i>
+                                id="submitBtn">
+                                <span class="spinner-border spinner-border-sm d-none" id="loader" role="status"
+                                    aria-hidden="true"></span>
+                                <span id="btnText">Kirim Link Reset <i class="bi bi-send ms-1"></i></span>
                             </button>
                         </div>
 
@@ -111,13 +120,19 @@
 @endsection
 
 @push('script')
-<script type="module">
-    import { Renderer, Program, Mesh, Color, Triangle } from 'https://esm.sh/ogl';
+    <script type="module">
+        import {
+            Renderer,
+            Program,
+            Mesh,
+            Color,
+            Triangle
+        } from 'https://esm.sh/ogl';
 
-    const VERT = `#version 300 es
+        const VERT = `#version 300 es
     in vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }`;
 
-    const FRAG = `#version 300 es
+        const FRAG = `#version 300 es
     precision highp float;
     uniform float uTime; uniform float uAmplitude; uniform vec3 uColorStops[3]; uniform vec2 uResolution; uniform float uBlend;
     out vec4 fragColor;
@@ -149,55 +164,93 @@
         fragColor = vec4(intensity * rampColor * auroraAlpha, auroraAlpha);
     }`;
 
-    const container = document.getElementById('aurora-bg');
-    const renderer = new Renderer({ alpha: true, premultipliedAlpha: true, antialias: true });
-    const gl = renderer.gl;
-    container.appendChild(gl.canvas);
+        const container = document.getElementById('aurora-bg');
+        const renderer = new Renderer({
+            alpha: true,
+            premultipliedAlpha: true,
+            antialias: true
+        });
+        const gl = renderer.gl;
+        container.appendChild(gl.canvas);
 
-    function getColors() {
-        const isDark = document.documentElement.getAttribute('data-coreui-theme') === 'dark';
-        return isDark ? ['#1a0b3b', '#6f42c1', '#21094e'] : ['#f3e8ff', '#d8b4fe', '#f3e8ff'];
-    }
-
-    let colors = getColors();
-    let colorStopsArray = colors.map(hex => { const c = new Color(hex); return [c.r, c.g, c.b]; });
-
-    const geometry = new Triangle(gl);
-    const program = new Program(gl, {
-        vertex: VERT, fragment: FRAG,
-        uniforms: {
-            uTime: { value: 0 }, uAmplitude: { value: 1.2 }, uBlend: { value: 0.5 },
-            uColorStops: { value: colorStopsArray },
-            uResolution: { value: [container.offsetWidth, container.offsetHeight] },
+        function getColors() {
+            const isDark = document.documentElement.getAttribute('data-coreui-theme') === 'dark';
+            return isDark ? ['#1a0b3b', '#6f42c1', '#21094e'] : ['#f3e8ff', '#d8b4fe', '#f3e8ff'];
         }
-    });
 
-    const mesh = new Mesh(gl, { geometry, program });
-    function resize() {
-        renderer.setSize(container.offsetWidth, container.offsetHeight);
-        program.uniforms.uResolution.value = [container.offsetWidth, container.offsetHeight];
-    }
-    window.addEventListener('resize', resize); resize();
+        let colors = getColors();
+        let colorStopsArray = colors.map(hex => {
+            const c = new Color(hex);
+            return [c.r, c.g, c.b];
+        });
 
-    function update(t) {
+        const geometry = new Triangle(gl);
+        const program = new Program(gl, {
+            vertex: VERT,
+            fragment: FRAG,
+            uniforms: {
+                uTime: {
+                    value: 0
+                },
+                uAmplitude: {
+                    value: 1.2
+                },
+                uBlend: {
+                    value: 0.5
+                },
+                uColorStops: {
+                    value: colorStopsArray
+                },
+                uResolution: {
+                    value: [container.offsetWidth, container.offsetHeight]
+                },
+            }
+        });
+
+        const mesh = new Mesh(gl, {
+            geometry,
+            program
+        });
+
+        function resize() {
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+            program.uniforms.uResolution.value = [container.offsetWidth, container.offsetHeight];
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function update(t) {
+            requestAnimationFrame(update);
+            program.uniforms.uTime.value = t * 0.0005;
+            renderer.render({
+                scene: mesh
+            });
+        }
         requestAnimationFrame(update);
-        program.uniforms.uTime.value = t * 0.0005;
-        renderer.render({ scene: mesh });
-    }
-    requestAnimationFrame(update);
 
-    // Toggle Theme
-    const btnTheme = document.getElementById('btnThemeToggle');
-    btnTheme.addEventListener('click', () => {
-        const currentTheme = document.documentElement.getAttribute('data-coreui-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-coreui-theme', newTheme);
-        
-        document.getElementById('themeIcon').className = newTheme === 'dark' ? 'bi bi-moon-stars-fill fs-4' : 'bi bi-sun-fill fs-4';
-        document.getElementById('welcomeText').style.color = newTheme === 'dark' ? '#fff' : '#6f42c1';
+        // Toggle Theme
+        const btnTheme = document.getElementById('btnThemeToggle');
+        btnTheme.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-coreui-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-coreui-theme', newTheme);
 
-        const newStops = getColors();
-        program.uniforms.uColorStops.value = newStops.map(hex => { const c = new Color(hex); return [c.r, c.g, c.b]; });
-    });
-</script>
+            document.getElementById('themeIcon').className = newTheme === 'dark' ? 'bi bi-moon-stars-fill fs-4' :
+                'bi bi-sun-fill fs-4';
+            document.getElementById('welcomeText').style.color = newTheme === 'dark' ? '#fff' : '#6f42c1';
+
+            const newStops = getColors();
+            program.uniforms.uColorStops.value = newStops.map(hex => {
+                const c = new Color(hex);
+                return [c.r, c.g, c.b];
+            });
+        });
+
+        document.getElementById('authForm').addEventListener('submit', function() {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            document.getElementById('loader').classList.remove('d-none');
+            document.getElementById('btnText').innerText = 'Mengirim...';
+        });
+    </script>
 @endpush

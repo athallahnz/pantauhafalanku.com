@@ -12,15 +12,12 @@
 
         .kpi-card {
             border-radius: 20px;
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.7) !important;
             box-shadow: var(--card-shadow);
             transition: var(--transition-smooth);
             border: 1px solid rgba(0, 0, 0, 0.02) !important;
-            overflow: hidden;
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            background: rgba(255, 255, 255, 0.7) !important;
-            /* Semi transparan putih */
             height: 100%;
         }
 
@@ -45,12 +42,6 @@
             line-height: 1;
         }
 
-        .kpi-sub {
-            font-size: 0.8rem;
-            font-weight: 500;
-            margin-top: 5px;
-        }
-
         .kpi-icon {
             width: 50px;
             height: 50px;
@@ -59,260 +50,359 @@
             align-items: center;
             justify-content: center;
             font-size: 1.4rem;
-            transition: var(--transition-smooth);
-        }
-
-        .kpi-card:hover .kpi-icon {
-            transform: scale(1.1) rotate(-5deg);
         }
 
         .kpi-progress {
-            height: 8px;
-            background: #f0f2f5;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.05);
             border-radius: 10px;
             margin-top: 15px;
+            overflow: hidden;
         }
 
         .kpi-progress-bar {
             border-radius: 10px;
-            transition: width 1.5s cubic-bezier(0.1, 0.5, 0.5, 1);
+            transition: width 1s ease-in-out;
         }
 
-        .card-header-custom {
-            background: transparent;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            padding: 1.25rem 1.5rem;
-            font-weight: 700;
-            color: var(--islamic-purple-700);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .text-adaptive-purple {
-            color: var(--islamic-purple-700);
-            transition: color 0.3s ease;
-        }
-
-        /* ================= FIX DARK THEME UNTUK KPI CARDS ================= */
+        /* Dark Mode Fixes */
         [data-coreui-theme="dark"] .kpi-card {
             background: rgba(42, 42, 53, 0.6) !important;
-            /* Semi transparan gelap */
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
         }
 
         [data-coreui-theme="dark"] .kpi-value,
         [data-coreui-theme="dark"] .text-adaptive-purple {
             color: #ffffff !important;
         }
-
-        [data-coreui-theme="dark"] .kpi-label {
-            color: #a0a0a0;
-        }
-
-        [data-coreui-theme="dark"] .kpi-sub.text-muted {
-            color: #8a8a8a !important;
-        }
-
-        [data-coreui-theme="dark"] .kpi-icon.bg-primary-subtle,
-        [data-coreui-theme="dark"] .bg-light-subtle {
-            background-color: rgba(255, 255, 255, 0.05) !important;
-        }
-
-        [data-coreui-theme="dark"] .card-header-custom {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
     </style>
+
+    {{-- Elemen Audio Tersembunyi --}}
+    <audio id="notifSound" src="{{ asset('sounds/notif.mp3') }}" preload="auto"></audio>
 
     {{-- HEADER TITLE --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h4 class="mb-0 fw-bold text-adaptive-purple">Dashboard Departemen</h4>
-            <span class="text-muted small">Ringkasan aktivitas dan data hafalan bulan ini</span>
+            <span class="text-muted small">Ringkasan aktivitas bulan {{ now()->translatedFormat('F Y') }}</span>
+        </div>
+        <div class="col-auto">
+            {{-- Indikator Suara Realtime --}}
+            {{-- Letakkan di dekat judul atau tombol header --}}
+            <button id="audioStatusBtn" class="btn btn-sm btn-light border rounded-pill px-4 shadow-sm transition-smooth">
+                <i class="bi bi-volume-mute text-danger me-1"></i>
+                <span class="small fw-bold text-muted">Suara Off</span>
+            </button>
+            <a href="{{ route('admin.musyrif.index') }}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                <i class="bi bi-person-plus me-1"></i> Musyrif Baru
+            </a>
         </div>
     </div>
 
     {{-- STATS CARDS --}}
     <div class="row g-4 mb-4">
-
-        {{-- Card 1: Kelas --}}
-        <div class="col-lg-4 col-md-6">
-            <div class="kpi-card position-relative p-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-card p-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <div class="kpi-label">Kelas di Departemen</div>
-                        <div class="kpi-value count-up" style="color: var(--islamic-purple-600);"
-                            data-target="{{ $jumlahKelas ?? 0 }}">0</div>
+                        <div class="kpi-label">Jumlah Kelas</div>
+                        <div class="kpi-value count-up" data-target="{{ $jumlahKelas }}">0</div>
                     </div>
-                    <div class="kpi-icon" style="background: var(--islamic-purple-100); color: var(--islamic-purple-600);">
-                        <i class="bi bi-houses"></i>
-                    </div>
+                    <div class="kpi-icon bg-primary-subtle text-primary"><i class="bi bi-houses"></i></div>
                 </div>
-                <div class="position-absolute bottom-0 start-0 w-100"
-                    style="height: 4px; background: var(--islamic-purple-400);"></div>
             </div>
         </div>
-
-        {{-- Card 2: Musyrif --}}
-        <div class="col-lg-4 col-md-6">
-            <div class="kpi-card position-relative p-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-card p-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <div class="kpi-label">Jumlah Musyrif</div>
-                        <div class="kpi-value count-up" style="color: var(--islamic-tosca-600);"
-                            data-target="{{ $jumlahMusyrif ?? 0 }}">0</div>
+                        <div class="kpi-value count-up" data-target="{{ $jumlahMusyrif }}">0</div>
                     </div>
-                    <div class="kpi-icon" style="background: var(--islamic-tosca-100); color: var(--islamic-tosca-600);">
-                        <i class="bi bi-people"></i>
-                    </div>
+                    <div class="kpi-icon bg-info-subtle text-info"><i class="bi bi-people"></i></div>
                 </div>
-                <div class="position-absolute bottom-0 start-0 w-100"
-                    style="height: 4px; background: var(--islamic-tosca-400);"></div>
             </div>
         </div>
-
-        {{-- Card 3: Setoran --}}
-        <div class="col-lg-4 col-md-6">
-            <div class="kpi-card position-relative p-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-card p-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <div class="kpi-label">Setoran Bulan Ini</div>
-                        <div class="kpi-value count-up" style="color: var(--islamic-purple-700);"
-                            data-target="{{ $setoranBulanIni ?? 0 }}">0</div>
+                        <div class="kpi-value count-up" data-target="{{ $setoranBulanIni }}">0</div>
                     </div>
-                    <div class="kpi-icon" style="background: var(--islamic-purple-50); color: var(--islamic-purple-600);">
-                        <i class="bi bi-journal-check"></i>
-                    </div>
-                </div>
-                <div class="position-absolute bottom-0 start-0 w-100"
-                    style="height: 4px; background: linear-gradient(90deg, var(--islamic-purple-600), var(--islamic-tosca-500));">
+                    <div class="kpi-icon bg-success-subtle text-success"><i class="bi bi-journal-check"></i></div>
                 </div>
             </div>
         </div>
-
+        {{-- Card Absensi dengan Progress Bar --}}
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-card p-4 border-primary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="kpi-label">Kehadiran Musyrif</div>
+                        <div class="d-flex align-items-baseline gap-1">
+                            <span class="kpi-value count-up" id="absensi-counter"
+                                data-target="{{ $absensiMusyrifHariIni }}">0</span>
+                            <span class="text-muted fw-bold">/ {{ $jumlahMusyrif }}</span>
+                        </div>
+                    </div>
+                    <div class="kpi-icon bg-warning-subtle text-warning"><i class="bi bi-person-check"></i></div>
+                </div>
+                <div class="kpi-progress">
+                    <div id="absensi-progress" class="kpi-progress-bar bg-warning"
+                        style="width: {{ $jumlahMusyrif > 0 ? ($absensiMusyrifHariIni / $jumlahMusyrif) * 100 : 0 }}%; height: 100%;">
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    {{-- CHART SECTION --}}
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="card-header border-0 py-3 rounded-top-4">
-            <h5 class="mb-0 fw-semibold text-white"><i class="bi bi-graph-up me-2"></i> Ringkasan Hafalan per Kelas</h5>
+    {{-- QUICK ACCESS SECTION --}}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card kpi-card border-0">
+                <div class="card-body p-3">
+                    <div class="kpi-label mb-3"><i class="bi bi-lightning-fill text-warning"></i> Akses Cepat Sistem</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ route('admin.musyrif.index') }}"
+                            class="btn btn-light rounded-pill border shadow-sm px-4 py-2">
+                            <i class="bi bi-person-badge text-primary me-2"></i>Kelola Musyrif
+                        </a>
+                        <a href="{{ route('admin.laporan.index') }}"
+                            class="btn btn-light rounded-pill border shadow-sm px-4 py-2">
+                            <i class="bi bi-journal-text text-success me-2"></i>Laporan Hafalan
+                        </a>
+                        <a href="{{ route('admin.santri.migrasi.page') }}"
+                            class="btn btn-light rounded-pill border shadow-sm px-4 py-2">
+                            <i class="bi bi-arrow-up-circle text-info me-2"></i>Naik Kelas
+                        </a>
+                        <a href="{{ route('admin.settings.institution') }}"
+                            class="btn btn-light rounded-pill border shadow-sm px-4 py-2">
+                            <i class="bi bi-gear text-secondary me-2"></i>Profil Lembaga
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- CHART --}}
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0 fw-semibold text-white"><i class="bi bi-graph-up me-2"></i> Capaian Hafalan per Kelas
+            </h5>
         </div>
         <div class="card-body p-4">
-            <p class="text-muted mb-4">
-                Grafik di bawah ini menampilkan rata-rata capaian hafalan santri (dalam juz) di masing-masing kelas untuk
-                bulan ini.
-            </p>
-
-            {{-- Wrapper agar chart responsif --}}
-            <div style="position: relative; height: 300px; width: 100%;">
+            <div style="position: relative; height: 320px; width: 100%;">
                 <canvas id="hafalanChart"></canvas>
             </div>
         </div>
     </div>
-
 @endsection
 
 @push('scripts')
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Ambil elemen canvas
-            const ctx = document.getElementById('hafalanChart').getContext('2d');
+            // === 1. KONFIGURASI & STATE ===
+            const state = {
+                totalMusyrif: {{ $jumlahMusyrif }},
+                chartData: @json($chartData),
+                isInteracted: false,
+                baseUrl: "{{ route('admin.musyrif.attendances', ':id') }}",
+                elements: {
+                    sound: document.getElementById('notifSound'),
+                    counter: document.getElementById('absensi-counter'),
+                    progressBar: document.getElementById('absensi-progress'),
+                    audioBtn: document.getElementById('audioStatusBtn')
+                }
+            };
 
-            // Setup Gradient untuk background chart
-            const gradientPurple = ctx.createLinearGradient(0, 0, 0, 300);
-            gradientPurple.addColorStop(0, 'rgba(107, 78, 255, 0.4)'); // --islamic-purple-500
-            gradientPurple.addColorStop(1, 'rgba(107, 78, 255, 0.0)');
+            // === 2. INTERACTION BRIDGE (Silent Activation) ===
+            const unlockInteractions = () => {
+                if (state.isInteracted) return;
+                state.isInteracted = true;
 
-            // Inisialisasi Chart (Contoh Data Dummy)
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Kelas 7A', 'Kelas 7B', 'Kelas 8A', 'Kelas 8B', 'Kelas 9A', 'Kelas 9B'],
-                    datasets: [{
-                        label: 'Rata-rata Hafalan (Juz)',
-                        data: [1.2, 1.5, 2.8, 2.4, 4.1,
-                            4.5
-                        ], // Ganti dengan data real dari controller
-                        borderColor: '#6b4eff', // var(--islamic-purple-500)
-                        backgroundColor: gradientPurple,
-                        borderWidth: 3,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#6b4eff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        fill: true,
-                        tension: 0.4 // Membuat garis melengkung (smooth)
-                    }]
+                // Unlock audio secara "diam-diam" melalui interaksi user
+                if (state.elements.sound) {
+                    state.elements.sound.play().then(() => {
+                        state.elements.sound.pause();
+                        state.elements.sound.currentTime = 0;
+
+                        // Update UI Indikator Suara jika ada
+                        if (state.elements.audioBtn) {
+                            state.elements.audioBtn.classList.replace('btn-light',
+                                'btn-primary-subtle');
+                            state.elements.audioBtn.innerHTML = `
+                                <i class="bi bi-volume-up-fill text-primary me-1"></i>
+                                <span class="small fw-bold text-primary">Suara On</span>`;
+                        }
+                    }).catch(() => {
+                        state.isInteracted = false; // Reset jika gagal
+                    });
+                }
+
+                // Hapus listener setelah aktif
+                ['click', 'touchstart', 'keydown'].forEach(evt =>
+                    document.removeEventListener(evt, unlockInteractions)
+                );
+            };
+
+            ['click', 'touchstart', 'keydown'].forEach(evt =>
+                document.addEventListener(evt, unlockInteractions)
+            );
+
+            // === 3. CORE UI MODULE ===
+            const UI = {
+                initCountUp: () => {
+                    document.querySelectorAll('.count-up').forEach(counter => {
+                        const target = parseInt(counter.dataset.target) || 0;
+                        let frame = 0,
+                            totalFrames = 40;
+                        const interval = setInterval(() => {
+                            frame++;
+                            const progress = frame / totalFrames;
+                            const eased = 1 - Math.pow(1 - progress, 3);
+                            counter.textContent = Math.round(target * eased).toLocaleString(
+                                'id-ID');
+                            if (frame === totalFrames) clearInterval(interval);
+                        }, 30);
+                    });
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false // Sembunyikan legend jika hanya 1 dataset
+
+                updateStats: () => {
+                    const {
+                        counter,
+                        progressBar
+                    } = state.elements;
+                    if (counter) {
+                        const current = parseInt(counter.textContent.replace(/\D/g, '')) || 0;
+                        const newVal = current + 1;
+                        counter.textContent = newVal.toLocaleString('id-ID');
+
+                        if (progressBar && state.totalMusyrif > 0) {
+                            progressBar.style.width = `${(newVal / state.totalMusyrif) * 100}%`;
+                        }
+                    }
+                },
+
+                initChart: () => {
+                    const ctx = document.getElementById('hafalanChart').getContext('2d');
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                    gradient.addColorStop(0, 'rgba(107, 78, 255, 0.4)');
+                    gradient.addColorStop(1, 'rgba(107, 78, 255, 0.0)');
+
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: state.chartData.map(d => d.nama_kelas),
+                            datasets: [{
+                                label: 'Rata-rata Setoran',
+                                data: state.chartData.map(d => d.rata_rata),
+                                borderColor: '#6b4eff',
+                                backgroundColor: gradient,
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 4
+                            }]
                         },
-                        tooltip: {
-                            backgroundColor: '#40307a', // var(--islamic-purple-700)
-                            titleFont: {
-                                size: 13
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
                             },
-                            bodyFont: {
-                                size: 14,
-                                weight: 'bold'
-                            },
-                            padding: 10,
-                            displayColors: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return context.parsed.y + ' Juz';
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(0,0,0,0.05)'
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    }
                                 }
                             }
                         }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0,0,0,0.05)',
-                                drawBorder: false,
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false,
-                                drawBorder: false,
-                            }
-                        }
-                    }
+                    });
                 }
+            };
+
+            // === 4. NOTIFICATION MODULE ===
+            const Notif = {
+                requestPermission: () => {
+                    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                        Notification.requestPermission();
+                    }
+                },
+
+                fireEffects: () => {
+                    if (!state.isInteracted) return;
+
+                    // Suara iPhone
+                    if (state.elements.sound?.readyState >= 2) {
+                        state.elements.sound.pause();
+                        state.elements.sound.currentTime = 0;
+                        state.elements.sound.play().catch(() => {});
+                    }
+
+                    // Getar
+                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                },
+
+                handleIncoming: (data) => {
+                    const logUrl = state.baseUrl.replace(':id', data.musyrifId);
+
+                    // 1. Browser Native Notif
+                    if (Notification.permission === "granted") {
+                        const n = new Notification("Absensi Masuk!", {
+                            body: `${data.nama} baru saja absen jam ${data.waktu}`,
+                            icon: "/vendor/pwa/icons/icon-192x192.png"
+                        });
+                        n.onclick = () => {
+                            window.focus();
+                            window.location.href = logUrl;
+                        };
+                    }
+
+                    // 2. SweetAlert Toast
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Absensi Masuk!',
+                        html: `<b>${data.nama}</b> baru saja absen.<br><small>Waktu: ${data.waktu}</small>`,
+                        showConfirmButton: true,
+                        confirmButtonText: 'Cek Log',
+                        confirmButtonColor: '#6b4eff',
+                        timer: 10000,
+                        timerProgressBar: true,
+                    }).then((res) => {
+                        if (res.isConfirmed) window.location.href = logUrl;
+                    });
+                }
+            };
+
+            // === 5. INITIALIZATION ===
+            UI.initChart();
+            UI.initCountUp();
+            Notif.requestPermission();
+
+            const pusher = new Pusher('{{ env('PUSHER_APP_KEY') }}', {
+                cluster: '{{ env('PUSHER_APP_CLUSTER') }}',
+                forceTLS: true
             });
 
-            // ================= COUNT UP =================
-            const counters = document.querySelectorAll('.count-up');
-            counters.forEach(counter => {
-                const target = parseInt(counter.dataset.target) || 0;
-                const start = parseInt(counter.textContent.replace(/\D/g, '')) || 0;
-                if (start === target) return;
-
-                const duration = 1200;
-                const frameRate = 30;
-                const totalFrames = Math.round(duration / (1000 / frameRate));
-                let frame = 0;
-
-                const interval = setInterval(() => {
-                    frame++;
-                    const progress = frame / totalFrames;
-                    const eased = 1 - Math.pow(1 - progress, 3); // easeOut
-                    const current = Math.round(start + (target - start) * eased);
-                    counter.textContent = current.toLocaleString('id-ID');
-
-                    if (frame >= totalFrames) {
-                        counter.textContent = target.toLocaleString('id-ID');
-                        clearInterval(interval);
-                    }
-                }, 1000 / frameRate);
+            pusher.subscribe('dashboard-channel').bind('musyrif-absen-event', (data) => {
+                Notif.fireEffects();
+                Notif.handleIncoming(data);
+                UI.updateStats();
             });
         });
     </script>

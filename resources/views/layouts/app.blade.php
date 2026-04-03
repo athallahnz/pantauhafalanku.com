@@ -184,14 +184,17 @@
         </div>
 
         {{-- FOOTER --}}
-        <footer class="footer px-4 border-top d-flex align-items-center">
-            <div>
-                © {{ date('Y') }} <span class="d-none d-sm-inline">Sistem Informasi Hafalan Santri</span>
-                <span class="d-inline d-sm-none">SI Hafalan</span>
+        <footer
+            class="footer border-top d-flex flex-column flex-sm-row align-items-center justify-content-center justify-content-sm-between gap-2">
+            <div class="text-center text-sm-start small order-2 order-sm-1">
+                <span class="text-muted">© {{ date('Y') }}</span>
+                <span class="d-none d-md-inline fw-semibold text-muted ms-1">Sistem Informasi Hafalan Santri</span>
+                <span class="d-inline d-md-none fw-semibold text-muted ms-1">SI Hafalan</span>
             </div>
-            <div class="ms-auto small">
-                <span class="brand-studio text-muted">Created by </span>
-                <span class="fw-bold text-adaptive-purple">AnzArt Studio</span>
+
+            <div class="small order-1 order-sm-2 mb-0">
+                <span class="text-muted">Created by</span>
+                <span class="fw-bold text-adaptive-purple ms-1" style="letter-spacing: 0.5px;">AnzArt Studio</span>
             </div>
         </footer>
     </div>

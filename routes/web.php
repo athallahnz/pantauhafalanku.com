@@ -36,9 +36,8 @@ use App\Http\Controllers\ProfileSettingController;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+// Cukup gunakan Route::view untuk halaman statis
+Route::view('/', 'welcome')->name('welcome');
 
 Route::post('/logout', function () {
     Auth::logout();
@@ -169,11 +168,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|pimpinan
     Route::post('musyrif/execute-import', [AdminMusyrifController::class, 'executeImport'])
         ->name('musyrif.execute_import');
 
-    // DataTables endpoint untuk attendances musyrif
+    // Pastikan ->name() sesuai dengan yang dipanggil di Blade
     Route::get('musyrif/{id}/attendances', [AdminMusyrifController::class, 'attendances'])
         ->name('musyrif.attendances');
-    Route::get('musyrif/{id}/attendances', [AdminMusyrifController::class, 'attendances'])
-        ->name('musyrif.attendances');
+
     Route::patch('musyrif/attendances/{attendance}/status', [AdminMusyrifController::class, 'updateAttendanceStatus'])
         ->name('musyrif.attendances.update_status');
 
@@ -185,6 +183,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|pimpinan
     Route::get('laporan-hafalan/rekap-kelas', [AdminLaporanController::class, 'getRekapKelas'])->name('laporan.rekap-kelas');
     Route::get('laporan-hafalan/rekap-musyrif', [AdminLaporanController::class, 'getRekapMusyrif'])->name('laporan.rekap-musyrif');
     Route::get('laporan-hafalan/riwayat-santri/{id}', [AdminLaporanController::class, 'getRiwayatSantri'])->name('laporan.riwayat-santri');
+    Route::get('laporan-hafalan/absensi-musyrif', [AdminLaporanController::class, 'getAbsensiMusyrif'])->name('laporan.absensi-musyrif');
 
     // Chart data
     Route::get('laporan-hafalan/chart-kelas', [AdminLaporanController::class, 'getChartKelas'])->name('laporan.chart-kelas');

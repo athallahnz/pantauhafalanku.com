@@ -77,9 +77,11 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         // RESET PASSWORD VIEW
-        Fortify::resetPasswordView(function (Request $request) {
+        Fortify::resetPasswordView(function ($request) {
             return view('auth.reset-password', ['request' => $request]);
         });
+
+        Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
 
         // EMAIL VERIFICATION VIEW
         Fortify::verifyEmailView(function () {
@@ -95,17 +97,19 @@ class FortifyServiceProvider extends ServiceProvider
 
             $login = trim($request->input('login'));
 
+            // UPDATE DI SINI: Query pencarian user diperluas
             $user = User::query()
-                ->when(
-                    filter_var($login, FILTER_VALIDATE_EMAIL),
-                    fn($q) => $q->where('email', $login),
-                    fn($q) => $q->where('nomor', $login)
-                )
+                ->where('email', $login)
+                ->orWhere('nomor', $login)
+                ->orWhereHas('santri', function ($query) use ($login) {
+                    $query->where('nis', $login);
+                })
                 ->first();
 
             if (!$user) {
                 throw ValidationException::withMessages([
-                    'login' => 'Email atau nomor tidak terdaftar.',
+                    // Update pesan error-nya
+                    'login' => 'Email, Nomor, atau NIS/NIM tidak terdaftar.',
                 ]);
             }
 
@@ -115,14 +119,14 @@ class FortifyServiceProvider extends ServiceProvider
                 ]);
             }
 
-            // Pengecekan verifikasi email yang bikin error tadi:
+            // Pengecekan verifikasi email
             if ($user instanceof MustVerifyEmail && !$user->hasVerifiedEmail()) {
                 return null;
             }
 
             if (!$user->is_approved) {
                 throw ValidationException::withMessages([
-                    'login' => 'Akun Anda sudah diverifikasi, namun masih menunggu persetujuan Admin Department.',
+                    'login' => 'Akun Anda sudah diverifikasi, namun masih menunggu persetujuan Admin.',
                 ]);
             }
 
