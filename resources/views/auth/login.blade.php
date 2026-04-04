@@ -4,6 +4,15 @@
 
 @section('content')
     <style>
+        /* ================= 0. GLOBAL FORCED STYLES ================= */
+        .force-white {
+            color: #ffffff !important;
+        }
+
+        .text-white-forced {
+            color: rgba(255, 255, 255, 0.85) !important;
+        }
+
         /* ================= 1. BASE & AURORA ================= */
         #aurora-bg {
             position: fixed;
@@ -113,19 +122,6 @@
             color: #f8d7da;
         }
 
-        .invalid-feedback-glass {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #dc3545;
-            margin-top: 5px;
-            display: block;
-            padding-left: 5px;
-        }
-
-        [data-coreui-theme="dark"] .invalid-feedback-glass {
-            color: #ff6b6b;
-        }
-
         @keyframes shake {
 
             0%,
@@ -144,18 +140,19 @@
     </style>
 
     <div id="aurora-bg"></div>
-    <div class="theme-switcher shadow-lg" id="btnThemeToggle"><i class="bi bi-sun-fill fs-4" id="themeIcon"></i></div>
+    <div class="theme-switcher shadow-lg" id="btnThemeToggle">
+        <i class="bi bi-sun-fill fs-4" id="themeIcon"></i>
+    </div>
 
-    <div class="row justify-content-center align-items-center min-vh-100 w-100 m-0"
-        style="position: relative; z-index: 10;">
+    <div class="row justify-content-center align-items-center min-vh-100 w-100 m-0" style="position: relative; z-index: 10;">
         <div class="col-md-10 col-lg-6 col-xl-5 px-4">
             <div class="card glass-pane border-0 py-3">
                 <div class="card-body p-4 p-md-5">
                     <div class="text-center mb-4">
-                        <img src="{{ asset('assets/logos-primary.png') }}" alt="Logo" class="mb-3"
-                            style="width: 90px; filter: drop-shadow(0 5px 15px rgba(111, 66, 193, 0.2));">
-                        <h2 class="h4 fw-bold mb-1" id="welcomeText" style="color: #6f42c1;">Selamat Datang</h2>
-                        <p class="text-muted small">Sistem Informasi Hafalan Santri</p>
+                        <img src="{{ asset('assets/logos-primary.png') }}" alt="Logo" id="mainLogo" class="mb-3"
+                            style="width: 90px; filter: drop-shadow(0 5px 15px rgba(111, 66, 193, 0.2)); transition: all 0.3s ease;">
+                        <h2 class="h5 fw-bold mb-2 force-white" id="welcomeText">Sistem Informasi Tahfidz Qur'an</h2>
+                        <p class="text-white-forced small">Departemen Al-Qur'an - Pondok Pesantren Darut Taqwa Ponorogo</p>
                     </div>
 
                     {{-- NOTIFIKASI --}}
@@ -180,21 +177,19 @@
                     <form method="POST" action="{{ route('login') }}" id="loginForm">
                         @csrf
                         <div class="mb-4">
-                            {{-- UBAH LABEL INI --}}
-                            <label class="form-label small fw-bold text-muted">Email, Nomor, atau NIS</label>
-
-                            {{-- UBAH PLACEHOLDER INI --}}
+                            <label class="form-label small fw-bold force-white">Email, Nomor, atau NIS</label>
                             <input type="text" name="login" class="form-control glass-input"
-                                value="{{ old('login') }}" placeholder="Masukkan Email, Nomor, atau NIS" required autofocus>
+                                value="{{ old('login') }}" placeholder="Masukkan Email, Nomor, atau NIS" required
+                                autofocus>
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label small fw-bold text-muted">Password</label>
+                            <label class="form-label small fw-bold force-white">Password</label>
                             <div class="position-relative">
                                 <input id="password" type="password" name="password" class="form-control glass-input pe-5"
                                     placeholder="Masukkan Password" required>
                                 <button type="button" id="togglePassword"
-                                    class="btn btn-link p-0 position-absolute top-50 translate-middle-y text-muted"
+                                    class="btn btn-link p-0 position-absolute top-50 translate-middle-y text-white-forced"
                                     style="right: 1.2rem; z-index: 10;">
                                     <i class="bi bi-eye-slash fs-5"></i>
                                 </button>
@@ -204,23 +199,23 @@
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="remember" id="remember">
-                                <label class="form-check-label small text-muted" for="remember">Ingat saya</label>
+                                <label class="form-check-label small force-white" for="remember">Ingat saya</label>
                             </div>
-                            <a class="small fw-bold text-decoration-none" style="color: #6f42c1;"
+                            <a class="small fw-bold text-decoration-none text-white"
                                 href="{{ route('password.request') }}">Lupa password?</a>
                         </div>
 
                         <div class="d-grid mb-4">
                             <button class="btn btn-primary btn-lg rounded-4 shadow-sm fw-bold py-3" type="submit"
-                                style="background: linear-gradient(135deg, #6f42c1, #4b2291); border: none;">
+                                style="background: linear-gradient(135deg, #6f42c1, #4b2291); border: none; color: white;">
                                 Masuk ke Akun <i class="bi bi-arrow-right-short ms-1"></i>
                             </button>
                         </div>
 
                         @if (Route::has('register'))
                             <div class="text-center">
-                                <span class="small text-muted">Belum punya akun?</span>
-                                <a class="small fw-bold text-decoration-none ms-1" style="color: #6f42c1;"
+                                <span class="small force-white">Belum punya akun?</span>
+                                <a class="small fw-bold text-decoration-none ms-1 text-white"
                                     href="{{ route('register') }}">Daftar Sekarang</a>
                             </div>
                         @endif
@@ -228,7 +223,10 @@
                 </div>
             </div>
             <div class="text-center mt-4">
-                <p class="text-white opacity-50 small">&copy; 2026 - AnzArt Studio</p>
+                <p class="text-white opacity-50 small">
+                    &copy;2026 SIMTAQU
+                    <span class="d-none d-md-inline">- Sistem Informasi Tahfidz Qur'an</span>
+                </p>
             </div>
         </div>
     </div>
@@ -278,6 +276,7 @@
         fragColor = vec4(intensity * rampColor * auroraAlpha, auroraAlpha);
     }`;
 
+    // --- SETUP RENDERER ---
     const container = document.getElementById('aurora-bg');
     const renderer = new Renderer({
         alpha: true,
@@ -287,17 +286,33 @@
     const gl = renderer.gl;
     container.appendChild(gl.canvas);
 
-    function getColors() {
-        const isDark = document.documentElement.getAttribute('data-coreui-theme') === 'dark';
-        return isDark ? ['#1a0b3b', '#6f42c1', '#21094e'] : ['#f3e8ff', '#d8b4fe', '#f3e8ff'];
+    // --- THEME UTILITIES ---
+    function getColors(targetTheme) {
+        return targetTheme === 'dark' ?
+            ['#1a0b3b', '#6f42c1', '#21094e'] :
+            ['#f3e8ff', '#d8b4fe', '#f3e8ff'];
     }
 
-    let colors = getColors();
-    let colorStopsArray = colors.map(hex => {
-        const c = new Color(hex);
-        return [c.r, c.g, c.b];
-    });
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-coreui-theme', theme);
 
+        // Update Ikon & Logo
+        const icon = document.getElementById('themeIcon');
+        const logo = document.getElementById('mainLogo');
+
+        if (icon) icon.className = theme === 'dark' ? 'bi bi-moon-stars-fill fs-4' : 'bi bi-sun-fill fs-4';
+        if (logo) logo.src = theme === 'dark' ? "{{ asset('assets/logos.png') }}" :
+            "{{ asset('assets/logos-primary.png') }}";
+
+        // Update Aurora Colors
+        const newStops = getColors(theme);
+        program.uniforms.uColorStops.value = newStops.map(hex => {
+            const c = new Color(hex);
+            return [c.r, c.g, c.b];
+        });
+    }
+
+    // --- INITIALIZE SHADER ---
     const geometry = new Triangle(gl);
     const program = new Program(gl, {
         vertex: VERT,
@@ -313,7 +328,11 @@
                 value: 0.5
             },
             uColorStops: {
-                value: colorStopsArray
+                value: [
+                    [0, 0, 0],
+                    [0, 0, 0],
+                    [0, 0, 0]
+                ]
             },
             uResolution: {
                 value: [container.offsetWidth, container.offsetHeight]
@@ -342,25 +361,29 @@
     }
     requestAnimationFrame(update);
 
-    // THEME TOGGLE LOGIC
+    // --- THEME LOGIC (System + Manual) ---
     const btnTheme = document.getElementById('btnThemeToggle');
+
     btnTheme.addEventListener('click', () => {
         const currentTheme = document.documentElement.getAttribute('data-coreui-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-coreui-theme', newTheme);
         localStorage.setItem('theme', newTheme);
-        document.getElementById('themeIcon').className = newTheme === 'dark' ? 'bi bi-moon-stars-fill fs-4' :
-            'bi bi-sun-fill fs-4';
-        const welcomeText = document.getElementById('welcomeText');
-        if (welcomeText) welcomeText.style.color = newTheme === 'dark' ? '#fff' : '#6f42c1';
-        const newStops = getColors();
-        program.uniforms.uColorStops.value = newStops.map(hex => {
-            const c = new Color(hex);
-            return [c.r, c.g, c.b];
-        });
+        applyTheme(newTheme);
     });
 
-    // PASSWORD TOGGLE (Safe check)
+    // Inisialisasi awal
+    const savedTheme = localStorage.getItem('theme');
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    applyTheme(savedTheme || systemTheme);
+
+    // Listen perubahan sistem secara real-time
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        if (!localStorage.getItem('theme')) {
+            applyTheme(e.matches ? 'dark' : 'light');
+        }
+    });
+
+    // --- UI INTERACTION ---
     const togglePass = document.getElementById('togglePassword');
     if (togglePass) {
         togglePass.addEventListener('click', function() {

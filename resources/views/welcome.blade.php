@@ -803,7 +803,7 @@
                         <li class="nav-item flex-grow-1 flex-lg-grow-0 d-flex gap-2 w-100 w-lg-auto">
                             @if (Route::has('login'))
                                 @auth
-                                    <a href="{{ url('/superadmin/dashboard') }}"
+                                    <a href="{{ url('/login') }}"
                                         class="btn text-white rounded-pill px-4 shadow-sm w-100 fw-bold"
                                         style="background: linear-gradient(135deg, var(--islamic-purple-500), var(--islamic-purple-700)); border: none;">
                                         Dashboard

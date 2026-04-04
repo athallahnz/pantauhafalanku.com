@@ -99,7 +99,7 @@ class SantriController extends Controller
 
                 return '
                 <div class="d-flex gap-2 flex-nowrap">
-                    <button type="button" class="btn btn-sm btn-primary btn-progress" 
+                    <button type="button" class="btn btn-sm btn-primary btn-progress"
                         data-nama="' . e($santri->nama) . '"
                         data-kelas="' . e(optional($santri->kelas)->nama_kelas ?: '-') . '"
                         data-detail_html="' . e($detailHtml) . '">

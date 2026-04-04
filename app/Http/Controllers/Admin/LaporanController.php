@@ -189,69 +189,24 @@ class LaporanController extends Controller
         [$startDate, $endDate] = $this->getRangeFromPeriode($periode);
 
         $query = Kelas::select(
-            'kelas.id',
+            'kelas.id', // Gunakan nama tabel yang sesuai di DB
             'kelas.nama_kelas',
-
             DB::raw('COUNT(DISTINCT santris.id) as jumlah_santri'),
-
-            DB::raw("
-            COALESCE(SUM(
-                CASE
-                    WHEN hafalans.status IN ('lulus','ulang')
-                    THEN 1 ELSE 0
-                END
-            ),0) as total_setor
-        "),
-
-            DB::raw("
-            COALESCE(SUM(
-                CASE
-                    WHEN hafalans.status = 'hadir_tidak_setor'
-                    THEN 1 ELSE 0
-                END
-            ),0) as hadir_tidak_setor
-        "),
-
-            DB::raw("
-            COALESCE(SUM(
-                CASE
-                    WHEN hafalans.status = 'alpha'
-                    THEN 1 ELSE 0
-                END
-            ),0) as alpha
-        "),
-
-            DB::raw("
-            AVG(
-                CASE
-                    WHEN hafalans.status IN ('lulus','ulang')
-                    THEN {$this->sqlNilaiLabelToAngka()}
-                    ELSE NULL
-                END
-            ) as rata_nilai
-        ")
+            DB::raw("SUM(CASE WHEN hafalans.status IN ('lulus','ulang') THEN 1 ELSE 0 END) as total_setor"),
+            DB::raw("SUM(CASE WHEN hafalans.status = 'hadir_tidak_setor' THEN 1 ELSE 0 END) as hadir_tidak_setor"),
+            DB::raw("SUM(CASE WHEN hafalans.status = 'alpha' THEN 1 ELSE 0 END) as alpha"),
+            DB::raw("AVG(CASE WHEN hafalans.status IN ('lulus','ulang') THEN {$this->sqlNilaiLabelToAngka()} ELSE NULL END) as rata_nilai")
         )
             ->leftJoin('santris', 'santris.kelas_id', '=', 'kelas.id')
-            ->leftJoin('hafalans', 'hafalans.santri_id', '=', 'santris.id')
-
-            ->when(
-                $kelasId,
-                fn($q) =>
-                $q->where('kelas.id', $kelasId)
-            )
-
-            ->when(
-                $musyrifId,
-                fn($q) =>
-                $q->where('santris.musyrif_id', $musyrifId)
-            )
-
-            ->when(
-                $startDate && $endDate,
-                fn($q) =>
-                $q->whereBetween('hafalans.tanggal_setoran', [$startDate, $endDate])
-            )
-
+            ->leftJoin('hafalans', function ($join) use ($startDate, $endDate) {
+                $join->on('hafalans.santri_id', '=', 'santris.id');
+                if ($startDate && $endDate) {
+                    $join->whereBetween('hafalans.tanggal_setoran', [$startDate, $endDate]);
+                }
+            })
+            // Filter Kelas/Musyrif harus di luar join agar data Kelas tetap muncul meski tidak ada santrinya (Left Join)
+            ->when($kelasId, fn($q) => $q->where('kelas.id', $kelasId))
+            ->when($musyrifId, fn($q) => $q->where('santris.musyrif_id', $musyrifId))
             ->groupBy('kelas.id', 'kelas.nama_kelas');
 
         return DataTables::of($query)
@@ -652,22 +607,23 @@ class LaporanController extends Controller
                 return '<span class="badge bg-warning text-dark rounded-pill px-3"><i class="bi bi-moon-stars-fill me-1"></i> Sore</span>';
             })
             ->addColumn('location', function ($row) {
-                $latlng = "{$row->latitude}, {$row->longitude}";
+                $latlng = "{$row->latitude},{$row->longitude}";
+                // Format link yang benar
                 $gmapsLink = "https://www.google.com/maps?q={$latlng}";
                 $addr = \Illuminate\Support\Str::limit($row->address_text, 35);
 
                 return "
-                <div class='mb-1'>{$addr}</div>
-                <div class='d-flex gap-2 align-items-center mt-1'>
-                    <a href='{$gmapsLink}' target='_blank' class='text-decoration-none small fw-semibold' title='Buka di Tab Baru'>
-                        <i class='bi bi-geo-alt text-danger'></i> {$latlng}
-                    </a>
-                    <button class='btn btn-sm btn-outline-secondary py-0 px-2 btn-preview-map'
-                        data-lat='{$row->latitude}' data-lng='{$row->longitude}' title='Preview Maps di Sini'>
-                        <i class='bi bi-map'></i>
-                    </button>
-                </div>
-            ";
+                    <div class='mb-1'>" . e($addr) . "</div>
+                    <div class='d-flex gap-2 align-items-center mt-1'>
+                        <a href='{$gmapsLink}' target='_blank' class='text-decoration-none small fw-semibold'>
+                            <i class='bi bi-geo-alt text-danger'></i> {$latlng}
+                        </a>
+                        <button class='btn btn-sm btn-outline-secondary py-0 px-2 btn-preview-map'
+                            data-lat='{$row->latitude}' data-lng='{$row->longitude}'>
+                            <i class='bi bi-map'></i>
+                        </button>
+                    </div>
+                ";
             })
             ->editColumn('status', function ($row) {
                 if ($row->status == 'valid') return '<span class="badge bg-success">Valid</span>';

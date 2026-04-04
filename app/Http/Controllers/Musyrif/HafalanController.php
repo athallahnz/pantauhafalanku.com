@@ -233,21 +233,42 @@ class HafalanController extends Controller
         $musyrif = $user->musyrif ?? Musyrif::where('user_id', $user->id)->first();
 
         if (!$musyrif) {
-            return response()->json(['message' => 'Profil Musyrif tidak ditemukan. Hubungi admin.'], 422);
+            return response()->json(['message' => 'Profil Musyrif tidak ditemukan.'], 422);
         }
 
         $v = $request->validated();
+        $today = now()->toDateString();
+
+        // ============================================================
+        // PENGECEKAN DATA DOUBLE
+        // ============================================================
+        // Cek apakah santri ini sudah menyetor materi yang sama hari ini
+        $isDuplicate = Hafalan::where('santri_id', $v['santri_id'])
+            ->where('hafalan_template_id', $v['hafalan_template_id'] ?? null)
+            ->where('tanggal_setoran', $today)
+            ->exists();
+
+        // Di dalam method store dan update
+        if ($isDuplicate && in_array($v['status'], ['lulus', 'ulang'], true)) {
+            return response()->json([
+                // Kita kirimkan di kedua tempat agar aman
+                'message' => 'Data hafalan ini sudah pernah diinput hari ini untuk santri tersebut.',
+                'errors' => [
+                    'hafalan' => ['Data hafalan ini sudah pernah diinput hari ini untuk santri tersebut.']
+                ]
+            ], 422);
+        }
+        // ============================================================
 
         $payload = [
             'santri_id' => $v['santri_id'],
             'musyrif_id' => $musyrif->id,
-            'tanggal_setoran' => now()->toDateString(),
+            'tanggal_setoran' => $today,
             'status' => $v['status'],
             'catatan' => $v['catatan'] ?? null,
             'hafalan_template_id' => null,
             'nilai_label' => null,
         ];
-
 
         if (in_array($v['status'], ['lulus', 'ulang'], true)) {
             $payload['hafalan_template_id'] = $v['hafalan_template_id'];
@@ -256,7 +277,6 @@ class HafalanController extends Controller
 
         $hafalan = Hafalan::create($payload);
 
-        // sinkron poin alpha = 1 (sesuai kesepakatan)
         $this->syncPoinAlpha($hafalan, $musyrif->id);
 
         return response()->json(['message' => 'Input hafalan berhasil disimpan.']);
@@ -267,13 +287,29 @@ class HafalanController extends Controller
         $user = auth()->user();
         $musyrif = $user->musyrif ?? Musyrif::where('user_id', $user->id)->firstOrFail();
 
-        // Pastikan hanya mengubah data miliknya
         if ((int) $hafalan->musyrif_id !== (int) $musyrif->id) {
             abort(403);
         }
 
         $v = $request->validated();
 
+        // ============================================================
+        // PENGECEKAN DATA DOUBLE (Kecuali data ini sendiri)
+        // ============================================================
+        $isDuplicate = Hafalan::where('santri_id', $v['santri_id'])
+            ->where('hafalan_template_id', $v['hafalan_template_id'] ?? null)
+            ->where('tanggal_setoran', $hafalan->tanggal_setoran)
+            ->where('id', '!=', $hafalan->id) // Abaikan record yang sedang diupdate
+            ->exists();
+
+        if ($isDuplicate && in_array($v['status'], ['lulus', 'ulang'], true)) {
+            return response()->json([
+                'message' => 'Gagal update! Data hafalan serupa sudah ada di sistem.'
+            ], 422);
+        }
+        // ============================================================
+
+        // ... sisa kode payload dan update sama seperti sebelumnya ...
         $payload = [
             'santri_id' => $v['santri_id'],
             'status' => $v['status'],
@@ -282,7 +318,6 @@ class HafalanController extends Controller
             'nilai_label' => null,
         ];
 
-
         if (in_array($v['status'], ['lulus', 'ulang'], true)) {
             $payload['hafalan_template_id'] = $v['hafalan_template_id'];
             $payload['nilai_label'] = $v['nilai_label'];
@@ -290,12 +325,10 @@ class HafalanController extends Controller
 
         $hafalan->update($payload);
         $hafalan->refresh();
-
         $this->syncPoinAlpha($hafalan, $musyrif->id);
 
         return response()->json(['message' => 'Input hafalan berhasil diperbarui.']);
     }
-
 
     public function show($id)
     {

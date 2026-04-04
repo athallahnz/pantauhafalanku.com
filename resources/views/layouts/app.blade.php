@@ -3,33 +3,38 @@
 
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="author" content="AnzArt Studio">
+    <meta name="description" content="Sistem Informasi Hafalan Santri">
+
     <title>@yield('title', 'Sistem Informasi Hafalan Santri')</title>
+
+    {{-- PWA & Mobile Optimization --}}
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0d6efd">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes"> {{-- Versi standar terbaru --}}
     <meta name="apple-mobile-web-app-title" content="SI Hafalan">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Sistem Informasi Hafalan Santri">
-    <meta name="author" content="AnzArt Studio">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    {{-- CoreUI & Vendor CSS --}}
+    {{-- Third Party CSS --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@coreui/icons/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
-    {{-- Vite Assets --}}
+    {{-- Vite Assets (CSS & JS Bundler) --}}
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 
-    {{-- Vendor JS --}}
+    {{-- Essential Vendor JS (JQuery Harus di Atas jika script halaman lain membutuhkannya segera) --}}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+
+    {{-- Plugin JS (Bisa ditaruh di sini atau sebelum </body> untuk speed) --}}
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js" defer></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js" defer></script>
 </head>
 
 <body>

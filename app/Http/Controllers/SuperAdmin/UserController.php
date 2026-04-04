@@ -101,12 +101,15 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
-        $request->validate([
+        $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'nomor' => 'nullable|string|max:20|unique:users,nomor,' . $user->id,
             'role' => 'required|in:superadmin,admin,musyrif,santri',
         ]);
+
+        // Update menggunakan data yang sudah divalidasi (kecuali password)
+        $user->update(collect($validatedData)->except('password')->toArray());
 
         DB::beginTransaction();
 
@@ -114,7 +117,7 @@ class UserController extends Controller
             $oldRole = $user->role;
 
             // update basic user
-            $user->update($request->only(['name', 'email', 'role']));
+            $user->update($request->only(['name', 'email', 'role', 'nomor']));
 
             if ($request->filled('password')) {
                 $user->update([

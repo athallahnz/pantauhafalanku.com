@@ -63,58 +63,187 @@
             font-size: 1.1rem;
         }
 
-        /* ================= FLOATING ACTION BUTTON (FAB) ================= */
-        .btn-fab {
+        /* ==========================================================
+                   MODAL GUIDE STYLES
+                   ========================================================== */
+        .guide-step {
+            position: relative;
+            border-left: 3px solid var(--cui-info);
+            padding-left: 15px;
+            margin-bottom: 20px;
+        }
+
+        .guide-number {
+            position: absolute;
+            left: -12px;
+            top: 0;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--cui-info);
+            color: #fff;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+
+        /* Container Utama di Pojok Kanan Bawah */
+        .fab-group-wrapper {
             position: fixed;
             bottom: 30px;
             right: 30px;
-            z-index: 1040;
+            z-index: 1050;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            /* Jarak otomatis antar tombol */
+        }
+
+        /* Tombol Utama */
+        .btn-fab-main {
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50px;
             padding: 12px 24px;
             font-weight: bold;
-            box-shadow: 0 4px 15px rgba(111, 66, 193, 0.4) !important;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(111, 66, 193, 0.4);
+            transition: all 0.3s ease;
         }
 
-        .btn-fab i {
-            font-size: 1.2rem;
-            transition: all 0.2s ease;
+        /* Tombol Info (Secondary) */
+        .btn-fab-info {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: var(--cui-secondary-bg, #e4e6e9);
+            color: var(--cui-secondary-color, #4f5d73);
+            border: 1px solid transparent;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .btn-fab:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 6px 20px rgba(111, 66, 193, 0.5) !important;
-        }
-
-        .btn-fab .fab-text {
-            margin-left: 8px;
+        /* Bubble Help - Diposisikan Relatif terhadap Container */
+        .help-bubble {
+            position: absolute;
+            bottom: 65px;
+            /* Jarak di atas tombol */
+            left: -20px;
+            /* Sesuaikan agar pas di tengah tombol info */
+            background: #6f42c1;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: 600;
             white-space: nowrap;
+            box-shadow: 0 10px 25px rgba(111, 66, 193, 0.3);
+            animation: floatBubble 2s infinite ease-in-out;
+            display: none;
+            /* Muncul via JS */
         }
 
-        /* Mode Mobile: Berubah jadi bulat & icon saja */
+        .bubble-arrow {
+            position: absolute;
+            bottom: -8px;
+            left: 35px;
+            /* Menunjuk pas ke icon tanda tanya */
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid #6f42c1;
+        }
+
+        @keyframes floatBubble {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        /* Mode Gelap */
+        [data-coreui-theme="dark"] .btn-fab-info {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: #fff;
+        }
+
+        /* ==========================================================
+               MOBILE RESPONSIVE (Pojok Kiri & Pojok Kanan)
+               ========================================================== */
         @media (max-width: 768px) {
-            .btn-fab {
+
+            /* Container dilepas flex-nya agar tombol bisa mencar */
+            .fab-group-wrapper {
+                position: static;
+                display: block;
+            }
+
+            /* TOMBOL INFO (KIRI BAWAH) */
+            .btn-fab-info {
+                position: fixed;
+                left: 25px;
+                /* Pojok kiri */
                 bottom: 25px;
+                /* Jarak dari bawah */
+                width: 55px;
+                height: 55px;
+                border-radius: 50%;
+                z-index: 1050;
+            }
+
+            /* TOMBOL UTAMA (KANAN BAWAH) */
+            .btn-fab-main {
+                position: fixed;
                 right: 25px;
+                /* Pojok kanan */
+                bottom: 25px;
+                /* Jarak dari bawah */
                 width: 60px;
                 height: 60px;
                 padding: 0;
+                /* Hapus padding teks */
                 border-radius: 50%;
-                /* Menjadi lingkaran penuh */
+                z-index: 1050;
             }
 
-            .btn-fab .fab-text {
+            /* Sembunyikan teks "Input Hafalan" */
+            .btn-fab-main .fab-text {
                 display: none;
-                /* Sembunyikan teks */
             }
 
-            .btn-fab i {
+            /* Icon plus dibuat lebih besar untuk jempol */
+            .btn-fab-main i {
                 font-size: 1.8rem;
-                /* Icon dibesarkan untuk jempol */
-                margin-left: 0;
+                margin: 0;
+            }
+
+            /* BUBBLE HELP (Pindah mengikuti tombol info di kiri) */
+            .help-bubble {
+                position: fixed;
+                bottom: 95px;
+                left: 15px;
+                /* Sejajar tombol info */
+                right: auto;
+                font-size: 11px;
+                padding: 8px 12px;
+            }
+
+            .bubble-arrow {
+                left: 25px;
+                /* Panah menunjuk ke tombol kiri */
+                right: auto;
             }
         }
     </style>
@@ -183,11 +312,91 @@
 @endsection
 
 @push('modals')
-    {{-- TOMBOL FAB INPUT HAFALAN --}}
-    <button class="btn btn-primary btn-fab" id="btnAddHafalan" title="Input Setoran Hafalan">
-        <i class="bi bi-plus-lg"></i>
-        <span class="fab-text">Input Hafalan</span>
-    </button>
+    <div class="fab-group-wrapper">
+        <div id="bubbleHelp" class="help-bubble">
+            <div class="bubble-content">
+                <i class="bi bi-magic me-1"></i> Bingung cara input? Klik di sini!
+            </div>
+            <div class="bubble-arrow"></div>
+        </div>
+
+        <button class="btn btn-fab-info" data-coreui-toggle="modal" data-coreui-target="#modalPanduanMusyrif">
+            <i class="bi bi-question-circle-fill"></i>
+        </button>
+
+        <button class="btn btn-primary btn-fab-main" id="btnAddHafalan">
+            <i class="bi bi-plus-lg"></i>
+            <span class="fab-text">Input Hafalan</span>
+        </button>
+    </div>
+
+    <div class="modal fade" id="modalPanduanMusyrif" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 25px;">
+                <div class="modal-header px-4">
+                    <h5 class="modal-title fw-bold text-adaptive-purple"><i class="bi bi-lightbulb-fill me-2"></i>Panduan
+                        Input Hafalan</h5>
+                    <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="guide-step">
+                        <span class="guide-number">1</span>
+                        <h6 class="fw-bold mb-1">Buka Form Input</h6>
+                        <p class="text-muted small mb-0">Klik tombol ungu (+) di pojok kanan bawah. Tanggal otomatis diset
+                            hari ini.</p>
+                    </div>
+
+                    <div class="guide-step">
+                        <span class="guide-number">2</span>
+                        <h6 class="fw-bold mb-1">Pilih Santri Binaan</h6>
+                        <p class="text-muted small mb-0">Pilih nama santri. Pastikan santri tersebut memang berada di bawah
+                            bimbingan Anda.</p>
+                    </div>
+
+                    <div class="guide-step">
+                        <span class="guide-number">3</span>
+                        <h6 class="fw-bold mb-1">Tentukan Status Kehadiran</h6>
+                        <p class="text-muted small mb-0">
+                            <b>Lulus/Ulang:</b> Membuka pilihan materi.<br>
+                            <b>Alpha:</b> Otomatis memberikan 1 poin pelanggaran ke santri.
+                        </p>
+                    </div>
+
+                    <div class="guide-step">
+                        <span class="guide-number">4</span>
+                        <h6 class="fw-bold mb-1">Filter Materi (Juz & Tahap)</h6>
+                        <p class="text-muted small mb-0">Pilih Juz dan Tahapan (Harian/Ujian) terlebih dahulu agar daftar
+                            Surah/Ayat muncul di kolom Template.</p>
+                    </div>
+
+                    <div class="guide-step" style="border-left-color: #ffc107;">
+                        <span class="guide-number" style="background: #ffc107;">5</span>
+                        <h6 class="fw-bold mb-1">Input Nilai & Catatan</h6>
+                        <p class="text-muted small mb-0">Pilih Taqdir (Mumtaz/Jayyid). Tambahkan catatan jika ada koreksi
+                            tajwid atau kelancaran.</p>
+                    </div>
+
+                    <div class="guide-step" style="border-left-color: #198754; margin-bottom: 0;">
+                        <span class="guide-number" style="background: #198754;">6</span>
+                        <h6 class="fw-bold mb-1">Validasi & Simpan</h6>
+                        <p class="text-muted small mb-0">Sistem akan menolak jika materi yang sama sudah diinput hari ini
+                            (mencegah data ganda).</p>
+                    </div>
+
+                    <div class="alert alert-secondary mt-4 mb-0 rounded-4 border-0 small">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        Gunakan fitur <b>Filter Tanggal</b> di halaman utama untuk melihat kembali riwayat setoran
+                        sebelumnya.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-primary w-100 py-2 rounded-pill fw-bold"
+                        data-coreui-dismiss="modal">Saya Mengerti</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- ===================== MODAL CREATE ===================== --}}
     <div class="modal fade" id="modalCreateHafalan" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -209,14 +418,15 @@
                                         <i class="bi bi-calendar-check"></i>
                                     </span>
                                     <input type="text" name="tanggal_setoran" id="tanggal_create"
-                                        class="form-control bg-body-tertiary border-start-0" placeholder="Pilih Tanggal..."
-                                        readonly>
+                                        class="form-control bg-body-tertiary border-start-0"
+                                        placeholder="Pilih Tanggal..." readonly>
                                 </div>
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">SANTRI BINAAN</label>
-                                <select name="santri_id" id="create_santri_id" class="form-select select2-basic" required>
+                                <select name="santri_id" id="create_santri_id" class="form-select select2-basic"
+                                    required>
                                     <option value="">-- Pilih Santri --</option>
                                     @foreach ($santriBinaan as $santri)
                                         <option value="{{ $santri->id }}">{{ $santri->nama }}
@@ -661,6 +871,32 @@
                 ]
             });
 
+            setTimeout(() => {
+                try {
+                    const bubble = document.getElementById('bubbleHelp');
+                    // Gunakan Instance CoreUI jika ada Toast (opsional)
+                    if (typeof coreui !== 'undefined') {
+                        const toastEl = document.getElementById('toastAutoHelp');
+                        if (toastEl) {
+                            coreui.Toast.getOrCreateInstance(toastEl).show();
+                        }
+                    }
+
+                    if (bubble) {
+                        bubble.style.display = 'block'; // Munculkan
+
+                        setTimeout(() => {
+                            bubble.classList.add('hide'); // Animasi fade out
+                            setTimeout(() => {
+                                if (bubble) bubble.remove();
+                            }, 500);
+                        }, 6000); // 6 detik tampil
+                    }
+                } catch (e) {
+                    console.warn("UI Helper failed to load safely:", e);
+                }
+            }, 1200);
+
             // ================== Filter Tanggal ==================
             $('#filterTanggalGroup button').on('click', function() {
                 if ($(this).hasClass('active')) return;
@@ -711,10 +947,17 @@
                     },
                     error: function(xhr) {
                         let msg = 'Terjadi kesalahan.';
+
+                        // 1. Cek jika ada error validasi Laravel (errors: { field: [msg] })
                         if (xhr.status === 422 && xhr.responseJSON?.errors) {
                             msg = Object.values(xhr.responseJSON.errors).map(e => e[0]).join(
                                 '\n');
                         }
+                        // 2. Cek jika ada pesan kustom (message: "...")
+                        else if (xhr.responseJSON?.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+
                         if (window.AppAlert) {
                             AppAlert.error(msg);
                         }
@@ -770,10 +1013,17 @@
                     },
                     error: function(xhr) {
                         let msg = 'Terjadi kesalahan.';
+
+                        // 1. Cek jika ada error validasi Laravel (errors: { field: [msg] })
                         if (xhr.status === 422 && xhr.responseJSON?.errors) {
                             msg = Object.values(xhr.responseJSON.errors).map(e => e[0]).join(
                                 '\n');
                         }
+                        // 2. Cek jika ada pesan kustom (message: "...")
+                        else if (xhr.responseJSON?.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+
                         if (window.AppAlert) {
                             AppAlert.error(msg);
                         }

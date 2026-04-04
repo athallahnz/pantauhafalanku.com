@@ -4,6 +4,16 @@
 
 @section('content')
     <style>
+        /* Tambahkan ini di bagian CSS */
+        .force-white {
+            color: #ffffff !important;
+        }
+
+        /* Memastikan teks pendukung juga tetap putih */
+        .text-white-forced {
+            color: rgba(255, 255, 255, 0.85) !important;
+        }
+
         /* REUSE LOGIN STYLES FOR CONSISTENCY */
         #aurora-bg {
             position: fixed;
@@ -120,7 +130,7 @@
                 <div class="card-body px-4 px-md-5">
                     <div class="text-center mb-4">
                         <h2 class="h4 fw-bold mb-1" id="welcomeText" style="color: #6f42c1;">Registrasi Internal</h2>
-                        <p class="text-muted small">Silahkan buat akun untuk memulai akses.</p>
+                        <p class="text-white-forced small">Silahkan buat akun untuk memulai akses.</p>
                     </div>
 
                     @if ($errors->any())
@@ -138,22 +148,22 @@
 
                         {{-- ROLE TILES --}}
                         <div class="mb-4 text-center">
-                            <label class="form-label small fw-bold text-muted mb-3">Daftar Sebagai:</label>
+                            <label class="form-label small fw-bold force-white mb-3">Daftar Sebagai:</label>
                             <div class="row g-3">
                                 <div class="col-6">
                                     <input type="radio" class="btn-check" name="role" id="roleMusyrif" value="musyrif"
                                         {{ old('role') == 'musyrif' ? 'checked' : '' }} required>
                                     <label class="btn glass-role-card w-100 p-3" for="roleMusyrif">
-                                        <i class="bi bi-person-badge fs-2 d-block mb-1"></i>
-                                        <span class="fw-bold">Musyrif</span>
+                                        <i class="bi bi-person-badge fs-2 d-block mb-1 text-white"></i>
+                                        <span class="fw-bold text-white">Musyrif</span>
                                     </label>
                                 </div>
                                 <div class="col-6">
                                     <input type="radio" class="btn-check" name="role" id="roleSantri" value="santri"
                                         {{ old('role', 'santri') == 'santri' ? 'checked' : '' }} required>
                                     <label class="btn glass-role-card w-100 p-3" for="roleSantri">
-                                        <i class="bi bi-mortarboard fs-2 d-block mb-1"></i>
-                                        <span class="fw-bold">Santri</span>
+                                        <i class="bi bi-mortarboard fs-2 d-block mb-1 text-white"></i>
+                                        <span class="fw-bold text-white">Santri</span>
                                     </label>
                                 </div>
                             </div>
@@ -161,23 +171,23 @@
 
                         <div class="row g-3">
                             <div class="col-12">
-                                <label class="form-label small fw-bold text-muted">Nama Lengkap</label>
+                                <label class="form-label small fw-bold force-white">Nama Lengkap</label>
                                 <input type="text" name="name" class="form-control glass-input"
                                     value="{{ old('name') }}" placeholder="Masukkan Nama Lengkap" required>
                             </div>
                             <div class="col-12">
-                                <label class="form-label small fw-bold text-muted">E-Mail</label>
+                                <label class="form-label small fw-bold force-white">E-Mail</label>
                                 <input type="email" name="email" class="form-control glass-input"
                                     value="{{ old('email') }}" placeholder="Masukkan E-Mail" required>
                             </div>
 
                             {{-- PASSWORD --}}
                             <div class="col-md-6 position-relative">
-                                <label class="form-label small fw-bold text-muted">Password</label>
+                                <label class="form-label small fw-bold force-white">Password</label>
                                 <input type="password" name="password" id="password" class="form-control glass-input"
                                     placeholder="Masukkan Password" required>
                                 <button type="button" id="togglePassword"
-                                    class="btn btn-link p-0 position-absolute text-muted"
+                                    class="btn btn-link p-0 position-absolute text-white-forced"
                                     style="right: 1.2rem; top: 38px; z-index: 10;">
                                     <i class="bi bi-eye-slash fs-5"></i>
                                 </button>
@@ -185,11 +195,11 @@
 
                             {{-- KONFIRMASI PASSWORD --}}
                             <div class="col-md-6 position-relative">
-                                <label class="form-label small fw-bold text-muted">Konfirmasi</label>
+                                <label class="form-label small fw-bold force-white">Konfirmasi</label>
                                 <input type="password" name="password_confirmation" id="password_confirmation"
                                     class="form-control glass-input" placeholder="Konfirmasi Password" required>
                                 <button type="button" id="togglePasswordConfirmation"
-                                    class="btn btn-link p-0 position-absolute text-muted"
+                                    class="btn btn-link p-0 position-absolute text-white-forced"
                                     style="right: 1.2rem; top: 38px; z-index: 10;">
                                     <i class="bi bi-eye-slash fs-5"></i>
                                 </button>
@@ -198,21 +208,24 @@
 
                         <div class="d-grid mt-4 mb-3">
                             <button class="btn btn-primary btn-lg rounded-4 shadow-sm fw-bold py-3" type="submit"
-                                style="background: linear-gradient(135deg, #6f42c1, #4b2291); border: none;">
+                                style="background: linear-gradient(135deg, #6f42c1, #4b2291); border: none; color: white;">
                                 Daftar Sekarang <i class="bi bi-arrow-right-short ms-1"></i>
                             </button>
                         </div>
 
                         <div class="text-center">
-                            <span class="small text-muted">Sudah punya akun?</span>
-                            <a class="small fw-bold text-decoration-none ms-1" style="color: #6f42c1;"
-                                href="{{ route('login') }}">Masuk di sini</a>
+                            <span class="small force-white">Sudah punya akun?</span>
+                            <a class="small fw-bold text-decoration-none ms-1 text-white" href="{{ route('login') }}">Masuk
+                                di sini</a>
                         </div>
                     </form>
                 </div>
             </div>
             <div class="text-center mt-4">
-                <p class="text-white opacity-50 small">&copy; 2026 - AnzArt Studio</p>
+                <p class="text-white opacity-50 small">
+                    &copy;2026 SIMTAQU
+                    <span class="d-none d-md-inline">- Sistem Informasi Tahfidz Qur'an</span>
+                </p>
             </div>
         </div>
     </div>
