@@ -278,6 +278,17 @@
         .bottom-sheet.dragging {
             transition: none !important;
         }
+
+        /* Efek putar untuk icon refresh GPS */
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spin-anim {
+            animation: spin 1s linear infinite;
+        }
     </style>
 </head>
 
@@ -322,15 +333,26 @@
                 </button>
             </div>
 
-            <div class="d-flex justify-content-between align-items-end text-white small"
+            <div class="d-flex justify-content-between align-items-start text-white small"
                 style="text-shadow: 0 1px 3px rgba(0,0,0,0.8);">
+                {{-- Blok Kiri: LOKASI GPS --}}
                 <div>
-                    <div class="fw-bold text-warning"><i class="bi bi-geo-alt-fill me-1"></i>LOKASI GPS</div>
+                    <div class="fw-bold text-warning d-flex align-items-center">
+                        <i class="bi bi-geo-alt-fill me-1"></i>LOKASI GPS
+                        {{-- Tombol Refresh GPS yang tadi kita tambahkan --}}
+                        <button id="btnRefreshGeo" type="button"
+                            class="btn btn-sm p-0 ms-2 text-warning border-0 bg-transparent shadow-none"
+                            title="Coba ulang cari sinyal GPS">
+                            <i class="bi bi-arrow-repeat fs-5"></i>
+                        </button>
+                    </div>
                     <div id="locText" class="opacity-75" style="font-size: 11px;">Mencari sinyal...</div>
                     <div id="accText" class="opacity-75" style="font-size: 11px;"></div>
                     <div id="geoFenceText" class="badge bg-danger mt-1 text-wrap text-start" style="font-size: 10px;">
                     </div>
                 </div>
+
+                {{-- Blok Kanan: STATUS Kamera --}}
                 <div class="text-end">
                     <div class="fw-bold text-info"><i class="bi bi-camera-fill me-1"></i>STATUS</div>
                     <div id="camText" class="opacity-75" style="font-size: 11px;">Menyiapkan...</div>
@@ -377,7 +399,7 @@
                 style="color: var(--islamic-purple-600);">
                 Gunakan <i class="bi bi-check2-circle ms-1"></i>
             </button>
-        </div>  
+        </div>
     </div>
 
     <canvas id="canvas" class="d-none"></canvas>
@@ -446,6 +468,8 @@
     </div>
 
     {{-- SCRIPTS --}}
+    {{-- SweetAlert2 untuk Popup --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         (function() {
             // 1. INISIALISASI ELEMEN
@@ -478,6 +502,7 @@
             const attForm = document.getElementById('attForm');
             const offlineBadge = document.getElementById('offlineBadge');
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const btnRefreshGeo = document.getElementById('btnRefreshGeo');
 
             let currentFacingMode = 'user';
             let stream = null;
@@ -671,27 +696,105 @@
 
             function initGeo() {
                 if (!navigator.geolocation) {
-                    if (locText) locText.innerText = 'GPS: tidak didukung';
+                    if (locText) locText.innerText = 'GPS: Browser tidak mendukung';
+                    // Tampilkan Popup jika browser tidak support sama sekali
+                    showGpsWarningPopup();
                     return;
                 }
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    const {
-                        latitude,
-                        longitude,
-                        accuracy
-                    } = pos.coords;
-                    latInput.value = latitude;
-                    lngInput.value = longitude;
-                    accInput.value = accuracy;
-                    if (locText) locText.innerText = `GPS: ${formatCoord(latitude, longitude)}`;
-                    if (accText) accText.innerText = `Akurasi: ${Math.round(accuracy)} m`;
-                    syncThumbOverlay();
-                }, (err) => {
-                    if (locText) locText.innerText = 'GPS: Ditolak / Gagal';
-                }, {
-                    enableHighAccuracy: true,
-                    timeout: 15000,
-                    maximumAge: 0
+
+                if (locText) {
+                    locText.innerText = 'Mencari sinyal GPS...';
+                    locText.classList.remove('text-danger');
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const {
+                            latitude,
+                            longitude,
+                            accuracy
+                        } = pos.coords;
+                        latInput.value = latitude;
+                        lngInput.value = longitude;
+                        accInput.value = accuracy;
+
+                        if (locText) locText.innerText = `GPS: ${formatCoord(latitude, longitude)}`;
+                        if (accText) accText.innerText = `Akurasi: ${Math.round(accuracy)} m`;
+
+                        if (btnRefreshGeo) btnRefreshGeo.querySelector('i').classList.remove('spin-anim');
+
+                        syncThumbOverlay();
+                    },
+                    (err) => {
+                        let errMsg = '';
+                        switch (err.code) {
+                            case err.PERMISSION_DENIED:
+                                errMsg = 'GPS: Akses ditolak user (Cek izin)';
+                                break;
+                            case err.POSITION_UNAVAILABLE:
+                                errMsg = 'GPS: Sensor mati / Tidak tersedia';
+                                break;
+                            case err.TIMEOUT:
+                                errMsg = 'GPS: Waktu habis (Sinyal lemah)';
+                                break;
+                            default:
+                                errMsg = 'GPS: Terjadi kesalahan';
+                                break;
+                        }
+
+                        if (locText) {
+                            locText.innerText = errMsg;
+                            locText.classList.add('text-danger');
+                        }
+                        if (geoFenceText) geoFenceText.innerText = '';
+                        if (accText) accText.innerText = '';
+
+                        if (btnRefreshGeo) btnRefreshGeo.querySelector('i').classList.remove('spin-anim');
+
+                        // ==========================================
+                        // PANGGIL POPUP WARNING DI SINI
+                        // ==========================================
+                        showGpsWarningPopup();
+                    }, {
+                        enableHighAccuracy: true,
+                        timeout: 15000,
+                        maximumAge: 0
+                    }
+                );
+            }
+
+            // Fungsi Helper untuk memunculkan SweetAlert
+            function showGpsWarningPopup() {
+                Swal.fire({
+                    title: 'Sinyal GPS Gagal Dimuat',
+                    html: `Sistem tidak dapat melacak lokasi Anda saat ini.<br><br>
+                           Anda <b>tetap bisa melanjutkan absensi</b>, namun status kehadiran akan ditandai sebagai <span class="badge bg-warning text-dark">SUSPECT</span> dan akan dicek manual oleh Admin.`,
+                    icon: 'warning',
+                    confirmButtonText: '<i class="bi bi-check2-circle"></i> Mengerti, Lanjutkan',
+                    confirmButtonColor: '#6f42c1', // Warna Islamic Purple
+                    backdrop: `rgba(0,0,0,0.8)`, // Latar belakang gelap agar kamera tertutup bayangan
+                    allowOutsideClick: false
+                });
+            }
+
+            // Tambahkan Event Listener untuk Tombol Refresh
+            if (btnRefreshGeo) {
+                btnRefreshGeo.addEventListener('click', () => {
+                    haptic(); // Getaran saat diklik
+
+                    // Tambahkan animasi berputar
+                    const icon = btnRefreshGeo.querySelector('i');
+                    icon.classList.add('spin-anim');
+
+                    // Reset UI sementara
+                    if (accText) accText.innerText = '';
+                    if (geoFenceText) {
+                        geoFenceText.innerText = '';
+                        geoFenceText.className = 'd-none'; // Sembunyikan badge
+                    }
+
+                    // Panggil ulang pencarian GPS
+                    initGeo();
                 });
             }
 
@@ -776,8 +879,54 @@
                 if (alertEl) alertEl.style.display = 'none';
             }, 4000);
 
-            initGeo();
-            initCamera();
+            // ==========================================
+            // INTRO MODAL DENGAN LOCALSTORAGE
+            // ==========================================
+            function showIntroPopup() {
+                Swal.fire({
+                    title: 'Persiapan Absensi',
+                    html: `
+                        <div class="text-start" style="font-size: 0.9rem;">
+                            <p class="text-muted">Untuk melanjutkan absensi, sistem membutuhkan izin akses <b>Kamera</b> dan <b>Lokasi (GPS)</b> Anda.</p>
+
+                            <div class="p-3 mb-0 text-dark rounded-3" style="background-color: #fff3cd; border-left: 4px solid #ffc107;">
+                                <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i> Perhatian:</div>
+                                Jika Anda membuka tautan ini dari dalam aplikasi <b>(WhatsApp, Instagram, dll)</b>, harap buka di browser bawaan <b>(Chrome / Safari)</b> dengan mengeklik ikon titik tiga di pojok kanan/kiri atas.
+                            </div>
+                        </div>
+                    `,
+                    icon: 'info',
+                    confirmButtonText: '<i class="bi bi-camera-video-fill me-1"></i> Mengerti & Lanjutkan',
+                    confirmButtonColor: '#6f42c1', // Warna Islamic Purple
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    backdrop: `rgba(0,0,0,0.9)`
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // 1. Simpan tanda ke localStorage agar tidak muncul lagi
+                        localStorage.setItem('hasSeenCameraIntro', 'true');
+
+                        // 2. Eksekusi Kamera & GPS
+                        initGeo();
+                        initCamera();
+                    }
+                });
+            }
+
+            // ==========================================
+            // LOGIKA PENGECEKAN LOCALSTORAGE
+            // ==========================================
+            // Cek apakah key 'hasSeenCameraIntro' sudah ada di browser user
+            if (localStorage.getItem('hasSeenCameraIntro') === 'true') {
+                // Jika sudah pernah melihat popup, langsung nyalakan kamera & GPS
+                initGeo();
+                initCamera();
+            } else {
+                // Jika belum pernah (atau cache baru dibersihkan), tampilkan popup
+                showIntroPopup();
+            }
+            // initGeo();
+            // initCamera();
         })();
     </script>
 </body>
