@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\LogsActivity; // Import trait untuk logging aktivitas
 
 class Musyrif extends Model
 {
     use HasFactory;
+    use LogsActivity; // Gunakan trait untuk logging aktivitas
 
     protected $fillable = [
         'user_id',

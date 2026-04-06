@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity; // <-- 1. Import Trait untuk logging aktivitas
 
 class PelanggaranPoint extends Model
 {
+    use LogsActivity; // <-- 2. Gunakan Trait untuk logging aktivitas
+
     protected $fillable = [
         'santri_id',
         'musyrif_id',
@@ -30,4 +33,3 @@ class PelanggaranPoint extends Model
         return $this->belongsTo(Hafalan::class);
     }
 }
-

@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity; // <-- 1. Import Trait untuk logging aktivitas
 
 class MusyrifAttendance extends Model
 {
+    use LogsActivity; // <-- 2. Gunakan Trait untuk logging aktivitas
+
     protected $fillable = [
         'musyrif_id',
         'type',

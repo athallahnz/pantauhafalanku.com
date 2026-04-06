@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity; // <-- 1. Import Trait
 
 class InstitutionSetting extends Model
 {
+    use LogsActivity; // <-- 2. Gunakan Trait untuk logging aktivitas
+    
     protected $fillable = [
         'name',
         'logo',

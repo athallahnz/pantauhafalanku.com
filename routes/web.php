@@ -9,6 +9,7 @@ use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardCo
 use App\Http\Controllers\SuperAdmin\UserController as SuperAdminUserController;
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\ActivityLogController as AdminActivityLogController;
 use App\Http\Controllers\Admin\InstitutionSettingController;
 use App\Http\Controllers\Admin\LaporanController as AdminLaporanController;
 use App\Http\Controllers\Admin\SantriController as AdminSantriController;
@@ -120,6 +121,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|pimpinan
     )
         ->name('settings.institution.store');
 
+    // Log Aktivitas
+    Route::get('activity-logs', [AdminActivityLogController::class, 'index'])->name('activity_logs.index');
+
     // Migrasi Santri
     Route::get('/santri/naik-kelas', [AdminMigrasiSantriController::class, 'page'])
         ->name('santri.migrasi.page');
@@ -168,7 +172,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|pimpinan
     Route::post('musyrif/execute-import', [AdminMusyrifController::class, 'executeImport'])
         ->name('musyrif.execute_import');
 
-    // Pastikan ->name() sesuai dengan yang dipanggil di Blade
+    // Absensi Musyrif
+    Route::get('musyrif/absensi/all', [AdminMusyrifController::class, 'allAttendances'])
+        ->name('musyrif.absensi.index');
+
+    Route::delete('musyrif/absensi/{attendance}', [AdminMusyrifController::class, 'destroyAttendance'])
+        ->name('musyrif.absensi.destroy');
+
     Route::get('musyrif/{id}/attendances', [AdminMusyrifController::class, 'attendances'])
         ->name('musyrif.attendances');
 

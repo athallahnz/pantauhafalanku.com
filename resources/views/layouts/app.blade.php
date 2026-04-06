@@ -207,27 +207,38 @@
     {{-- SCRIPTS --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            const loader = document.getElementById('global-loader');
 
-            // 1. Sembunyikan loader setelah halaman benar-benar selesai dimuat
             function hideLoader() {
-                const loader = document.getElementById('global-loader');
                 if (loader) {
                     loader.classList.add('loader-hidden');
                 }
             }
 
-            // Cek jika halaman sudah selesai loading
+            function showLoader() {
+                if (loader) {
+                    loader.classList.remove('loader-hidden');
+                }
+            }
+
+            // 1. Sembunyikan loader saat load awal
             if (document.readyState === 'complete') {
                 hideLoader();
             } else {
                 window.addEventListener('load', hideLoader);
             }
 
-            // 2. Tampilkan loader saat user klik link atau submit form (pindah page)
+            // 2. Tampilkan loader saat user navigasi pergi
+            // Gunakan pengecekan agar tidak muncul pada link internal (#) atau download
             window.addEventListener('beforeunload', function() {
-                const loader = document.getElementById('global-loader');
-                if (loader) {
-                    loader.classList.remove('loader-hidden');
+                showLoader();
+            });
+
+            // 3. FIX: Sembunyikan loader jika user kembali via tombol BACK browser
+            window.addEventListener('pageshow', function(event) {
+                // event.persisted bernilai true jika halaman dimuat dari cache (tombol back)
+                if (event.persisted) {
+                    hideLoader();
                 }
             });
 

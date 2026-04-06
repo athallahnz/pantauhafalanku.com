@@ -467,9 +467,7 @@
             </div>
         </div>
     </div>
-@endpush
 
-@push('modals')
     {{-- Modal Riwayat Santri (Yang sudah ada sebelumnya) --}}
     {{-- MODAL PREVIEW FOTO ABSENSI --}}
     <div class="modal fade" id="modalPreviewPhoto" tabindex="-1">

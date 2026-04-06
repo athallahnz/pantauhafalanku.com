@@ -6,10 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Traits\LogsActivity; // <-- 1. Import Trait untuk logging aktivitas
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
+    use LogsActivity; // <-- 2. Gunakan Trait untuk logging aktivitas
 
     protected $fillable = [
         'name',

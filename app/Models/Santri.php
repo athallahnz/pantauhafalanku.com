@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\LogsActivity; // <-- 1. Import Trait untuk logging aktivitas
 
 class Santri extends Model
 {
     use HasFactory;
+    use LogsActivity; // <-- 2. Gunakan Trait untuk logging aktivitas
 
     protected $fillable = [
         'user_id',

@@ -131,7 +131,7 @@ class MusyrifController extends Controller
             ->addColumn('kelas', function ($row) {
                 return $row->nama_kelas ? e($row->nama_kelas) : '-';
             })
-            
+
             ->addColumn('absen_pagi', function ($row) {
                 return $this->renderAttendanceCell($row->morning_time, $row->morning_status);
             })
@@ -307,6 +307,107 @@ class MusyrifController extends Controller
         return response()->json(['message' => 'Musyrif berhasil dihapus.']);
     }
 
+    // ==========================================
+    // MANAJEMEN ABSENSI KESELURUHAN (ALL MUSYRIF)
+    // ==========================================
+
+    public function allAttendances(Request $request)
+    {
+        // 1. Jika request berupa AJAX dari DataTables
+        if ($request->ajax()) {
+            $q = MusyrifAttendance::with('musyrif')->select('musyrif_attendances.*');
+
+            // Filter
+            if ($request->filled('date')) {
+                $q->whereDate('attendance_at', $request->date);
+            }
+            if ($request->filled('musyrif_id')) {
+                $q->where('musyrif_id', $request->musyrif_id);
+            }
+            if ($request->filled('type')) {
+                $q->where('type', $request->type);
+            }
+            if ($request->filled('status')) {
+                $q->where('status', $request->status);
+            }
+
+            return \Yajra\DataTables\Facades\DataTables::of($q)
+                ->addColumn('waktu', function ($row) {
+                    $date = $row->attendance_at->format('d M Y');
+                    $time = $row->attendance_at->format('H:i');
+                    return "<div class='fw-bold'>{$date}</div><div class='text-muted small'>{$time} WIB</div>";
+                })
+                ->addColumn('musyrif_info', function ($row) {
+                    $nama = $row->musyrif?->nama ?? 'Tidak Diketahui';
+                    $kode = $row->musyrif?->kode ?? '-';
+                    return "<div class='fw-semibold text-adaptive-purple'>{$nama}</div><div class='text-muted small'><i class='bi bi-hash'></i> {$kode}</div>";
+                })
+                ->addColumn('sesi_status', function ($row) {
+                    $sesi = $row->type === 'morning' ? 'Pagi' : 'Malam';
+                    $badge = match ($row->status) {
+                        'valid' => 'bg-success',
+                        'suspect' => 'bg-warning text-dark',
+                        'rejected' => 'bg-danger',
+                        default => 'bg-secondary'
+                    };
+                    $status = strtoupper($row->status);
+                    return "<div class='mb-1'>{$sesi}</div><span class='badge {$badge} px-3 py-1 rounded-pill' style='font-size: 0.7rem;'>{$status}</span>";
+                })
+                ->addColumn('lokasi', function ($row) {
+                    $latlng = "{$row->latitude},{$row->longitude}";
+                    $gmapsLink = "https://maps.google.com/?q={$latlng}";
+                    return "
+                        <div class='d-flex gap-2 align-items-center mt-1'>
+                            <a href='{$gmapsLink}' target='_blank' class='text-decoration-none small fw-semibold'>
+                                <i class='bi bi-geo-alt text-danger'></i> {$latlng}
+                            </a>
+                            <button class='btn btn-sm btn-outline-secondary py-0 px-2 btn-preview-map'
+                                data-lat='{$row->latitude}' data-lng='{$row->longitude}' title='Preview di Maps'>
+                                <i class='bi bi-map'></i>
+                            </button>
+                        </div>
+                    ";
+                })
+                ->addColumn('foto', function ($row) {
+                    if ($row->photo_path) {
+                        $url = asset('storage/' . $row->photo_path);
+                        return "<button class='btn btn-sm btn-outline-primary rounded-pill btnPreview' data-photo='{$url}'><i class='bi bi-image'></i></button>";
+                    }
+                    return "<span class='text-muted small'>-</span>";
+                })
+                ->addColumn('aksi', function ($row) {
+                    return "
+                        <div class='d-flex justify-content-end gap-2'>
+                            <div class='btn-group shadow-sm rounded-pill overflow-hidden'>
+                                <button class='btn btn-sm btn-success text-white btnUpdateStatus' data-id='{$row->id}' data-status='valid' data-current='{$row->status}' title='Validasi'><i class='bi bi-check-lg'></i></button>
+                                <button class='btn btn-sm btn-warning text-white btnUpdateStatus' data-id='{$row->id}' data-status='suspect' data-current='{$row->status}' title='Tandai Mencurigakan'><i class='bi bi-exclamation-triangle'></i></button>
+                                <button class='btn btn-sm btn-danger text-white btnUpdateStatus' data-id='{$row->id}' data-status='rejected' data-current='{$row->status}' title='Tolak Absen'><i class='bi bi-x-lg'></i></button>
+                            </div>
+                            <button class='btn btn-sm btn-outline-danger shadow-sm rounded-circle btnDelete' data-id='{$row->id}' title='Hapus Data'><i class='bi bi-trash3-fill'></i></button>
+                        </div>
+                    ";
+                })
+                ->rawColumns(['waktu', 'musyrif_info', 'sesi_status', 'lokasi', 'foto', 'aksi'])
+                ->make(true);
+        }
+
+        // 2. Load View pertama kali (tanpa query data berat)
+        $musyrifs = Musyrif::select('id', 'nama', 'kode')->orderBy('nama')->get();
+        return view('admin.musyrif.absensi.index', compact('musyrifs'));
+    }
+
+    public function destroyAttendance(MusyrifAttendance $attendance)
+    {
+        // Hapus file foto dari storage
+        if ($attendance->photo_path && Storage::disk('public')->exists($attendance->photo_path)) {
+            Storage::disk('public')->delete($attendance->photo_path);
+        }
+
+        $attendance->delete();
+
+        return back()->with('success', 'Data absensi berhasil dihapus permanen.');
+    }
+
     public function attendances($id, Request $request)
     {
         $musyrif = Musyrif::with('user')->findOrFail($id);
@@ -361,7 +462,7 @@ class MusyrifController extends Controller
             }
         }
 
-        return view('admin.musyrif.attendances', compact('musyrif', 'data', 'month', 'start', 'end', 'calendar'));
+        return view('admin.musyrif.absensi.attendances', compact('musyrif', 'data', 'month', 'start', 'end', 'calendar'));
     }
 
     public function updateAttendanceStatus(Request $request, MusyrifAttendance $attendance)
