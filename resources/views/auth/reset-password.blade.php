@@ -4,6 +4,15 @@
 
 @section('content')
     <style>
+        /* === TAMBAHAN CLASS FORCE WHITE === */
+        .force-white {
+            color: #ffffff !important;
+        }
+
+        .text-white-forced {
+            color: rgba(255, 255, 255, 0.85) !important;
+        }
+
         #aurora-bg {
             position: fixed;
             top: 0;
@@ -55,11 +64,41 @@
             border: 1px solid rgba(111, 66, 193, 0.1) !important;
             border-radius: 16px !important;
             padding: 12px 18px !important;
+            color: #444 !important;
+            /* Tambahan warna teks saat light mode */
         }
 
         [data-coreui-theme="dark"] .glass-input {
             background: rgba(0, 0, 0, 0.2) !important;
             color: white !important;
+        }
+
+        .glass-alert-danger {
+            background: rgba(220, 53, 69, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            border-left: 4px solid #6f42c1;
+            color: #842029;
+            padding: 1rem;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
         }
     </style>
 
@@ -74,40 +113,134 @@
                         <img src="{{ asset('assets/logos-primary.png') }}" alt="Logo" class="mb-3"
                             style="width: 100px; filter: drop-shadow(0 5px 15px rgba(111, 66, 193, 0.2));">
                         <h2 class="h4 fw-bold mb-1" id="welcomeText" style="color: #6f42c1;">Password Baru</h2>
-                        <p class="text-muted small">Silahkan buat password baru yang kuat.</p>
+                        <p class="text-white-forced small">Silahkan buat password baru yang kuat.</p>
                     </div>
+
+                    @if ($errors->any())
+                        <div class="glass-alert-danger">
+                            <ul class="mb-0 list-unstyled small fw-bold">
+                                @foreach ($errors->all() as $error)
+                                    <li><i class="bi bi-x-circle me-2"></i>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
 
                     <form method="POST" action="{{ route('password.update') }}" id="authForm">
                         @csrf
                         <input type="hidden" name="token" value="{{ $request->route('token') }}">
                         <input type="hidden" name="email" value="{{ old('email', $request->email) }}">
 
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">Password Baru</label>
-                            <input type="password" name="password" class="form-control glass-input" placeholder="••••••••"
-                                required autofocus>
+                        <div class="mb-3 position-relative">
+                            <label class="form-label small fw-bold force-white">Password Baru</label>
+                            <input type="password" name="password" id="password" class="form-control glass-input"
+                                placeholder="••••••••" required autofocus>
+                            <button type="button" id="togglePassword"
+                                class="btn btn-link p-0 position-absolute text-white-forced"
+                                style="right: 1.2rem; top: 38px; z-index: 10;">
+                                <i class="bi bi-eye-slash fs-5"></i>
+                            </button>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label small fw-bold text-muted">Konfirmasi Password Baru</label>
-                            <input type="password" name="password_confirmation" class="form-control glass-input"
-                                placeholder="••••••••" required>
+                        <div class="mb-4 position-relative">
+                            <label class="form-label small fw-bold force-white">Konfirmasi Password Baru</label>
+                            <input type="password" name="password_confirmation" id="password_confirmation"
+                                class="form-control glass-input" placeholder="••••••••" required>
+                            <button type="button" id="togglePasswordConfirmation"
+                                class="btn btn-link p-0 position-absolute text-white-forced"
+                                style="right: 1.2rem; top: 38px; z-index: 10;">
+                                <i class="bi bi-eye-slash fs-5"></i>
+                            </button>
                         </div>
 
-                        <div class="d-grid">
+                        <div class="d-grid mb-3">
                             <button class="btn btn-primary btn-lg rounded-4 shadow-sm fw-bold py-3" type="submit"
-                                style="background: linear-gradient(135deg, #6f42c1, #4b2291); border: none;">
-                                Update Password <i class="bi bi-check2-circle ms-1"></i>
+                                id="submitBtn"
+                                style="background: linear-gradient(135deg, #6f42c1, #4b2291); border: none; color: white;">
+                                <span class="spinner-border spinner-border-sm d-none" id="loader" role="status"
+                                    aria-hidden="true"></span>
+                                <span id="btnText">Update Password <i class="bi bi-check2-circle ms-1"></i></span>
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
+
+            {{-- Copyright Text --}}
+            <div class="text-center mt-4">
+                <p class="text-white opacity-50 small">
+                    &copy;2026 SIMTAQU
+                    <span class="d-none d-md-inline">- Sistem Informasi Tahfidz Qur'an</span>
+                </p>
+            </div>
+
         </div>
     </div>
+
+    {{-- ========================================================= --}}
+    {{-- SCRIPT 1: LOGIKA UI (PASSWORD MATA, TEMA, LOADER)         --}}
+    {{-- ========================================================= --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Fungsi Toggle Mata Password
+            function setupPasswordToggle(btnId, inputId) {
+                const btn = document.getElementById(btnId);
+                const input = document.getElementById(inputId);
+                if (btn && input) {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const isPassword = input.type === 'password';
+                        input.type = isPassword ? 'text' : 'password';
+                        const icon = this.querySelector('i');
+                        icon.className = isPassword ? 'bi bi-eye fs-5' : 'bi bi-eye-slash fs-5';
+                    });
+                }
+            }
+
+            setupPasswordToggle('togglePassword', 'password');
+            setupPasswordToggle('togglePasswordConfirmation', 'password_confirmation');
+
+            // 2. Loading State pada Tombol Submit
+            document.getElementById('authForm').addEventListener('submit', function() {
+                const btn = document.getElementById('submitBtn');
+                btn.disabled = true;
+                document.getElementById('loader').classList.remove('d-none');
+                document.getElementById('btnText').innerText = 'Memproses...';
+            });
+
+            // 3. Logika Tema Gelap/Terang
+            const btnTheme = document.getElementById('btnThemeToggle');
+            if (btnTheme) {
+                btnTheme.addEventListener('click', () => {
+                    const currentTheme = document.documentElement.getAttribute('data-coreui-theme') ||
+                        'light';
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+                    document.documentElement.setAttribute('data-coreui-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+
+                    document.getElementById('themeIcon').className = newTheme === 'dark' ?
+                        'bi bi-moon-stars-fill fs-4' : 'bi bi-sun-fill fs-4';
+
+                    const welcomeText = document.getElementById('welcomeText');
+                    if (welcomeText) welcomeText.style.color = newTheme === 'dark' ? '#fff' : '#6f42c1';
+
+                    // Beri tahu script animasi Aurora kalau tema berubah
+                    window.dispatchEvent(new CustomEvent('themeChanged', {
+                        detail: {
+                            isDark: newTheme === 'dark'
+                        }
+                    }));
+                });
+            }
+        });
+    </script>
 @endsection
 
 @push('script')
+    {{-- ========================================================= --}}
+    {{-- SCRIPT 2: ANIMASI AURORA (WEBGL)                            --}}
+    {{-- ========================================================= --}}
     <script type="module">
         import {
             Renderer,
@@ -161,12 +294,12 @@
         const gl = renderer.gl;
         container.appendChild(gl.canvas);
 
-        function getColors() {
-            const isDark = document.documentElement.getAttribute('data-coreui-theme') === 'dark';
+        function getColors(isDark) {
             return isDark ? ['#1a0b3b', '#6f42c1', '#21094e'] : ['#f3e8ff', '#d8b4fe', '#f3e8ff'];
         }
 
-        let colors = getColors();
+        const isDarkInitial = document.documentElement.getAttribute('data-coreui-theme') === 'dark';
+        let colors = getColors(isDarkInitial);
         let colorStopsArray = colors.map(hex => {
             const c = new Color(hex);
             return [c.r, c.g, c.b];
@@ -191,7 +324,7 @@
                 },
                 uResolution: {
                     value: [container.offsetWidth, container.offsetHeight]
-                },
+                }
             }
         });
 
@@ -216,19 +349,10 @@
         }
         requestAnimationFrame(update);
 
-        // Toggle Theme
-        const btnTheme = document.getElementById('btnThemeToggle');
-        btnTheme.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-coreui-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-coreui-theme', newTheme);
-
-            document.getElementById('themeIcon').className = newTheme === 'dark' ? 'bi bi-moon-stars-fill fs-4' :
-                'bi bi-sun-fill fs-4';
-            document.getElementById('welcomeText').style.color = newTheme === 'dark' ? '#fff' : '#6f42c1';
-
-            const newStops = getColors();
-            program.uniforms.uColorStops.value = newStops.map(hex => {
+        // Menangkap event perubahan tema dari UI Script
+        window.addEventListener('themeChanged', (e) => {
+            const newColors = getColors(e.detail.isDark);
+            program.uniforms.uColorStops.value = newColors.map(hex => {
                 const c = new Color(hex);
                 return [c.r, c.g, c.b];
             });

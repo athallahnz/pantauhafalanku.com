@@ -5,10 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\MassPrunable; // <-- 1. Import ini
 
 class ActivityLog extends Model
 {
-    use HasFactory;
+    use HasFactory, MassPrunable; // <-- 2. Gunakan trait ini
+
+    /**
+     * Tentukan kondisi untuk menghapus log yang sudah usang.
+     * Misalnya, kita ingin menghapus log yang lebih dari 90 hari.
+     */
+    public function prunable()
+    {
+        return static::where('created_at', '<=', now()->subMonths(6));
+    }
 
     protected $fillable = [
         'log_name',

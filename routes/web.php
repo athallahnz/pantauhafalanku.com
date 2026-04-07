@@ -1,7 +1,5 @@
 <?php
 
-use App\Http\Controllers\Admin\MigrasiSantriController;
-use App\Http\Controllers\Musyrif\HafalanController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -100,10 +98,10 @@ Route::prefix('superadmin')
     });
 
 /*
-|--------------------------------------------------------------------------
-| ADMIN / DEPARTEMEN
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | ADMIN / DEPARTEMEN
+    |--------------------------------------------------------------------------
+    */
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|pimpinan'])->group(function () {
 
     // Dashboard Admin
@@ -123,6 +121,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|pimpinan
 
     // Log Aktivitas
     Route::get('activity-logs', [AdminActivityLogController::class, 'index'])->name('activity_logs.index');
+    Route::get('activity-logs/export', [AdminActivityLogController::class, 'export'])->name('activity_logs.export');
 
     // Migrasi Santri
     Route::get('/santri/naik-kelas', [AdminMigrasiSantriController::class, 'page'])

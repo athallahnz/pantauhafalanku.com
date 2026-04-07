@@ -314,10 +314,16 @@
                 {{-- TAB SANTRI --}}
                 <div class="tab-pane fade show active" id="tab-santri" role="tabpanel">
                     <div class="d-flex justify-content-end mb-3 gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-success" id="btnExportSantriExcel"><i
-                                class="bi bi-file-earmark-excel"></i> Export Excel</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" id="btnExportSantriPdf"><i
-                                class="bi bi-file-earmark-pdf"></i> Export PDF</button>
+                        <button type="button"
+                            class="btn btn-sm btn-success text-white fw-bold shadow-sm rounded-pill px-3 no-loader"
+                            id="btnExportSantriExcel">
+                            <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel
+                        </button>
+                        <button type="button"
+                            class="btn btn-sm btn-danger text-white fw-bold shadow-sm rounded-pill px-3 no-loader"
+                            id="btnExportSantriPdf">
+                            <i class="bi bi-file-earmark-pdf-fill me-1"></i> Export PDF
+                        </button>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped align-middle w-100 text-nowrap"
@@ -343,10 +349,16 @@
                 {{-- TAB KELAS --}}
                 <div class="tab-pane fade" id="tab-kelas" role="tabpanel">
                     <div class="d-flex justify-content-end mb-3 gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-success" id="btnExportKelasExcel"><i
-                                class="bi bi-file-earmark-excel"></i> Export Excel</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" id="btnExportKelasPdf"><i
-                                class="bi bi-file-earmark-pdf"></i> Export PDF</button>
+                        <button type="button"
+                            class="btn btn-sm btn-success text-white fw-bold shadow-sm rounded-pill px-3 no-loader"
+                            id="btnExportKelasExcel">
+                            <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel
+                        </button>
+                        <button type="button"
+                            class="btn btn-sm btn-danger text-white fw-bold shadow-sm rounded-pill px-3 no-loader"
+                            id="btnExportKelasPdf">
+                            <i class="bi bi-file-earmark-pdf-fill me-1"></i> Export PDF
+                        </button>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped align-middle w-100 text-nowrap"
@@ -368,10 +380,16 @@
                 {{-- TAB MUSYRIF --}}
                 <div class="tab-pane fade" id="tab-musyrif" role="tabpanel">
                     <div class="d-flex justify-content-end mb-3 gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-success" id="btnExportMusyrifExcel"><i
-                                class="bi bi-file-earmark-excel"></i> Export Excel</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" id="btnExportMusyrifPdf"><i
-                                class="bi bi-file-earmark-pdf"></i> Export PDF</button>
+                        <button type="button"
+                            class="btn btn-sm btn-success text-white fw-bold shadow-sm rounded-pill px-3 no-loader"
+                            id="btnExportMusyrifExcel">
+                            <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel
+                        </button>
+                        <button type="button"
+                            class="btn btn-sm btn-danger text-white fw-bold shadow-sm rounded-pill px-3 no-loader"
+                            id="btnExportMusyrifPdf">
+                            <i class="bi bi-file-earmark-pdf-fill me-1"></i> Export PDF
+                        </button>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped align-middle w-100 text-nowrap"
@@ -491,7 +509,8 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header" style="background: var(--cui-body-bg);">
-                    <h5 class="modal-title fw-bold text-primary"><i class="bi bi-geo-alt text-primary me-2"></i> Preview Lokasi</h5>
+                    <h5 class="modal-title fw-bold text-primary"><i class="bi bi-geo-alt text-primary me-2"></i> Preview
+                        Lokasi</h5>
                     <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-0">
@@ -837,33 +856,43 @@
                 return params.toString();
             }
 
+            // Fungsi Helper untuk download tanpa memicu global loader
+            function triggerDownload(url) {
+                let a = document.createElement('a');
+                a.href = url;
+                a.target = '_blank'; // Membuka proses download di background/tab baru
+                a.className = 'no-loader'; // Keamanan ekstra
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a); // Bersihkan DOM setelah diklik
+            }
+
             $('#btnExportSantriExcel').on('click', function() {
-                window.location.href = '{{ route('admin.laporan.export-santri-excel') }}' + '?' +
-                    buildQueryString();
+                triggerDownload('{{ route('admin.laporan.export-santri-excel') }}' + '?' +
+                    buildQueryString());
             });
             $('#btnExportSantriPdf').on('click', function() {
-                window.location.href = '{{ route('admin.laporan.export-santri-pdf') }}' + '?' +
-                    buildQueryString();
+                triggerDownload('{{ route('admin.laporan.export-santri-pdf') }}' + '?' +
+                    buildQueryString());
             });
 
             $('#btnExportKelasExcel').on('click', function() {
-                window.location.href = '{{ route('admin.laporan.export-kelas-excel') }}' + '?' +
-                    buildQueryString();
+                triggerDownload('{{ route('admin.laporan.export-kelas-excel') }}' + '?' +
+                    buildQueryString());
             });
             $('#btnExportKelasPdf').on('click', function() {
-                window.location.href = '{{ route('admin.laporan.export-kelas-pdf') }}' + '?' +
-                    buildQueryString();
+                triggerDownload('{{ route('admin.laporan.export-kelas-pdf') }}' + '?' +
+                    buildQueryString());
             });
 
             $('#btnExportMusyrifExcel').on('click', function() {
-                window.location.href = '{{ route('admin.laporan.export-musyrif-excel') }}' + '?' +
-                    buildQueryString();
+                triggerDownload('{{ route('admin.laporan.export-musyrif-excel') }}' + '?' +
+                    buildQueryString());
             });
             $('#btnExportMusyrifPdf').on('click', function() {
-                window.location.href = '{{ route('admin.laporan.export-musyrif-pdf') }}' + '?' +
-                    buildQueryString();
+                triggerDownload('{{ route('admin.laporan.export-musyrif-pdf') }}' + '?' +
+                    buildQueryString());
             });
-
 
             // === CHARTS INISIALISASI & LOGIC ===
             let ctxKelas = document.getElementById('chartKelas').getContext('2d');
@@ -1132,7 +1161,7 @@
                 // URL ini adalah trik menggunakan widget embed Google Maps gratisan
                 let embedUrl =
                     `https://maps.google.com/maps?q=${lat},${lng}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
-
+                    
                 // Set source iframe
                 $('#previewMapIframe').attr('src', embedUrl);
 

@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="author" content="AnzArt Studio">
-    <meta name="description" content="Sistem Informasi Hafalan Santri">
+    <meta name="description" content="Sistem Informasi Hafalan - Sistem Informasi Tahfidz Qur'an">
 
-    <title>@yield('title', 'Sistem Informasi Hafalan Santri')</title>
+    <title>@yield('title', 'Sistem Informasi Hafalan - Sistem Informasi Tahfidz Qur\'an')</title>
 
     {{-- PWA & Mobile Optimization --}}
     <link rel="manifest" href="/manifest.json">
@@ -38,6 +38,98 @@
 </head>
 
 <body>
+    @php
+        /** @var \App\Models\User|null $user */
+        /** @var \App\Models\InstitutionSetting|null $institution */
+        $user = auth()->user();
+        $role = $user->role ?? null;
+        $profile = $user?->profileSetting ?? null;
+        $institution = \App\Models\InstitutionSetting::first();
+    @endphp
+
+    {{-- ================= WELCOME SPLASH SCREEN ================= --}}
+    <style>
+        #welcome-splash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: var(--cui-body-bg, #ffffff);
+            /* Otomatis adaptif dark/light mode */
+            z-index: 999999;
+            /* Paling atas, menutupi global loader */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s ease-out, visibility 0.6s ease-out;
+        }
+
+        #welcome-splash.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .splash-logo {
+            width: 110px;
+            margin-bottom: 24px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .splash-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards 0.2s;
+        }
+
+        .splash-subtitle {
+            font-size: 1rem;
+            font-weight: 500;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards 0.4s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-12px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
+    <div id="welcome-splash">
+        <img src="{{ !empty($institution?->logo) ? asset('storage/' . $institution->logo) : asset('assets/logos.png') }}"
+            alt="Logo Institusi" class="splash-logo">
+        <div class="splash-title text-adaptive-purple">SI HAFALAN</div>
+        <div class="splash-subtitle text-muted">Sistem Informasi Tahfidz Qur'an</div>
+    </div>
+    {{-- ================= END WELCOME SPLASH ================= --}}
+
+
+    {{-- ================= GLOBAL LOADER ================= --}}
     <style>
         /* Global Preloader Styling */
         #global-loader {
@@ -86,14 +178,8 @@
             <p class="mt-3 fw-bold text-adaptive-purple">Mohon Tunggu...</p>
         </div>
     </div>
-    @php
-        /** @var \App\Models\User|null $user */
-        /** @var \App\Models\InstitutionSetting|null $institution */
-        $user = auth()->user();
-        $role = $user->role ?? null;
-        $profile = $user?->profileSetting ?? null;
-        $institution = \App\Models\InstitutionSetting::first();
-    @endphp
+    {{-- ================= END GLOBAL LOADER ================= --}}
+
 
     {{-- SIDEBAR --}}
     <div class="sidebar sidebar-dark sidebar-fixed border-end" id="sidebar">
@@ -159,7 +245,6 @@
                         <span class="d-none d-md-inline fw-medium">{{ $user->name ?? 'Guest' }}</span>
                     </a>
 
-                    {{-- Class mt-2 boleh dihapus karena sudah diatur oleh offset di atas --}}
                     <div class="dropdown-menu dropdown-menu-end pt-0 shadow-lg dropdown-animated">
                         <div class="dropdown-header bg-light py-2 rounded-top">
                             <div class="fw-semibold">Akun Saya</div>
@@ -193,7 +278,7 @@
             class="footer border-top d-flex flex-column flex-sm-row align-items-center justify-content-center justify-content-sm-between gap-2">
             <div class="text-center text-sm-start small order-2 order-sm-1">
                 <span class="text-muted">© {{ date('Y') }}</span>
-                <span class="d-none d-md-inline fw-semibold text-muted ms-1">Sistem Informasi Hafalan Santri</span>
+                <span class="d-none d-md-inline fw-semibold text-muted ms-1">Sistem Informasi Tahfidz Qur'an</span>
                 <span class="d-inline d-md-none fw-semibold text-muted ms-1">SI Hafalan</span>
             </div>
 
@@ -207,48 +292,94 @@
     {{-- SCRIPTS --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+
+            // ==========================================
+            // 1. LOGIKA WELCOME SPLASH SCREEN
+            // ==========================================
+            const welcomeSplash = document.getElementById('welcome-splash');
+
+            if (welcomeSplash) {
+                // Cek apakah user sudah melihat splash screen di sesi ini
+                if (!sessionStorage.getItem('hasSeenWelcomeSplash')) {
+                    // Tampilkan selama 2.2 detik (disesuaikan agar pas dengan animasi css)
+                    setTimeout(() => {
+                        welcomeSplash.classList.add('hidden');
+                        sessionStorage.setItem('hasSeenWelcomeSplash', 'true');
+                    }, 2200);
+                } else {
+                    // Jika sudah pernah, sembunyikan langsung tanpa animasi
+                    welcomeSplash.style.display = 'none';
+                }
+            }
+
+
+            // ==========================================
+            // 2. LOGIKA GLOBAL LOADER (PAGE TRANSITIONS)
+            // ==========================================
             const loader = document.getElementById('global-loader');
 
             function hideLoader() {
-                if (loader) {
-                    loader.classList.add('loader-hidden');
-                }
+                if (loader) loader.classList.add('loader-hidden');
             }
 
             function showLoader() {
-                if (loader) {
-                    loader.classList.remove('loader-hidden');
-                }
+                if (loader) loader.classList.remove('loader-hidden');
             }
 
-            // 1. Sembunyikan loader saat load awal
+            // Sembunyikan loader saat load awal
             if (document.readyState === 'complete') {
                 hideLoader();
             } else {
                 window.addEventListener('load', hideLoader);
             }
 
-            // 2. Tampilkan loader saat user navigasi pergi
-            // Gunakan pengecekan agar tidak muncul pada link internal (#) atau download
-            window.addEventListener('beforeunload', function() {
-                showLoader();
+            // FIX: LOGIKA SKIP LOADER UNTUK DOWNLOAD
+            let skipLoader = false;
+
+            document.body.addEventListener('click', function(e) {
+                if (e.target.closest('.no-loader')) {
+                    skipLoader = true;
+                    setTimeout(() => skipLoader = false, 1500);
+                    return;
+                }
+
+                const target = e.target.closest('a');
+                if (target) {
+                    const href = target.getAttribute('href');
+                    const targetAttr = target.getAttribute('target');
+
+                    if (
+                        targetAttr === '_blank' ||
+                        (href && (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith(
+                            'tel:')))
+                    ) {
+                        skipLoader = true;
+                        setTimeout(() => skipLoader = false, 1500);
+                    }
+                }
             });
 
-            // 3. FIX: Sembunyikan loader jika user kembali via tombol BACK browser
+            document.body.addEventListener('submit', function(e) {
+                if (e.target.classList.contains('no-loader')) {
+                    skipLoader = true;
+                    setTimeout(() => skipLoader = false, 1500);
+                }
+            });
+
+            window.addEventListener('beforeunload', function(e) {
+                if (!skipLoader) {
+                    showLoader();
+                }
+            });
+
             window.addEventListener('pageshow', function(event) {
-                // event.persisted bernilai true jika halaman dimuat dari cache (tombol back)
                 if (event.persisted) {
                     hideLoader();
                 }
             });
 
-            // 3. Integrasi dengan AJAX (DataTables/Proses Simpan)
-            $(document).ajaxStart(function() {
-                // Jika Mas ingin loader muncul setiap kali ada AJAX request berat
-                // Tapi disarankan hanya untuk proses yang memakan waktu lama
-            }).ajaxStop(function() {
-                // Sembunyikan kembali
-            });
+            $(document).ajaxStart(function() {}).ajaxStop(function() {});
+
 
             /* =========================================================
             THEME TOGGLE LOGIC (DARK/LIGHT MODE)
@@ -257,24 +388,21 @@
             const themeToggle = document.getElementById("themeToggle");
 
             function applyTheme(theme) {
-                // Ini yang bertugas memberi tahu browser dan CoreUI untuk ganti warna
                 html.setAttribute("data-coreui-theme", theme);
             }
 
-            // Cek memori browser, apakah sebelumnya user pakai mode gelap?
             let theme = localStorage.getItem("theme");
             if (!theme) {
                 theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
             }
             applyTheme(theme);
 
-            // Jika tombol diklik, ganti tema
             if (themeToggle) {
                 themeToggle.addEventListener("click", function(e) {
-                    e.preventDefault(); // Mencegah halaman refresh
+                    e.preventDefault();
                     theme = html.getAttribute("data-coreui-theme") === "dark" ? "light" : "dark";
                     applyTheme(theme);
-                    localStorage.setItem("theme", theme); // Simpan pilihan user
+                    localStorage.setItem("theme", theme);
                 });
             }
 
@@ -287,7 +415,7 @@
 
             if (sidebarToggle && sidebar) {
                 sidebarToggle.addEventListener("click", function(e) {
-                    e.stopPropagation(); // Mencegah event klik langsung menjalar
+                    e.stopPropagation();
 
                     if (window.innerWidth < 992) {
                         body.classList.toggle("sidebar-open");
@@ -298,7 +426,6 @@
                     }
                 });
 
-                // Fitur tutup otomatis jika layar disentuh di luar sidebar (khusus mobile)
                 document.addEventListener("click", function(e) {
                     if (window.innerWidth < 992 && body.classList.contains("sidebar-open")) {
                         if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
@@ -307,7 +434,6 @@
                     }
                 });
 
-                /* Restore state untuk desktop */
                 if (localStorage.getItem("sidebar-collapse") === "true" && window.innerWidth >= 992) {
                     sidebar.classList.add("sidebar-narrow");
                 }

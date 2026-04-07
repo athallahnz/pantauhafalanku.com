@@ -58,6 +58,12 @@
     <div class="card main-card mb-4">
         <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center">
             <h6 class="fw-bold mb-0">Daftar Aktivitas Terbaru</h6>
+
+            {{-- TAMBAHKAN BUTTON EXPORT DI SINI --}}
+            <a href="{{ route('admin.activity_logs.export') }}"
+                class="btn btn-sm btn-success text-white fw-bold shadow-sm rounded-pill px-3 no-loader">
+                <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel
+            </a>
         </div>
         <div class="card-body p-4">
             <div class="table-responsive">

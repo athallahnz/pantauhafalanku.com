@@ -4,6 +4,15 @@
 
 @section('content')
     <style>
+        /* === TAMBAHAN CLASS FORCE WHITE === */
+        .force-white {
+            color: #ffffff !important;
+        }
+
+        .text-white-forced {
+            color: rgba(255, 255, 255, 0.85) !important;
+        }
+
         #aurora-bg {
             position: fixed;
             top: 0;
@@ -55,6 +64,8 @@
             border: 1px solid rgba(111, 66, 193, 0.1) !important;
             border-radius: 16px !important;
             padding: 12px 18px !important;
+            color: #444 !important;
+            /* Tambahan warna teks saat light mode */
         }
 
         [data-coreui-theme="dark"] .glass-input {
@@ -71,36 +82,39 @@
             <div class="card glass-pane border-0">
                 <div class="card-body p-4 p-md-5">
                     <div class="text-center mb-4">
-                        <img src="{{ asset('assets/logos-primary.png') }}" alt="Logo" class="mb-3"
-                            style="width: 100px; filter: drop-shadow(0 5px 15px rgba(111, 66, 193, 0.2));">
                         <h2 class="h4 fw-bold mb-1" id="welcomeText" style="color: #6f42c1;">Lupa Password?</h2>
-                        <p class="text-muted small">Kami akan mengirimkan link reset ke email Anda.</p>
+                        {{-- Menggunakan text-white-forced agar konsisten --}}
+                        <p class="text-white-forced small">Kami akan mengirimkan link reset ke email Anda.</p>
                     </div>
 
                     @if (session('status'))
-                        <div class="alert alert-success border-0 shadow-sm rounded-4 small text-center mb-4">
-                            {{ session('status') }}
+                        {{-- Disesuaikan agar tetap berbaur dengan glass effect --}}
+                        <div class="alert border-0 shadow-sm rounded-4 small text-center mb-4"
+                            style="background: rgba(25, 135, 84, 0.15); border-left: 4px solid #198754; color: #d1e7dd; backdrop-filter: blur(10px);">
+                            <i class="bi bi-check-circle-fill me-2"></i> {{ session('status') }}
                         </div>
                     @endif
 
                     <form method="POST" action="{{ route('password.email') }}" id="authForm">
                         @csrf
                         <div class="mb-4">
-                            <label class="form-label small fw-bold text-muted">Alamat E-Mail</label>
+                            {{-- Menggunakan force-white untuk label --}}
+                            <label class="form-label small fw-bold force-white">Alamat E-Mail</label>
                             <input type="email" name="email"
                                 class="form-control glass-input @error('email') is-invalid @enderror"
                                 value="{{ old('email') }}" placeholder="name@example.com" required autofocus>
 
                             @error('email')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
+                                <div class="invalid-feedback fw-bold" style="color: #ff6b6b;">
+                                    <i class="bi bi-exclamation-circle me-1"></i> {{ $message }}
                                 </div>
                             @enderror
                         </div>
 
                         <div class="d-grid mb-4">
                             <button class="btn btn-primary btn-lg rounded-4 shadow-sm fw-bold py-3" type="submit"
-                                id="submitBtn">
+                                id="submitBtn"
+                                style="background: linear-gradient(135deg, #6f42c1, #4b2291); border: none; color: white;">
                                 <span class="spinner-border spinner-border-sm d-none" id="loader" role="status"
                                     aria-hidden="true"></span>
                                 <span id="btnText">Kirim Link Reset <i class="bi bi-send ms-1"></i></span>
@@ -108,13 +122,23 @@
                         </div>
 
                         <div class="text-center">
-                            <a class="small fw-bold text-primary text-decoration-none" href="{{ route('login') }}">
+                            {{-- Warna teks diubah sedikit agar tetap terlihat elegan di background gelap --}}
+                            <a class="small fw-bold text-white text-decoration-none" href="{{ route('login') }}">
                                 <i class="bi bi-arrow-left me-1"></i> Kembali ke Login
                             </a>
                         </div>
                     </form>
                 </div>
             </div>
+
+            {{-- Copyright Text di bawah box seperti di halaman Register --}}
+            <div class="text-center mt-4">
+                <p class="text-white opacity-50 small">
+                    &copy;2026 SIMTAQU
+                    <span class="d-none d-md-inline">- Sistem Informasi Tahfidz Qur'an</span>
+                </p>
+            </div>
+
         </div>
     </div>
 @endsection

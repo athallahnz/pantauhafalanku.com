@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Exports\ActivityLogsExport;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ActivityLogController extends Controller
 {
@@ -58,5 +60,12 @@ class ActivityLogController extends Controller
         }
 
         return view('admin.activity_logs.index');
+    }
+
+    public function export()
+    {
+        // File akan otomatis terunduh dengan nama activity_logs_TANGGAL.xlsx
+        $fileName = 'activity_logs_' . date('Ymd_His') . '.xlsx';
+        return Excel::download(new ActivityLogsExport, $fileName);
     }
 }

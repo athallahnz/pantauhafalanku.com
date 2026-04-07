@@ -1,6 +1,6 @@
 @extends('layouts.auth')
 
-@section('title', 'Daftar Akun Baru')
+@section('title', 'Daftar Akun - Sistem Informasi Tahfidz Qur\'an')
 
 @section('content')
     <style>
