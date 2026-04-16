@@ -143,41 +143,42 @@
     {{-- ================== ROW KPI CARDS ================== --}}
     <div class="row g-3 mb-4">
         {{-- Santri Bimbingan --}}
-        <div class="col-lg-3 col-md-6">
+        <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6">
             <div class="card kpi-card spotlight-card h-100 border-0">
-                <div class="card-body p-4">
+                <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <div class="kpi-label">Santri Bimbingan</div>
+                            <div class="kpi-label">Bimbingan</div>
                             <div class="kpi-value count-up" data-target="{{ $jumlahSantri ?? 0 }}">0</div>
-                            <div class="kpi-sub text-muted">Total santri binaan</div>
+                            <div class="kpi-sub text-muted" style="font-size: 11px;">Total santri</div>
                         </div>
-                        <div class="kpi-icon bg-primary-subtle text-primary shadow-sm">
+                        <div class="kpi-icon shadow-sm"
+                            style="background-color: var(--islamic-purple-100); color: var(--islamic-purple-600);">
                             <i class="bi bi-people-fill"></i>
                         </div>
                     </div>
-                    <div class="kpi-progress">
-                        <div class="kpi-progress-bar bg-primary" style="width:100%"></div>
+                    <div class="kpi-progress mt-2">
+                        <div class="kpi-progress-bar" style="background-color: var(--islamic-purple-500); width:100%"></div>
                     </div>
                 </div>
             </div>
         </div>
 
         {{-- Setoran Hari Ini --}}
-        <div class="col-lg-3 col-md-6">
+        <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6">
             <div class="card kpi-card spotlight-card h-100 border-0">
-                <div class="card-body p-4">
+                <div class="card-body p-3">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <div class="kpi-label">Setoran Hari Ini</div>
+                            <div class="kpi-label">Setor</div>
                             <div class="kpi-value count-up" data-target="{{ $setoranHariIni ?? 0 }}">0</div>
-                            <div class="kpi-sub text-success fw-bold">Lulus / Ulang</div>
+                            <div class="kpi-sub text-success fw-bold" style="font-size: 11px;">Lulus / Ulang</div>
                         </div>
                         <div class="kpi-icon bg-success-subtle text-success shadow-sm">
                             <i class="bi bi-check-all"></i>
                         </div>
                     </div>
-                    <div class="kpi-progress">
+                    <div class="kpi-progress mt-2">
                         <div class="kpi-progress-bar bg-success"
                             style="width: {{ min(100, ($setoranHariIni ?? 0) * 10) }}%"></div>
                     </div>
@@ -186,20 +187,20 @@
         </div>
 
         {{-- Hadir Tidak Setor --}}
-        <div class="col-lg-3 col-md-6">
+        <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6">
             <div class="card kpi-card spotlight-card h-100 border-0">
-                <div class="card-body p-4">
+                <div class="card-body p-3">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <div class="kpi-label">Hadir Tidak Setor</div>
+                            <div class="kpi-label">Hadir (TS)</div>
                             <div class="kpi-value count-up" data-target="{{ $hadirTidakSetorHariIni ?? 0 }}">0</div>
-                            <div class="kpi-sub text-warning">Perlu Perhatian</div>
+                            <div class="kpi-sub text-warning" style="font-size: 11px;">Tidak Setor</div>
                         </div>
                         <div class="kpi-icon bg-warning-subtle text-warning shadow-sm">
                             <i class="bi bi-exclamation-triangle-fill"></i>
                         </div>
                     </div>
-                    <div class="kpi-progress">
+                    <div class="kpi-progress mt-2">
                         <div class="kpi-progress-bar bg-warning"
                             style="width: {{ min(100, ($hadirTidakSetorHariIni ?? 0) * 10) }}%"></div>
                     </div>
@@ -207,21 +208,65 @@
             </div>
         </div>
 
-        {{-- Alpha --}}
-        <div class="col-lg-3 col-md-6">
+        {{-- Sakit --}}
+        <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6">
             <div class="card kpi-card spotlight-card h-100 border-0">
-                <div class="card-body p-4">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="kpi-label">Sakit</div>
+                            <div class="kpi-value count-up" data-target="{{ $sakitHariIni ?? 0 }}">0</div>
+                            <div class="kpi-sub text-primary" style="font-size: 11px;">Berhalangan</div>
+                        </div>
+                        <div class="kpi-icon bg-primary-subtle text-primary shadow-sm">
+                            <i class="bi bi-heart-pulse-fill"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-progress mt-2">
+                        <div class="kpi-progress-bar bg-primary" style="width: {{ min(100, ($sakitHariIni ?? 0) * 10) }}%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Izin --}}
+        <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6">
+            <div class="card kpi-card spotlight-card h-100 border-0">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="kpi-label">Izin</div>
+                            <div class="kpi-value count-up" data-target="{{ $izinHariIni ?? 0 }}">0</div>
+                            <div class="kpi-sub text-secondary" style="font-size: 11px;">Berhalangan</div>
+                        </div>
+                        <div class="kpi-icon bg-secondary-subtle text-secondary shadow-sm">
+                            <i class="bi bi-envelope-paper-fill"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-progress mt-2">
+                        <div class="kpi-progress-bar bg-secondary" style="width: {{ min(100, ($izinHariIni ?? 0) * 10) }}%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Alpha --}}
+        <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6">
+            <div class="card kpi-card spotlight-card h-100 border-0">
+                <div class="card-body p-3">
                     <div class="d-flex justify-content-between">
                         <div>
                             <div class="kpi-label">Alpha</div>
                             <div class="kpi-value count-up" data-target="{{ $alphaHariIni ?? 0 }}">0</div>
-                            <div class="kpi-sub text-danger">Tanpa Keterangan</div>
+                            <div class="kpi-sub text-danger" style="font-size: 11px;">Tanpa Ket.</div>
                         </div>
                         <div class="kpi-icon bg-danger-subtle text-danger shadow-sm">
                             <i class="bi bi-person-x-fill"></i>
                         </div>
                     </div>
-                    <div class="kpi-progress">
+                    <div class="kpi-progress mt-2">
                         <div class="kpi-progress-bar bg-danger" style="width: {{ min(100, ($alphaHariIni ?? 0) * 10) }}%">
                         </div>
                     </div>

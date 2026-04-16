@@ -176,11 +176,13 @@ class HafalanController extends Controller
             })
             ->editColumn('status', function ($row) {
                 return match ($row->status) {
-                    'lulus' => '<span class="badge bg-success">Lulus</span>',
-                    'ulang' => '<span class="badge bg-warning text-dark">Ulang</span>',
+                    'lulus'             => '<span class="badge bg-success">Lulus</span>',
+                    'ulang'             => '<span class="badge bg-warning text-dark">Ulang</span>',
                     'hadir_tidak_setor' => '<span class="badge bg-info text-dark">Hadir Tidak Setor</span>',
-                    'alpha' => '<span class="badge bg-danger">Alpha</span>',
-                    default => '<span class="badge bg-secondary">-</span>',
+                    'alpha'             => '<span class="badge bg-danger">Alpha</span>',
+                    'sakit'             => '<span class="badge bg-primary">Sakit</span>',   // <--- TAMBAHAN
+                    'izin'              => '<span class="badge bg-secondary">Izin</span>', // <--- TAMBAHAN
+                    default             => '<span class="badge bg-secondary">-</span>',
                 };
             })
             ->addColumn('aksi', function ($row) {

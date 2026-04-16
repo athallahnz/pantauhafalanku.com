@@ -38,6 +38,16 @@ class DashboardController extends Controller
             ->where('status', 'hadir_tidak_setor')
             ->count();
 
+        $sakitHariIni = Hafalan::where('musyrif_id', $musyrif->id)
+            ->whereDate('tanggal_setoran', $today)
+            ->where('status', 'sakit')
+            ->count();
+
+        $izinHariIni = Hafalan::where('musyrif_id', $musyrif->id)
+            ->whereDate('tanggal_setoran', $today)
+            ->where('status', 'izin')
+            ->count();
+
         $alphaHariIni = Hafalan::where('musyrif_id', $musyrif->id)
             ->whereDate('tanggal_setoran', $today)
             ->where('status', 'alpha')
@@ -103,12 +113,14 @@ class DashboardController extends Controller
             ->pluck('total', 'status')
             ->toArray();
 
-        $allStatus = ['lulus', 'ulang', 'hadir_tidak_setor', 'alpha'];
+        $allStatus = ['lulus', 'ulang', 'hadir_tidak_setor', 'alpha', 'sakit', 'izin']; // <-- TAMBAHKAN DI SINI
         $statusLabels = [
-            'lulus' => 'Lulus',
-            'ulang' => 'Ulang',
+            'lulus'             => 'Lulus',
+            'ulang'             => 'Ulang',
             'hadir_tidak_setor' => 'Hadir Tidak Setor',
-            'alpha' => 'Alpha',
+            'alpha'             => 'Alpha',
+            'sakit'             => 'Sakit', // <-- TAMBAHKAN DI SINI
+            'izin'              => 'Izin',  // <-- TAMBAHKAN DI SINI
         ];
 
         $chartStatus = [
@@ -161,6 +173,8 @@ class DashboardController extends Controller
             'setoranHariIni',
             'hadirTidakSetorHariIni',
             'alphaHariIni',
+            'sakitHariIni',
+            'izinHariIni',
             'totalSetoran',
             'rataNilai',
             'totalJuzUnik',

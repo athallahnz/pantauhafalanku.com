@@ -20,8 +20,8 @@ class HafalanController extends Controller
         }
 
         /*
-     * Statistik, progress, dll
-     */
+         * Statistik, progress, dll
+         */
         $statusCounts = Hafalan::where('santri_id', $santri->id)
             ->selectRaw('status, COUNT(*) as total')
             ->groupBy('status')
@@ -30,6 +30,10 @@ class HafalanController extends Controller
         $totalSetor = ($statusCounts['lulus'] ?? 0) + ($statusCounts['ulang'] ?? 0);
         $totalAlpha = $statusCounts['alpha'] ?? 0;
         $totalHadirTidakSetor = $statusCounts['hadir_tidak_setor'] ?? 0;
+
+        // --- TAMBAHAN BARU ---
+        $totalSakit = $statusCounts['sakit'] ?? 0;
+        $totalIzin = $statusCounts['izin'] ?? 0;
 
         $avgNilai = Hafalan::where('santri_id', $santri->id)
             ->whereIn('status', ['lulus', 'ulang'])
@@ -112,6 +116,8 @@ class HafalanController extends Controller
             'totalSetor',
             'totalAlpha',
             'totalHadirTidakSetor',
+            'totalSakit', // --- TAMBAHAN BARU ---
+            'totalIzin',  // --- TAMBAHAN BARU ---
             'avgNilai',
             'progressPerJuz',
             'overallPct'
@@ -129,7 +135,6 @@ class HafalanController extends Controller
             return response()->json(['error' => 'Profil santri tidak ditemukan'], 403);
         }
 
-        // REVISI: Gunakan Join agar database bisa "melihat" kolom di tabel templates
         $q = Hafalan::query()
             ->leftJoin('hafalan_templates', 'hafalans.hafalan_template_id', '=', 'hafalan_templates.id')
             ->where('hafalans.santri_id', $santri->id)
@@ -137,34 +142,21 @@ class HafalanController extends Controller
 
         return DataTables::of($q)
             ->addIndexColumn()
-
-            /* =====================================================
-            PENTING: FilterColumn untuk Searching Maksimal
-        ===================================================== */
-            // Searching Tanggal (format d-m-Y)
             ->filterColumn('tanggal', function ($query, $keyword) {
                 $query->whereRaw("DATE_FORMAT(tanggal_setoran, '%d-%m-%Y') LIKE ?", ["%{$keyword}%"]);
             })
-            // Searching Juz
             ->filterColumn('juz', function ($query, $keyword) {
                 $query->where('hafalan_templates.juz', 'like', "%{$keyword}%");
             })
-            // Searching Surah/Ayat
             ->filterColumn('surah_ayat', function ($query, $keyword) {
                 $query->where('hafalan_templates.label', 'like', "%{$keyword}%");
             })
-            // Searching Nilai (Ngetik 'Mumtaz' atau 'ممتاز' tetap ketemu)
             ->filterColumn('nilai', function ($query, $keyword) {
                 $query->where('nilai_label', 'like', "%{$keyword}%");
             })
-            // Searching Status
             ->filterColumn('status', function ($query, $keyword) {
                 $query->where('status', 'like', "%{$keyword}%");
             })
-
-            /* =====================================================
-            Mapping Data untuk Tampilan
-        ===================================================== */
             ->addColumn('tanggal', fn($r) => $r->tanggal_setoran ? $r->tanggal_setoran->format('d-m-Y') : '-')
             ->addColumn('juz', fn($r) => $r->template_juz ?? '-')
             ->addColumn('surah_ayat', fn($r) => $r->template_label ?? '-')
@@ -179,6 +171,8 @@ class HafalanController extends Controller
                     'lulus' => 'bg-success',
                     'ulang' => 'bg-warning text-dark',
                     'hadir_tidak_setor' => 'bg-info text-dark',
+                    'sakit' => 'bg-primary',      // --- TAMBAHAN BARU ---
+                    'izin' => 'bg-secondary',     // --- TAMBAHAN BARU ---
                     'alpha' => 'bg-danger',
                     default => 'bg-secondary',
                 };
@@ -186,6 +180,8 @@ class HafalanController extends Controller
                     'lulus' => 'Lulus',
                     'ulang' => 'Ulang',
                     'hadir_tidak_setor' => 'Hadir Tidak Setor',
+                    'sakit' => 'Sakit',           // --- TAMBAHAN BARU ---
+                    'izin' => 'Izin',             // --- TAMBAHAN BARU ---
                     'alpha' => 'Alpha',
                     default => '-',
                 };
@@ -214,21 +210,31 @@ class HafalanController extends Controller
 
         $timeline = $query->get();
 
-        // Statistik khusus untuk data yang difilter
+        // --- UPDATE STATISTIK UNTUK PDF ---
         $statusCounts = $timeline->groupBy('status')->map->count();
+
         $totalSetor = ($statusCounts['lulus'] ?? 0) + ($statusCounts['ulang'] ?? 0);
+        $totalAlpha = $statusCounts['alpha'] ?? 0;
+        $totalSakit = $statusCounts['sakit'] ?? 0; // Tambahkan ini
+        $totalIzin  = $statusCounts['izin'] ?? 0;  // Tambahkan ini
+        $totalHTS   = $statusCounts['hadir_tidak_setor'] ?? 0; // Tambahkan ini (Hadir Tidak Setor)
 
         $data = [
-            'santri' => $santri,
-            'timeline' => $timeline,
-            'totalSetor' => $totalSetor,
-            'periode' => $periode,
+            'santri'        => $santri,
+            'timeline'      => $timeline,
+            'totalSetor'    => $totalSetor,
+            'totalAlpha'    => $totalAlpha,
+            'totalSakit'    => $totalSakit,
+            'totalIzin'     => $totalIzin,
+            'totalHTS'      => $totalHTS,
+            'periode'       => $periode,
             'tanggal_cetak' => now()->format('d F Y'),
         ];
 
         $pdf = Pdf::loadView('santri.hafalan.pdf', $data);
         $pdf->setPaper('a4', 'portrait');
 
-        return $pdf->download('Laporan_Hafalan_' . str_replace(' ', '_', $santri->nama) . '.pdf');
+        // Ganti bagian return di akhir fungsi exportPdf
+        return $pdf->stream('Laporan_Hafalan_' . str_replace(' ', '_', $santri->nama) . '.pdf');
     }
 }

@@ -336,6 +336,8 @@
                                     <th>Musyrif</th>
                                     <th>Jumlah Setoran</th>
                                     <th>Hadir Tidak Setor</th>
+                                    <th>Sakit</th> {{-- TAMBAHAN BARU --}}
+                                    <th>Izin</th> {{-- TAMBAHAN BARU --}}
                                     <th>Alpha</th>
                                     <th>Rata-rata Nilai</th>
                                     <th>Aksi</th>
@@ -569,6 +571,14 @@
                     },
                     {
                         data: 'hadir_tidak_setor',
+                        searchable: false
+                    },
+                    {
+                        data: 'sakit',
+                        searchable: false
+                    },
+                    {
+                        data: 'izin',
                         searchable: false
                     },
                     {
@@ -1161,7 +1171,7 @@
                 // URL ini adalah trik menggunakan widget embed Google Maps gratisan
                 let embedUrl =
                     `https://maps.google.com/maps?q=${lat},${lng}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
-                    
+
                 // Set source iframe
                 $('#previewMapIframe').attr('src', embedUrl);
 

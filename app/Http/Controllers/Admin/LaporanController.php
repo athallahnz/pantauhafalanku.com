@@ -113,6 +113,8 @@ class LaporanController extends Controller
                 'santri_id',
                 DB::raw("SUM(CASE WHEN status IN ('lulus','ulang') THEN 1 ELSE 0 END) as total_setor"),
                 DB::raw("SUM(CASE WHEN status = 'hadir_tidak_setor' THEN 1 ELSE 0 END) as hadir_tidak_setor"),
+                DB::raw("SUM(CASE WHEN status = 'sakit' THEN 1 ELSE 0 END) as sakit"), // <-- TAMBAHAN
+                DB::raw("SUM(CASE WHEN status = 'izin' THEN 1 ELSE 0 END) as izin"),   // <-- TAMBAHAN
                 DB::raw("SUM(CASE WHEN status = 'alpha' THEN 1 ELSE 0 END) as alpha"),
                 DB::raw("AVG(CASE WHEN status IN ('lulus','ulang') THEN " . $this->sqlNilaiLabelToAngka() . " ELSE NULL END) as rata_nilai")
             )
@@ -145,6 +147,8 @@ class LaporanController extends Controller
             ->editColumn('total_setor', fn($row) => (int) ($row->total_setor ?? 0))
             ->editColumn('hadir_tidak_setor', fn($row) => (int) ($row->hadir_tidak_setor ?? 0))
             ->editColumn('alpha', fn($row) => (int) ($row->alpha ?? 0))
+            ->editColumn('sakit', fn($row) => (int) ($row->sakit ?? 0))
+            ->editColumn('izin', fn($row) => (int) ($row->izin ?? 0))
             ->editColumn('rata_nilai', function ($row) {
                 return is_null($row->rata_nilai) ? '-' : number_format($row->rata_nilai, 2);
             })
@@ -194,6 +198,8 @@ class LaporanController extends Controller
             DB::raw('COUNT(DISTINCT santris.id) as jumlah_santri'),
             DB::raw("SUM(CASE WHEN hafalans.status IN ('lulus','ulang') THEN 1 ELSE 0 END) as total_setor"),
             DB::raw("SUM(CASE WHEN hafalans.status = 'hadir_tidak_setor' THEN 1 ELSE 0 END) as hadir_tidak_setor"),
+            DB::raw("SUM(CASE WHEN status = 'sakit' THEN 1 ELSE 0 END) as sakit"), // <-- TAMBAHAN
+            DB::raw("SUM(CASE WHEN status = 'izin' THEN 1 ELSE 0 END) as izin"),   // <-- TAMBAHAN
             DB::raw("SUM(CASE WHEN hafalans.status = 'alpha' THEN 1 ELSE 0 END) as alpha"),
             DB::raw("AVG(CASE WHEN hafalans.status IN ('lulus','ulang') THEN {$this->sqlNilaiLabelToAngka()} ELSE NULL END) as rata_nilai")
         )
@@ -230,6 +236,10 @@ class LaporanController extends Controller
                 fn($row) =>
                 (int) $row->hadir_tidak_setor
             )
+
+            ->editColumn('sakit', fn($row) => (int) ($row->sakit ?? 0))
+
+            ->editColumn('izin', fn($row) => (int) ($row->izin ?? 0))
 
             ->editColumn(
                 'alpha',
@@ -269,6 +279,8 @@ class LaporanController extends Controller
             DB::raw('COUNT(DISTINCT santris.id) as jumlah_santri'),
             DB::raw("SUM(CASE WHEN hafalans.status IN ('lulus','ulang') THEN 1 ELSE 0 END) as total_setor"),
             DB::raw("SUM(CASE WHEN hafalans.status = 'hadir_tidak_setor' THEN 1 ELSE 0 END) as hadir_tidak_setor"),
+            DB::raw("SUM(CASE WHEN status = 'sakit' THEN 1 ELSE 0 END) as sakit"), // <-- TAMBAHAN
+            DB::raw("SUM(CASE WHEN status = 'izin' THEN 1 ELSE 0 END) as izin"),   // <-- TAMBAHAN
             DB::raw("SUM(CASE WHEN hafalans.status = 'alpha' THEN 1 ELSE 0 END) as alpha"),
             DB::raw("AVG(CASE WHEN hafalans.status IN ('lulus','ulang') THEN " . $this->sqlNilaiLabelToAngka() . " ELSE NULL END) as rata_nilai"),
         )
@@ -293,6 +305,8 @@ class LaporanController extends Controller
             ->addIndexColumn()
             ->editColumn('jumlah_santri', fn($row) => (int) ($row->jumlah_santri ?? 0))
             ->editColumn('total_setor', fn($row) => (int) ($row->total_setor ?? 0))
+            ->editColumn('sakit', fn($row) => (int) ($row->sakit ?? 0))
+            ->editColumn('izin', fn($row) => (int) ($row->izin ?? 0))
             ->editColumn('rata_nilai', function ($row) {
                 if (is_null($row->rata_nilai)) {
                     return '-';

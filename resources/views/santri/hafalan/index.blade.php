@@ -265,34 +265,50 @@
         @php
             $kpiItems = [
                 [
-                    'label' => 'Total Setor',
+                    'label' => 'Setor',
                     'value' => $totalSetor,
-                    'sub' => 'Status: Lulus / Ulang',
+                    'sub' => 'Lulus / Ulang',
                     'color' => 'success',
                     'icon' => 'journal-check',
-                    'max' => 5,
+                    'max' => max(10, $totalSetor),
                 ],
                 [
-                    'label' => 'Izin / Tdk Setor',
+                    'label' => 'Hadir (TS)',
                     'value' => $totalHadirTidakSetor,
-                    'sub' => 'Kehadiran tanpa setoran',
+                    'sub' => 'Tidak Setor',
                     'color' => 'warning',
                     'icon' => 'exclamation-triangle',
-                    'max' => 5,
+                    'max' => max(10, $totalHadirTidakSetor),
+                ],
+                [
+                    'label' => 'Sakit',
+                    'value' => $totalSakit ?? 0,
+                    'sub' => 'Izin Sakit',
+                    'color' => 'primary',
+                    'icon' => 'heart-pulse',
+                    'max' => max(10, $totalSakit ?? 0),
+                ],
+                [
+                    'label' => 'Izin',
+                    'value' => $totalIzin ?? 0,
+                    'sub' => 'Izin Syar\'i',
+                    'color' => 'secondary',
+                    'icon' => 'envelope-paper',
+                    'max' => max(10, $totalIzin ?? 0),
                 ],
                 [
                     'label' => 'Alpha',
                     'value' => $totalAlpha,
-                    'sub' => 'Akumulasi ketidakhadiran',
+                    'sub' => 'Tanpa Ket.',
                     'color' => 'danger',
                     'icon' => 'x-octagon',
-                    'max' => 5,
+                    'max' => max(10, $totalAlpha),
                 ],
                 [
-                    'label' => 'Rata-rata Nilai',
+                    'label' => 'Rata Nilai',
                     'value' => $avgNilai,
-                    'sub' => 'Predikat hafalan terakhir',
-                    'color' => 'primary',
+                    'sub' => 'Indeks Prestasi',
+                    'color' => 'special', // Custom logic applied below
                     'icon' => 'graph-up-arrow',
                     'max' => 100,
                 ],
@@ -300,23 +316,31 @@
         @endphp
 
         @foreach ($kpiItems as $item)
-            <div class="col-lg-3 col-md-6">
-                <div class="card kpi-card border-0 h-100">
-                    <div class="card-body p-4">
+            <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
+                <div class="card kpi-card border-0 h-100 shadow-sm" {!! $item['color'] === 'special'
+                    ? 'style="background: linear-gradient(135deg, var(--islamic-purple-50) 0%, #ffffff 100%);"'
+                    : '' !!}>
+                    <div class="card-body p-3">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
                                 <div class="kpi-label">{{ $item['label'] }}</div>
-                                <div class="kpi-value text-{{ $item['color'] }}">{{ $item['value'] ?? 0 }}</div>
+                                <div class="kpi-value text-{{ $item['color'] }}" {!! $item['color'] === 'special' ? 'style="color: var(--islamic-purple-600) !important;"' : '' !!}>
+                                    {{ $item['value'] ?? 0 }}
+                                </div>
                             </div>
-                            <div class="kpi-icon bg-{{ $item['color'] }}-subtle text-{{ $item['color'] }} shadow-sm">
+                            <div class="kpi-icon shadow-sm rounded-3 p-2 {{ $item['color'] !== 'special' ? 'bg-' . $item['color'] . '-subtle text-' . $item['color'] : '' }}"
+                                {!! $item['color'] === 'special'
+                                    ? 'style="background-color: var(--islamic-purple-100); color: var(--islamic-purple-600);"'
+                                    : '' !!}>
                                 <i class="bi bi-{{ $item['icon'] }}"></i>
                             </div>
                         </div>
-                        <div class="kpi-progress">
-                            <div class="progress-bar kpi-progress-bar bg-{{ $item['color'] }}"
-                                style="width: {{ min(100, ((float) $item['value'] / $item['max']) * 100) }}%"></div>
+                        <div class="kpi-progress mt-2">
+                            <div class="progress-bar kpi-progress-bar {{ $item['color'] !== 'special' ? 'bg-' . $item['color'] : '' }}"
+                                style="height: 6px; width: {{ min(100, ((float) $item['value'] / max(1, $item['max'])) * 100) }}%; {!! $item['color'] === 'special' ? 'background-color: var(--islamic-purple-500);' : '' !!}">
+                            </div>
                         </div>
-                        <div class="kpi-sub">{{ $item['sub'] }}</div>
+                        <div class="kpi-sub fst-italic mt-1" style="font-size: 11px;">{{ $item['sub'] }}</div>
                     </div>
                 </div>
             </div>
@@ -417,7 +441,8 @@
             class="card-header bg-transparent py-3 px-4 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
             <span class="section-title"><i class="bi bi-clock-history me-2"></i>Riwayat Timeline Setoran</span>
 
-            <form action="{{ route('santri.hafalan.export-pdf') }}" method="GET"
+            {{-- Ganti bagian form di header card riwayat --}}
+            <form id="formExportPdf" action="{{ route('santri.hafalan.export-pdf') }}" method="GET" target="_blank"
                 class="d-flex flex-wrap gap-2 align-items-center">
 
                 <div class="input-group input-group-sm w-auto adaptive-group">
@@ -430,8 +455,9 @@
                     <input type="date" name="end_date" class="form-control adaptive-input shadow-none">
                 </div>
 
-                <button type="submit"
-                    class="btn btn-sm btn-danger text-white rounded-pill px-3 shadow-sm fw-bold btn-export">
+                {{-- Ubah type menjadi "button", bukan "submit" --}}
+                <button type="button" id="btnCetakPdf"
+                    class="btn btn-sm btn-danger text-white rounded-pill px-3 shadow-sm fw-bold">
                     <i class="bi bi-file-earmark-pdf me-1"></i> Cetak PDF
                 </button>
             </form>
@@ -533,12 +559,19 @@
             }
 
             /* =====================================================
-                DATATABLES TIMELINE (LOGIKA UTUH)
+                DATATABLES TIMELINE
             ===================================================== */
-            $('#timelineTable').DataTable({
+            const table = $('#timelineTable').DataTable({
                 processing: true,
                 serverSide: true,
-                ajax: "{{ route('santri.hafalan.timeline') }}",
+                ajax: {
+                    url: "{{ route('santri.hafalan.timeline') }}",
+                    // Kirim filter tanggal ke datatable agar tabel ikut ter-filter saat tanggal diisi
+                    data: function(d) {
+                        d.start_date = $('input[name="start_date"]').val();
+                        d.end_date = $('input[name="end_date"]').val();
+                    }
+                },
                 columns: [{
                         data: 'DT_RowIndex',
                         orderable: false,
@@ -580,12 +613,32 @@
                     [1, 'desc']
                 ],
                 pageLength: 10,
-                responsive: true,
-                language: {
-                    search: "_INPUT_",
-                    searchPlaceholder: "Cari riwayat...",
-                    lengthMenu: "_MENU_ baris"
-                }
+                responsive: true
+            });
+
+            // Reload tabel saat tanggal diubah
+            $('input[name="start_date"], input[name="end_date"]').on('change', function() {
+                table.draw();
+            });
+
+            $('#btnCetakPdf').on('click', function(e) {
+                // 1. Ambil referensi form dan tombol
+                const $form = $('#formExportPdf');
+                const $btn = $(this);
+                const originalHtml = $btn.html();
+
+                // 2. Trigger submit form secara manual (target="_blank" akan membuka tab baru)
+                $form.submit();
+
+                // 3. Jalankan efek visual loading di tombol halaman utama
+                $btn.prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm me-1"></span> Memproses...');
+
+                // 4. Kembalikan tombol ke normal setelah jeda singkat
+                // Kita beri 3-4 detik karena biasanya di waktu ini tab baru sudah mulai mendownload
+                setTimeout(() => {
+                    $btn.prop('disabled', false).html(originalHtml);
+                }, 3500);
             });
         });
     </script>

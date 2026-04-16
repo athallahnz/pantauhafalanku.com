@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Validation\Rule;
+
 class UpdateHafalanRequest extends StoreHafalanRequest
 {
 
@@ -17,7 +19,7 @@ class UpdateHafalanRequest extends StoreHafalanRequest
 
         $rules = [
             'santri_id' => ['required', 'exists:santris,id'],
-            'status' => ['required', Rule::in(['lulus', 'ulang', 'hadir_tidak_setor', 'alpha'])],
+            'status' => ['required', Rule::in(['lulus', 'ulang', 'hadir_tidak_setor', 'alpha', 'sakit', 'izin'])],
             'catatan' => ['nullable', 'string'],
         ];
 

@@ -123,10 +123,9 @@ class SantriController extends Controller
 
         /*
     |--------------------------------------------------------------------------
-    | Statistik status
+    | Statistik status (Dalam method detail)
     |--------------------------------------------------------------------------
     */
-
         $statusCounts = Hafalan::query()
             ->where('santri_id', $santri->id)
             ->selectRaw('status, COUNT(*) as total')
@@ -136,7 +135,8 @@ class SantriController extends Controller
         $totalSetor = ($statusCounts['lulus'] ?? 0) + ($statusCounts['ulang'] ?? 0);
         $totalAlpha = $statusCounts['alpha'] ?? 0;
         $totalHadirTidakSetor = $statusCounts['hadir_tidak_setor'] ?? 0;
-
+        $totalSakit = $statusCounts['sakit'] ?? 0;
+        $totalIzin  = $statusCounts['izin'] ?? 0;
 
         /*
     |--------------------------------------------------------------------------
@@ -297,6 +297,10 @@ class SantriController extends Controller
 
             'totalAlpha' => $totalAlpha,
 
+            'totalSakit' => $totalSakit,
+
+            'totalIzin' => $totalIzin,
+
             'totalHadirTidakSetor' => $totalHadirTidakSetor,
 
             'avgNilai' => $avgNilai,
@@ -336,6 +340,8 @@ class SantriController extends Controller
                     'lulus' => 'bg-success',
                     'ulang' => 'bg-warning text-dark',
                     'hadir_tidak_setor' => 'bg-info text-dark',
+                    'sakit' => 'bg-primary',      // <-- Tambahan
+                    'izin' => 'bg-secondary',     // <-- Tambahan
                     'alpha' => 'bg-danger',
                     default => 'bg-secondary',
                 };
@@ -343,6 +349,8 @@ class SantriController extends Controller
                     'lulus' => 'Lulus',
                     'ulang' => 'Ulang',
                     'hadir_tidak_setor' => 'Hadir Tidak Setor',
+                    'sakit' => 'Sakit',           // <-- Tambahan
+                    'izin' => 'Izin',             // <-- Tambahan
                     'alpha' => 'Alpha',
                     default => '-',
                 };

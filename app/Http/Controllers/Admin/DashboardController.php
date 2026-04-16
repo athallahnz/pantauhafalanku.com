@@ -24,28 +24,28 @@ class DashboardController extends Controller
         $jumlahKelas = Kelas::count();
         $jumlahMusyrif = Musyrif::count();
 
-        // Menghitung jumlah setoran santri khusus di bulan dan tahun berjalan
+        // PERBAIKAN: Menghitung setoran santri HANYA yang berstatus lulus/ulang
         $setoranBulanIni = Hafalan::whereMonth('tanggal_setoran', $now->month)
             ->whereYear('tanggal_setoran', $now->year)
+            ->whereIn('status', ['lulus', 'ulang']) // <-- TAMBAHKAN INI
             ->count();
 
-        // Menghitung kehadiran musyrif hari ini (Unique per Musyrif)
-        // Menggunakan distinct agar jika musyrif absen pagi & sore tetap terhitung 1 orang hadir
-        // Gunakan format Y-m-d untuk memastikan kecocokan dengan database
+        // Menghitung kehadiran musyrif hari ini
         $absensiMusyrifHariIni = MusyrifAttendance::whereDate('attendance_at', now()->format('Y-m-d'))
             // ->where('status', 'valid')
             ->distinct('musyrif_id')
             ->count();
 
         // 2. DATA CHART: Rata-rata Hafalan per Kelas (Bulan Ini)
-        // Eager loading santris dan hafalans dengan filter bulan berjalan
+        // PERBAIKAN: Eager loading hafalans juga harus difilter statusnya
         $chartData = Kelas::with(['santris.hafalans' => function ($q) use ($now) {
             $q->whereMonth('tanggal_setoran', $now->month)
-                ->whereYear('tanggal_setoran', $now->year);
+                ->whereYear('tanggal_setoran', $now->year)
+                ->whereIn('status', ['lulus', 'ulang']); // <-- TAMBAHKAN INI JUGA
         }])
             ->get()
             ->map(function ($kelas) {
-                // Hitung total setoran dari semua santri di kelas tersebut
+                // Hitung total setoran (karena sudah difilter di atas, tinggal di-count)
                 $totalSetoran = $kelas->santris->sum(function ($santri) {
                     return $santri->hafalans->count();
                 });

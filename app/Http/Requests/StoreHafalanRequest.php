@@ -9,7 +9,6 @@ class StoreHafalanRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Anda bisa tambah cek role musyrif di sini jika mau.
         return true;
     }
 
@@ -19,7 +18,7 @@ class StoreHafalanRequest extends FormRequest
 
         $rules = [
             'santri_id' => ['required', 'exists:santris,id'],
-            'status' => ['required', Rule::in(['lulus', 'ulang', 'hadir_tidak_setor', 'alpha'])],
+            'status' => ['required', Rule::in(['lulus', 'ulang', 'hadir_tidak_setor', 'alpha', 'sakit', 'izin'])],
             'catatan' => ['nullable', 'string'],
         ];
 
@@ -33,8 +32,7 @@ class StoreHafalanRequest extends FormRequest
             $rules['nilai_label'] = ['nullable', Rule::in(['mumtaz', 'jayyid_jiddan', 'jayyid'])];
         }
 
-        // Field legacy: kalau masih ada di request (misal dari modal lama), biarkan nullable
-        // dan nanti kita abaikan pada controller agar tidak jadi sumber kebenaran ganda.
+        // Field legacy
         $rules['juz'] = ['nullable', 'integer', 'min:1', 'max:30'];
         $rules['surah'] = ['nullable', 'string', 'max:100'];
         $rules['ayat_awal'] = ['nullable', 'integer', 'min:1'];

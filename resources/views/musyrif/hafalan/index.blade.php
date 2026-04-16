@@ -358,6 +358,7 @@
                         <h6 class="fw-bold mb-1">Tentukan Status Kehadiran</h6>
                         <p class="text-muted small mb-0">
                             <b>Lulus/Ulang:</b> Membuka pilihan materi.<br>
+                            <b>Sakit/Izin/Hadir Tidak Setor:</b> Tidak ada setoran materi.<br>
                             <b>Alpha:</b> Otomatis memberikan 1 poin pelanggaran ke santri.
                         </p>
                     </div>
@@ -470,6 +471,8 @@
                                     <option value="lulus" class="text-success">Lulus</option>
                                     <option value="ulang" class="text-warning">Ulang</option>
                                     <option value="hadir_tidak_setor" class="text-info">Hadir Tidak Setor</option>
+                                    <option value="sakit" class="text-primary">Sakit</option>
+                                    <option value="izin" class="text-secondary">Izin</option>
                                     <option value="alpha" class="text-danger">Alpha</option>
                                 </select>
                             </div>
@@ -556,11 +559,13 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">STATUS</label>
-                                <select name="status" id="edit_status" class="form-select" required>
-                                    <option value="lulus">Lulus</option>
-                                    <option value="ulang">Ulang</option>
-                                    <option value="hadir_tidak_setor">Hadir Tidak Setor</option>
-                                    <option value="alpha">Alpha</option>
+                                <select name="status" id="edit_status" class="form-select fw-bold" required>
+                                    <option value="lulus" class="text-success">Lulus</option>
+                                    <option value="ulang" class="text-warning">Ulang</option>
+                                    <option value="hadir_tidak_setor" class="text-info">Hadir Tidak Setor</option>
+                                    <option value="sakit" class="text-primary">Sakit</option>
+                                    <option value="izin" class="text-secondary">Izin</option>
+                                    <option value="alpha" class="text-danger">Alpha</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
@@ -655,7 +660,6 @@
 @endpush
 
 @push('scripts')
-    {{-- LOGIKA UTUH 100% - SEARCHING FIXED --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // ================== Filter Tanggal (Button Group) ==================
@@ -707,6 +711,8 @@
                     'lulus': 'Lulus',
                     'ulang': 'Ulang',
                     'hadir_tidak_setor': 'Hadir Tidak Setor',
+                    'sakit': 'Sakit',
+                    'izin': 'Izin',
                     'alpha': 'Alpha',
                 })[v] || '-';
             }
@@ -770,33 +776,50 @@
 
             function syncRules(mode) {
                 const statusEl = document.getElementById(`${mode}_status`);
+                const juzEl = document.getElementById(`${mode}_juz_ui`);
+                const tahapEl = document.getElementById(`${mode}_tahap_ui`);
                 const tplEl = document.getElementById(`${mode}_template_id`);
                 const nilaiEl = document.getElementById(`${mode}_nilai_label`);
+
                 const hintBox = document.getElementById(`${mode}_hint`);
                 const hintText = document.getElementById(`${mode}_hint_text`);
 
-                if (!statusEl || !tplEl || !nilaiEl) return;
+                if (!statusEl || !tplEl || !nilaiEl || !juzEl || !tahapEl) return;
+
                 const status = statusEl.value;
                 const isSetor = (status === 'lulus' || status === 'ulang');
 
+                // Disable seluruh field yang berkaitan dengan setoran materi jika status bukan lulus/ulang
+                juzEl.disabled = !isSetor;
+                tahapEl.disabled = !isSetor;
                 tplEl.disabled = !isSetor;
                 nilaiEl.disabled = !isSetor;
 
                 if (!isSetor) {
-                    tplEl.value = '';
+                    // Reset value agar data sebelumnya (jika ada) tidak tersimpan secara visual
+                    juzEl.value = '';
+                    tahapEl.value = 'harian'; // Reset ke default
+                    tplEl.innerHTML = `<option value="">-- Pilih Juz & Tahapan dulu --</option>`;
                     nilaiEl.value = '';
+
                     if (hintBox && hintText) {
                         hintBox.classList.remove('d-none');
-                        hintText.textContent = (status === 'alpha') ?
-                            'Status Alpha: tidak ada setoran (template & nilai dinonaktifkan).' :
-                            'Status Hadir Tidak Setor: tidak ada setoran (template & nilai dinonaktifkan).';
+
+                        let msg = 'Tidak ada setoran (Juz, Tahapan, Template & Nilai dinonaktifkan).';
+                        if (status === 'alpha') msg = 'Status Alpha: Santri mendapat 1 poin pelanggaran otomatis.';
+                        else if (status === 'sakit') msg = 'Status Sakit: Santri berhalangan karena sakit.';
+                        else if (status === 'izin') msg = 'Status Izin: Santri berhalangan dengan izin.';
+                        else if (status === 'hadir_tidak_setor') msg = 'Status Hadir Tidak Setor: Santri hadir namun tidak menyetor.';
+
+                        hintText.textContent = msg;
                     }
                 } else {
+                    // Sembunyikan hint jika statusnya menyetor
                     if (hintBox) hintBox.classList.add('d-none');
                 }
             }
 
-            // ================== DataTables (SEARCH FIXED) ==================
+            // ================== DataTables ==================
             const table = $('#hafalan-table').DataTable({
                 processing: true,
                 serverSide: true,
@@ -817,24 +840,24 @@
                         name: 'santri',
                         orderable: false,
                         searchable: true
-                    }, // FIXED: true
+                    },
                     {
                         data: 'kelas',
                         name: 'kelas',
                         orderable: false,
                         searchable: true
-                    }, // FIXED: true
+                    },
                     {
                         data: 'template_juz',
                         name: 'template_juz',
                         searchable: true
-                    }, // FIXED: true
+                    },
                     {
                         data: 'template_label',
                         name: 'template_label',
                         orderable: false,
                         searchable: true
-                    }, // FIXED: true
+                    },
                     {
                         data: 'tanggal',
                         name: 'tanggal_setoran',
@@ -851,13 +874,13 @@
                         name: 'template_tahap',
                         orderable: false,
                         searchable: true
-                    }, // FIXED: true
+                    },
                     {
                         data: 'status',
                         name: 'status',
                         orderable: false,
                         searchable: true
-                    }, // FIXED: true
+                    },
                     {
                         data: 'aksi',
                         name: 'aksi',
@@ -874,7 +897,6 @@
             setTimeout(() => {
                 try {
                     const bubble = document.getElementById('bubbleHelp');
-                    // Gunakan Instance CoreUI jika ada Toast (opsional)
                     if (typeof coreui !== 'undefined') {
                         const toastEl = document.getElementById('toastAutoHelp');
                         if (toastEl) {
@@ -883,14 +905,14 @@
                     }
 
                     if (bubble) {
-                        bubble.style.display = 'block'; // Munculkan
+                        bubble.style.display = 'block';
 
                         setTimeout(() => {
-                            bubble.classList.add('hide'); // Animasi fade out
+                            bubble.classList.add('hide');
                             setTimeout(() => {
                                 if (bubble) bubble.remove();
                             }, 500);
-                        }, 6000); // 6 detik tampil
+                        }, 6000);
                     }
                 } catch (e) {
                     console.warn("UI Helper failed to load safely:", e);
@@ -919,6 +941,11 @@
                 }
                 const tplEl = document.getElementById('create_template_id');
                 if (tplEl) tplEl.innerHTML = `<option value="">-- Pilih Juz & Tahapan dulu --</option>`;
+
+                // Pastikan field aktif saat modal baru dibuka (default status 'lulus')
+                $('#create_juz_ui').prop('disabled', false);
+                $('#create_tahap_ui').prop('disabled', false);
+
                 syncRules('create');
                 modalCreate.show();
             });
@@ -947,17 +974,11 @@
                     },
                     error: function(xhr) {
                         let msg = 'Terjadi kesalahan.';
-
-                        // 1. Cek jika ada error validasi Laravel (errors: { field: [msg] })
                         if (xhr.status === 422 && xhr.responseJSON?.errors) {
-                            msg = Object.values(xhr.responseJSON.errors).map(e => e[0]).join(
-                                '\n');
-                        }
-                        // 2. Cek jika ada pesan kustom (message: "...")
-                        else if (xhr.responseJSON?.message) {
+                            msg = Object.values(xhr.responseJSON.errors).map(e => e[0]).join('\n');
+                        } else if (xhr.responseJSON?.message) {
                             msg = xhr.responseJSON.message;
                         }
-
                         if (window.AppAlert) {
                             AppAlert.error(msg);
                         }
@@ -970,18 +991,30 @@
                 const d = $(this).data();
                 $('#edit_id').val(d.id);
                 $('#edit_santri_id').val(d.santri_id);
+
                 if (d.tanggal_ymd) {
-                    $('#tanggal_edit').val(formatTanggalIndonesia(d.tanggal_ymd)).attr('data-iso', d
-                        .tanggal_ymd);
+                    $('#tanggal_edit').val(formatTanggalIndonesia(d.tanggal_ymd)).attr('data-iso', d.tanggal_ymd);
                 }
+
                 $('#edit_status').val(d.status || 'hadir_tidak_setor');
                 $('#edit_nilai_label').val(d.nilai_label || '');
                 $('#edit_catatan').val(d.catatan || '');
                 $('#edit_juz_ui').val(d.template_juz || '');
                 $('#edit_tahap_ui').val(d.template_tahap || 'harian');
-                await loadTemplateOptions('edit');
-                $('#edit_template_id').val(d.hafalan_template_id || '');
+
+                // Aktifkan sementara untuk load template jika ada
+                $('#edit_juz_ui').prop('disabled', false);
+                $('#edit_tahap_ui').prop('disabled', false);
+
+                if(d.template_juz && d.template_tahap){
+                     await loadTemplateOptions('edit');
+                     $('#edit_template_id').val(d.hafalan_template_id || '');
+                } else {
+                     $('#edit_template_id').html('<option value="">-- Pilih Juz & Tahapan dulu --</option>');
+                }
+
                 syncRules('edit');
+
                 const iso = d.tanggal_ymd || todayISO();
                 $('#tanggal_edit').val(formatTanggalIndonesia(iso)).attr('data-iso', iso);
                 modalEdit.show();
@@ -1013,17 +1046,11 @@
                     },
                     error: function(xhr) {
                         let msg = 'Terjadi kesalahan.';
-
-                        // 1. Cek jika ada error validasi Laravel (errors: { field: [msg] })
                         if (xhr.status === 422 && xhr.responseJSON?.errors) {
-                            msg = Object.values(xhr.responseJSON.errors).map(e => e[0]).join(
-                                '\n');
-                        }
-                        // 2. Cek jika ada pesan kustom (message: "...")
-                        else if (xhr.responseJSON?.message) {
+                            msg = Object.values(xhr.responseJSON.errors).map(e => e[0]).join('\n');
+                        } else if (xhr.responseJSON?.message) {
                             msg = xhr.responseJSON.message;
                         }
-
                         if (window.AppAlert) {
                             AppAlert.error(msg);
                         }
