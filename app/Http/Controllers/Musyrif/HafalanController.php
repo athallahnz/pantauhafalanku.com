@@ -161,6 +161,7 @@ class HafalanController extends Controller
                     'mumtaz' => 'ممتاز',
                     'jayyid_jiddan' => 'جيد جدًا',
                     'jayyid' => 'جيد',
+                    'mardud' => 'مردود',
                     default => '-',
                 };
             })

@@ -61,7 +61,7 @@ class SantriController extends Controller
                 $totalSetor = $uniqueHafalans->count();
 
                 // Rata-rata Nilai
-                $nilaiMap = ['mumtaz' => 95, 'jayyid_jiddan' => 85, 'jayyid' => 75];
+                $nilaiMap = ['mumtaz' => 95, 'jayyid_jiddan' => 85, 'jayyid' => 75, 'mardud' => 65];
                 $valid = $uniqueHafalans->whereIn('nilai_label', array_keys($nilaiMap));
                 $avg = $valid->count() ? round($valid->sum(fn($h) => $nilaiMap[$h->nilai_label]) / $valid->count(), 1) : 0;
 
@@ -76,7 +76,7 @@ class SantriController extends Controller
                 </div>';
             })
 
-            // Kolom Aksi (Kalkulasi modal detail)
+            // Kolom Aksi (Ditambahkan Tombol Tahsin)
             ->addColumn('aksi', function ($santri) use ($targetPerJuz) {
                 $uniqueHafalans = $santri->hafalans->unique('hafalan_template_id');
                 $donePerJuz = $uniqueHafalans->groupBy('template.juz')->map->count();
@@ -98,15 +98,20 @@ class SantriController extends Controller
                 $detailHtml = '<div>' . ($rows ?: '<div class="text-muted">Belum ada setoran harian.</div>') . '</div>';
 
                 return '
-                <div class="d-flex gap-2 flex-nowrap">
+                <div class="d-flex gap-2 flex-nowrap justify-content-end">
                     <button type="button" class="btn btn-sm btn-primary btn-progress"
                         data-nama="' . e($santri->nama) . '"
                         data-kelas="' . e(optional($santri->kelas)->nama_kelas ?: '-') . '"
                         data-detail_html="' . e($detailHtml) . '">
-                        <i class="bi bi-bar-chart" data-coreui-toggle="tooltip" title="Progress Harian"></i>
+                        <i class="bi bi-bar-chart-fill" data-coreui-toggle="tooltip" title="Progress Harian"></i>
                     </button>
+
                     <a class="btn btn-sm btn-outline-primary" href="' . route('musyrif.santri.detail', $santri->id) . '">
-                        <i class="bi bi-eye" data-coreui-toggle="tooltip" title="Detail Lengkap"></i>
+                        <i class="bi bi-journal-bookmark-fill" data-coreui-toggle="tooltip" title="Detail Hafalan"></i>
+                    </a>
+
+                    <a class="btn btn-sm btn-outline-success" href="' . route('musyrif.tahsin.detail', $santri->id) . '">
+                        <i class="bi bi-book-half" data-coreui-toggle="tooltip" title="Detail Tahsin"></i>
                     </a>
                 </div>';
             })
@@ -154,6 +159,8 @@ class SantriController extends Controller
                         WHEN 'mumtaz' THEN 95
                         WHEN 'jayyid_jiddan' THEN 85
                         WHEN 'jayyid' THEN 75
+                        WHEN 'mardud' THEN 65
+                        ELSE NULL
                     END
                 ), 1
             ) as avg
@@ -333,6 +340,7 @@ class SantriController extends Controller
                 'mumtaz' => 'ممتاز',
                 'jayyid_jiddan' => 'جيد جدًا',
                 'jayyid' => 'جيد',
+                'mardud' => 'مردود',
                 default => '-',
             })
             ->addColumn('status', function ($r) {

@@ -15,21 +15,21 @@ class StoreHafalanRequest extends FormRequest
     public function rules(): array
     {
         $status = $this->input('status');
-
         $rules = [
             'santri_id' => ['required', 'exists:santris,id'],
-            'status' => ['required', Rule::in(['lulus', 'ulang', 'hadir_tidak_setor', 'alpha', 'sakit', 'izin'])],
-            'catatan' => ['nullable', 'string'],
+            'status'    => ['required', Rule::in(['lulus', 'ulang', 'hadir_tidak_setor', 'alpha', 'sakit', 'izin'])],
+            'catatan'   => ['nullable', 'string'],
         ];
 
-        // Jika setor (lulus/ulang), wajib template + nilai_label
+        // Tambahkan 'mardud' di validasi in:
+        $nilaiOptions = ['mumtaz', 'jayyid_jiddan', 'jayyid', 'mardud'];
+
         if (in_array($status, ['lulus', 'ulang'], true)) {
             $rules['hafalan_template_id'] = ['required', 'exists:hafalan_templates,id'];
-            $rules['nilai_label'] = ['required', Rule::in(['mumtaz', 'jayyid_jiddan', 'jayyid'])];
+            $rules['nilai_label'] = ['required', Rule::in($nilaiOptions)];
         } else {
-            // Jika bukan setor, pastikan field ini tidak wajib
             $rules['hafalan_template_id'] = ['nullable', 'exists:hafalan_templates,id'];
-            $rules['nilai_label'] = ['nullable', Rule::in(['mumtaz', 'jayyid_jiddan', 'jayyid'])];
+            $rules['nilai_label'] = ['nullable', Rule::in($nilaiOptions)];
         }
 
         // Field legacy
@@ -54,9 +54,17 @@ class StoreHafalanRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Normalisasi ringan
         if ($this->has('status')) {
-            $this->merge(['status' => trim((string) $this->status)]);
+            $status = trim((string) $this->status);
+            // Jika status ULANG, paksa nilai_label menjadi MARDUD sebelum divalidasi
+            if ($status === 'ulang') {
+                $this->merge([
+                    'status' => $status,
+                    'nilai_label' => 'mardud'
+                ]);
+            } else {
+                $this->merge(['status' => $status]);
+            }
         }
     }
 }

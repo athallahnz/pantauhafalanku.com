@@ -64,8 +64,8 @@
         }
 
         /* ==========================================================
-                   MODAL GUIDE STYLES
-                   ========================================================== */
+                       MODAL GUIDE STYLES
+                       ========================================================== */
         .guide-step {
             position: relative;
             border-left: 3px solid var(--cui-info);
@@ -180,8 +180,8 @@
         }
 
         /* ==========================================================
-               MOBILE RESPONSIVE (Pojok Kiri & Pojok Kanan)
-               ========================================================== */
+                   MOBILE RESPONSIVE (Pojok Kiri & Pojok Kanan)
+                   ========================================================== */
         @media (max-width: 768px) {
 
             /* Container dilepas flex-nya agar tombol bisa mencar */
@@ -484,6 +484,7 @@
                                     <option value="mumtaz">ممتاز (Mumtaz)</option>
                                     <option value="jayyid_jiddan">جيد جدًا (Jayyid Jiddan)</option>
                                     <option value="jayyid">جيد (Jayyid)</option>
+                                    <option value="mardud">مردود (Mardud)</option>
                                 </select>
                             </div>
 
@@ -575,6 +576,7 @@
                                     <option value="mumtaz">ممتاز</option>
                                     <option value="jayyid_jiddan">جيد جدًا</option>
                                     <option value="jayyid">جيد</option>
+                                    <option value="mardud">مردود</option>
                                 </select>
                             </div>
                             <div class="col-12">
@@ -722,6 +724,7 @@
                     'mumtaz': 'ممتاز',
                     'jayyid_jiddan': 'جيد جدًا',
                     'jayyid': 'جيد',
+                    'mardud': 'مردود',
                 })[v] || '-';
             }
 
@@ -774,13 +777,13 @@
                 });
             }
 
+            // 2. Update Fungsi Utama syncRules
             function syncRules(mode) {
                 const statusEl = document.getElementById(`${mode}_status`);
                 const juzEl = document.getElementById(`${mode}_juz_ui`);
                 const tahapEl = document.getElementById(`${mode}_tahap_ui`);
                 const tplEl = document.getElementById(`${mode}_template_id`);
                 const nilaiEl = document.getElementById(`${mode}_nilai_label`);
-
                 const hintBox = document.getElementById(`${mode}_hint`);
                 const hintText = document.getElementById(`${mode}_hint_text`);
 
@@ -789,33 +792,48 @@
                 const status = statusEl.value;
                 const isSetor = (status === 'lulus' || status === 'ulang');
 
-                // Disable seluruh field yang berkaitan dengan setoran materi jika status bukan lulus/ulang
+                // --- LOGIKA OTOMATISASI MARDUD ---
+                if (status === 'ulang') {
+                    nilaiEl.value = 'mardud';
+                    nilaiEl.classList.add('bg-light');
+                    nilaiEl.style.pointerEvents = 'none'; // Lock input agar tidak bisa diklik manual
+                } else {
+                    // Jika status pindah dari ulang ke lulus, kosongkan nilai mardud agar user milih lagi
+                    if (nilaiEl.value === 'mardud' && status === 'lulus') {
+                        nilaiEl.value = '';
+                    }
+                    nilaiEl.classList.remove('bg-light');
+                    nilaiEl.style.pointerEvents = 'auto';
+                }
+
+                // Aktif/Nonaktifkan Field berdasarkan status setor
                 juzEl.disabled = !isSetor;
                 tahapEl.disabled = !isSetor;
                 tplEl.disabled = !isSetor;
-                nilaiEl.disabled = !isSetor;
 
+                // Jangan di-disable jika 'ulang' agar data 'mardud' tetap ter-serialize ke server
+                if (status !== 'ulang') {
+                    nilaiEl.disabled = !isSetor;
+                }
+
+                // Tampilkan Hint
                 if (!isSetor) {
-                    // Reset value agar data sebelumnya (jika ada) tidak tersimpan secara visual
                     juzEl.value = '';
-                    tahapEl.value = 'harian'; // Reset ke default
+                    tahapEl.value = 'harian';
                     tplEl.innerHTML = `<option value="">-- Pilih Juz & Tahapan dulu --</option>`;
                     nilaiEl.value = '';
 
                     if (hintBox && hintText) {
                         hintBox.classList.remove('d-none');
-
-                        let msg = 'Tidak ada setoran (Juz, Tahapan, Template & Nilai dinonaktifkan).';
-                        if (status === 'alpha') msg = 'Status Alpha: Santri mendapat 1 poin pelanggaran otomatis.';
-                        else if (status === 'sakit') msg = 'Status Sakit: Santri berhalangan karena sakit.';
-                        else if (status === 'izin') msg = 'Status Izin: Santri berhalangan dengan izin.';
-                        else if (status === 'hadir_tidak_setor') msg = 'Status Hadir Tidak Setor: Santri hadir namun tidak menyetor.';
-
-                        hintText.textContent = msg;
+                        hintText.textContent = 'Tidak ada setoran (Field dinonaktifkan).';
                     }
                 } else {
-                    // Sembunyikan hint jika statusnya menyetor
-                    if (hintBox) hintBox.classList.add('d-none');
+                    if (status === 'ulang') {
+                        hintBox.classList.remove('d-none');
+                        hintText.textContent = 'Status "Ulang" otomatis menetapkan nilai "Mardud".';
+                    } else {
+                        hintBox.classList.add('d-none');
+                    }
                 }
             }
 
@@ -975,7 +993,8 @@
                     error: function(xhr) {
                         let msg = 'Terjadi kesalahan.';
                         if (xhr.status === 422 && xhr.responseJSON?.errors) {
-                            msg = Object.values(xhr.responseJSON.errors).map(e => e[0]).join('\n');
+                            msg = Object.values(xhr.responseJSON.errors).map(e => e[0]).join(
+                                '\n');
                         } else if (xhr.responseJSON?.message) {
                             msg = xhr.responseJSON.message;
                         }
@@ -993,7 +1012,8 @@
                 $('#edit_santri_id').val(d.santri_id);
 
                 if (d.tanggal_ymd) {
-                    $('#tanggal_edit').val(formatTanggalIndonesia(d.tanggal_ymd)).attr('data-iso', d.tanggal_ymd);
+                    $('#tanggal_edit').val(formatTanggalIndonesia(d.tanggal_ymd)).attr('data-iso', d
+                        .tanggal_ymd);
                 }
 
                 $('#edit_status').val(d.status || 'hadir_tidak_setor');
@@ -1006,11 +1026,12 @@
                 $('#edit_juz_ui').prop('disabled', false);
                 $('#edit_tahap_ui').prop('disabled', false);
 
-                if(d.template_juz && d.template_tahap){
-                     await loadTemplateOptions('edit');
-                     $('#edit_template_id').val(d.hafalan_template_id || '');
+                if (d.template_juz && d.template_tahap) {
+                    await loadTemplateOptions('edit');
+                    $('#edit_template_id').val(d.hafalan_template_id || '');
                 } else {
-                     $('#edit_template_id').html('<option value="">-- Pilih Juz & Tahapan dulu --</option>');
+                    $('#edit_template_id').html(
+                        '<option value="">-- Pilih Juz & Tahapan dulu --</option>');
                 }
 
                 syncRules('edit');
@@ -1047,7 +1068,8 @@
                     error: function(xhr) {
                         let msg = 'Terjadi kesalahan.';
                         if (xhr.status === 422 && xhr.responseJSON?.errors) {
-                            msg = Object.values(xhr.responseJSON.errors).map(e => e[0]).join('\n');
+                            msg = Object.values(xhr.responseJSON.errors).map(e => e[0]).join(
+                                '\n');
                         } else if (xhr.responseJSON?.message) {
                             msg = xhr.responseJSON.message;
                         }

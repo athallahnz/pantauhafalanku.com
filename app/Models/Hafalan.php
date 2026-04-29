@@ -91,6 +91,7 @@ class Hafalan extends Model
                 'mumtaz' => 'Mumtaz',
                 'jayyid_jiddan' => 'Jayyid Jiddan',
                 'jayyid' => 'Jayyid',
+                'mardud'        => 'Mardud', // Tambahkan ini jika Anda menggunakan label 'mardud' untuk nilai terendah
                 default => $this->nilai_label,
             };
         }

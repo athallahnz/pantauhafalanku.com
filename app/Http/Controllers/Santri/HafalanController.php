@@ -44,6 +44,8 @@ class HafalanController extends Controller
                         WHEN 'mumtaz' THEN 95
                         WHEN 'jayyid_jiddan' THEN 85
                         WHEN 'jayyid' THEN 75
+                        WHEN 'mardud' THEN 65
+                        ELSE NULL
                     END
                 ), 1
             ) as avg
@@ -164,6 +166,7 @@ class HafalanController extends Controller
                 'mumtaz' => 'ممتاز',
                 'jayyid_jiddan' => 'جيد جدًا',
                 'jayyid' => 'جيد',
+                'mardud' => 'مردود',
                 default => '-'
             })
             ->addColumn('status', function ($r) {

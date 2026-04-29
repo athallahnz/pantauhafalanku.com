@@ -32,7 +32,7 @@ return new class extends Migration {
 
             // 3) Nilai berbasis label (mumtaz/jayyid_jiddan/jayyid)
             if (!Schema::hasColumn('hafalans', 'nilai_label')) {
-                $table->enum('nilai_label', ['mumtaz', 'jayyid_jiddan', 'jayyid'])
+                $table->enum('nilai_label', ['mumtaz', 'jayyid_jiddan', 'jayyid', 'mardud'])
                     ->nullable()
                     ->after('hafalan_template_id');
             }
@@ -46,7 +46,7 @@ return new class extends Migration {
         // 'proses' -> 'hadir_tidak_setor' (atau Anda bisa pilih 'alpha')
         DB::statement("
             ALTER TABLE hafalans
-            MODIFY status ENUM('lulus','ulang','hadir_tidak_setor','alpha')
+        MODIFY status ENUM('lulus','ulang','hadir_tidak_setor','alpha','mardud')
             NOT NULL DEFAULT 'hadir_tidak_setor'
         ");
 

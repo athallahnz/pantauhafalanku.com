@@ -26,11 +26,11 @@ class UpdateHafalanRequest extends StoreHafalanRequest
         // Jika setor (lulus/ulang), wajib template + nilai_label
         if (in_array($status, ['lulus', 'ulang'], true)) {
             $rules['hafalan_template_id'] = ['required', 'exists:hafalan_templates,id'];
-            $rules['nilai_label'] = ['required', Rule::in(['mumtaz', 'jayyid_jiddan', 'jayyid'])];
+            $rules['nilai_label'] = ['required', Rule::in(['mumtaz', 'jayyid_jiddan', 'jayyid', 'mardud'])];
         } else {
             // Jika bukan setor, pastikan field ini tidak wajib
             $rules['hafalan_template_id'] = ['nullable', 'exists:hafalan_templates,id'];
-            $rules['nilai_label'] = ['nullable', Rule::in(['mumtaz', 'jayyid_jiddan', 'jayyid'])];
+            $rules['nilai_label'] = ['nullable', Rule::in(['mumtaz', 'jayyid_jiddan', 'jayyid', 'mardud'])];
         }
 
         // Field legacy: kalau masih ada di request (misal dari modal lama), biarkan nullable

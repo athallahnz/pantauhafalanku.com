@@ -223,6 +223,7 @@
                                 'mumtaz' => 'Mumtaz',
                                 'jayyid_jiddan' => 'Jayyid Jiddan',
                                 'jayyid' => 'Jayyid',
+                                'mardud' => 'Mardud',
                                 default => '-',
                             } }}
                         @else

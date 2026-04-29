@@ -24,6 +24,7 @@ class LaporanController extends Controller
         WHEN hafalans.nilai_label = 'mumtaz' THEN 95
         WHEN hafalans.nilai_label = 'jayyid_jiddan' THEN 85
         WHEN hafalans.nilai_label = 'jayyid' THEN 75
+        WHEN hafalans.nilai_label = 'mardud' THEN 65
         ELSE NULL
     END";
     }

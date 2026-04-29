@@ -168,7 +168,7 @@
                 [
                     'label' => 'Rata-rata Nilai',
                     'value' => $avgNilai,
-                    'sub' => 'Mumtaz / Jayyid Jiddan / Jayyid',
+                    'sub' => 'Mumtaz / Jayyid Jiddan / Jayyid / Mardud',
                     'color' => 'primary',
                     'icon' => 'graph-up-arrow',
                     'max' => 100,

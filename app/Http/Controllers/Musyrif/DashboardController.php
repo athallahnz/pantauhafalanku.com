@@ -58,7 +58,7 @@ class DashboardController extends Controller
             ->count();
 
         // rata-rata nilai label -> numeric
-        $nilaiMap = ['mumtaz' => 95, 'jayyid_jiddan' => 85, 'jayyid' => 75];
+        $nilaiMap = ['mumtaz' => 95, 'jayyid_jiddan' => 85, 'jayyid' => 75, 'mardud' => 65];
 
         $avgNilaiRow = Hafalan::where('musyrif_id', $musyrif->id)
             ->whereIn('status', ['lulus', 'ulang'])
@@ -68,6 +68,7 @@ class DashboardController extends Controller
                         WHEN 'mumtaz' THEN 95
                         WHEN 'jayyid_jiddan' THEN 85
                         WHEN 'jayyid' THEN 75
+                        WHEN 'mardud' THEN 65
                         ELSE NULL
                     END
                 ) as avg_nilai
@@ -152,6 +153,7 @@ class DashboardController extends Controller
                         WHEN 'mumtaz' THEN 95
                         WHEN 'jayyid_jiddan' THEN 85
                         WHEN 'jayyid' THEN 75
+                        WHEN 'mardud' THEN 65
                         ELSE NULL
                     END
                 ) as avg_nilai

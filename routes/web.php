@@ -16,6 +16,8 @@ use App\Http\Controllers\Admin\MigrasiSantriController as AdminMigrasiSantriCont
 
 use App\Http\Controllers\Musyrif\DashboardController as MusyrifDashboardController;
 use App\Http\Controllers\Musyrif\HafalanController as MusyrifHafalanController;
+use App\Http\Controllers\Musyrif\TahsinController as MusyrifTahsinController;
+use App\Http\Controllers\Musyrif\TilawahController as MusyrifTilawahController;
 use App\Http\Controllers\Musyrif\SantriController as MusyrifSantriController;
 use App\Http\Controllers\Musyrif\MusyrifAttendanceController as MusyrifAttendanceController;
 
@@ -229,10 +231,8 @@ Route::prefix('musyrif')
         // ===================== ABSENSI ====================
         Route::get('/absensi', [MusyrifAttendanceController::class, 'index'])
             ->name('absensi.index');
-
         Route::post('/absensi', [MusyrifAttendanceController::class, 'store'])
             ->name('absensi.store');
-
         Route::get('/absensi/riwayat', [MusyrifAttendanceController::class, 'history'])
             ->name('absensi.history');
 
@@ -240,71 +240,58 @@ Route::prefix('musyrif')
         Route::prefix('hafalan')
             ->name('hafalan.')
             ->group(function () {
-
-                // Riwayat (index) – view: resources/views/musyrif/hafalan/index.blade.php
-                Route::get('/', [MusyrifHafalanController::class, 'index'])
-                    ->name('index');
-
-                // DataTables
-                Route::get('/datatable', [MusyrifHafalanController::class, 'datatable'])
-                    ->name('datatable');
-
-                // AJAX - templates dropdown Surah:Ayat otomatis
-                Route::get('/templates', [MusyrifHafalanController::class, 'templates'])
-                    ->name('templates');
-
-                // Form halaman sendiri (kalau tetap dipakai)
-                // view: resources/views/musyrif/hafalan/create.blade.php
-                Route::get('/create', [MusyrifHafalanController::class, 'create'])
-                    ->name('create');
-
-                // Store
-                Route::post('/', [MusyrifHafalanController::class, 'store'])
-                    ->name('store');
-
-                // Update
-                Route::put('/{hafalan}', [MusyrifHafalanController::class, 'update'])
-                    ->whereNumber('hafalan')
-                    ->name('update');
-
-                // Delete
-                Route::delete('/{hafalan}', [MusyrifHafalanController::class, 'destroy'])
-                    ->whereNumber('hafalan')
-                    ->name('destroy');
-
-                // Detail – view: resources/views/musyrif/hafalan/show.blade.php
-                Route::get('/{hafalan}', [MusyrifHafalanController::class, 'show'])
-                    ->whereNumber('hafalan')
-                    ->name('show');
+                Route::get('/', [MusyrifHafalanController::class, 'index'])->name('index');
+                Route::get('/datatable', [MusyrifHafalanController::class, 'datatable'])->name('datatable');
+                Route::get('/templates', [MusyrifHafalanController::class, 'templates'])->name('templates');
+                Route::get('/create', [MusyrifHafalanController::class, 'create'])->name('create');
+                Route::post('/', [MusyrifHafalanController::class, 'store'])->name('store');
+                Route::put('/{hafalan}', [MusyrifHafalanController::class, 'update'])->whereNumber('hafalan')->name('update');
+                Route::delete('/{hafalan}', [MusyrifHafalanController::class, 'destroy'])->whereNumber('hafalan')->name('destroy');
+                Route::get('/{hafalan}', [MusyrifHafalanController::class, 'show'])->whereNumber('hafalan')->name('show');
             });
+
 
         // ===================== SANTRI BINAAN =====================
         Route::prefix('santri')
             ->name('santri.')
             ->group(function () {
+                Route::get('/', [MusyrifSantriController::class, 'index'])->name('index');
+                Route::get('/datatable', [MusyrifSantriController::class, 'datatable'])->name('datatable');
+                Route::get('/{santri}/detail', [MusyrifSantriController::class, 'detail'])->whereNumber('santri')->name('detail');
+                Route::get('/{santri}/timeline', [MusyrifSantriController::class, 'timeline'])->whereNumber('santri')->name('timeline');
+            });
 
-                // List santri binaan – view: resources/views/musyrif/santri/index.blade.php
-                Route::get('/', [MusyrifSantriController::class, 'index'])
-                    ->name('index');
 
-                // DataTables santri binaan
-                Route::get('/datatable', [MusyrifSantriController::class, 'datatable'])
-                    ->name('datatable');
+        // ===================== TAHSIN =====================
+        Route::prefix('tahsin')
+            ->name('tahsin.')
+            ->group(function () {
+                Route::get('/', [MusyrifTahsinController::class, 'index'])->name('index');
+                Route::get('/datatable', [MusyrifTahsinController::class, 'datatable'])->name('datatable');
+                Route::post('/', [MusyrifTahsinController::class, 'store'])->name('store');
+                Route::get('/today/{santriId}', [MusyrifTahsinController::class, 'getTodayProgress'])->whereNumber('santriId')->name('today');
+                Route::put('/{tahsin}', [MusyrifTahsinController::class, 'update'])->whereNumber('tahsin')->name('update');
+                Route::delete('/{tahsin}', [MusyrifTahsinController::class, 'destroy'])->whereNumber('tahsin')->name('destroy');
+                Route::get('/santri/{santri}', [MusyrifTahsinController::class, 'detail'])->name('detail');
+                Route::get('/santri/{santri}/timeline', [MusyrifTahsinController::class, 'timeline'])->name('timeline');
+                Route::get('/tahsin/{santri}/timeline-tilawah', [MusyrifTahsinController::class, 'timelineTilawah'])->name('timeline-tilawah');
+                Route::get('/tahsin/check-eligibility', [MusyrifTahsinController::class, 'checkEligibility'])->name('check');
+            });
 
-                Route::get('/{santri}/detail', [MusyrifSantriController::class, 'detail'])
-                    ->whereNumber('santri')
-                    ->name('detail');
-
-                Route::get('/{santri}/timeline', [MusyrifSantriController::class, 'timeline'])
-                    ->whereNumber('santri')
-                    ->name('timeline');
+        // ===================== TILAWAH =====================
+        // KELUARKAN DARI GROUP TAHSIN
+        Route::prefix('tilawah')
+            ->name('tilawah.')
+            ->group(function () {
+                // Route ini akan otomatis menjadi: musyrif.tilawah.progress
+                Route::get('/progress', [MusyrifTilawahController::class, 'getProgress'])->name('progress');
+                Route::put('/tilawah/{tilawah}', [MusyrifTilawahController::class, 'update'])->name('update');
+                // Route ini akan otomatis menjadi: musyrif.tilawah.masal
+                Route::post('/masal', [MusyrifTilawahController::class, 'storeMasal'])->name('masal');
+                Route::get('/datatable', [MusyrifTilawahController::class, 'datatable'])->name('datatable');
+                Route::delete('/{tilawah}', [MusyrifTilawahController::class, 'destroy'])->whereNumber('tilawah')->name('destroy');
             });
     });
-
-
-
-
-
 /*
 |--------------------------------------------------------------------------
 | KELAS (MASTER)

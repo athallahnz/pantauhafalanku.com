@@ -31,3 +31,12 @@
         <i class="nav-icon bi bi-journal-check"></i> <span>Hafalan Santri</span>
     </a>
 </li>
+
+<li class="nav-title">Data Tahsin & Tilawah</li>
+
+<li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('musyrif.tahsin.*') ? 'active' : '' }}"
+        href="{{ route('musyrif.tahsin.index') }}">
+        <i class="nav-icon bi bi-book-half"></i> <span>Tahsin & Tilawah Santri</span>
+    </a>
+</li>

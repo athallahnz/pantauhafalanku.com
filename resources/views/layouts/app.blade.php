@@ -123,7 +123,7 @@
     <div id="welcome-splash">
         <img src="{{ !empty($institution?->logo) ? asset('storage/' . $institution->logo) : asset('assets/logos.png') }}"
             alt="Logo Institusi" class="splash-logo">
-        <div class="splash-title text-adaptive-purple">SI HAFALAN</div>
+        <div class="splash-title text-adaptive-purple">SIMTAQU</div>
         <div class="splash-subtitle text-muted">Sistem Informasi Tahfidz Qur'an</div>
     </div>
     {{-- ================= END WELCOME SPLASH ================= --}}
@@ -279,12 +279,12 @@
             <div class="text-center text-sm-start small order-2 order-sm-1">
                 <span class="text-muted">© {{ date('Y') }}</span>
                 <span class="d-none d-md-inline fw-semibold text-muted ms-1">Sistem Informasi Tahfidz Qur'an</span>
-                <span class="d-inline d-md-none fw-semibold text-muted ms-1">SI Hafalan</span>
+                <span class="d-inline d-md-none fw-semibold text-muted ms-1">SIMTAQU</span>
             </div>
 
             <div class="small order-1 order-sm-2 mb-0">
-                <span class="text-muted">Created by</span>
-                <span class="fw-bold text-adaptive-purple ms-1" style="letter-spacing: 0.5px;">AnzArt Studio</span>
+                <span class="text-muted">Developed by</span>
+                <span class="fw-bold text-adaptive-purple" style="letter-spacing: 1px;">anzartstudio.id</span>
             </div>
         </footer>
     </div>
