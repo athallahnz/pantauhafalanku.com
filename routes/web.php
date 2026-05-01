@@ -279,13 +279,12 @@ Route::prefix('musyrif')
             });
 
         // ===================== TILAWAH =====================
-        // KELUARKAN DARI GROUP TAHSIN
         Route::prefix('tilawah')
             ->name('tilawah.')
             ->group(function () {
                 // Route ini akan otomatis menjadi: musyrif.tilawah.progress
                 Route::get('/progress', [MusyrifTilawahController::class, 'getProgress'])->name('progress');
-                Route::put('/tilawah/{tilawah}', [MusyrifTilawahController::class, 'update'])->name('update');
+                Route::put('/{tilawah}', [MusyrifTilawahController::class, 'update'])->name('update');
                 // Route ini akan otomatis menjadi: musyrif.tilawah.masal
                 Route::post('/masal', [MusyrifTilawahController::class, 'storeMasal'])->name('masal');
                 Route::get('/datatable', [MusyrifTilawahController::class, 'datatable'])->name('datatable');

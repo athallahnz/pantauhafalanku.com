@@ -160,8 +160,8 @@
         }
 
         /* ==========================================================
-                                                                                                                               MODAL GUIDE STYLES
-                                                                                                                            ========================================================== */
+                                                                                                                                   MODAL GUIDE STYLES
+                                                                                                                                ========================================================== */
         .guide-step {
             position: relative;
             border-left: 3px solid var(--cui-info);
@@ -186,8 +186,8 @@
         }
 
         /* ==========================================================
-                                                                                                                               FAB (FLOATING ACTION BUTTON) STYLES
-                                                                                                                            ========================================================== */
+                                                                                                                                   FAB (FLOATING ACTION BUTTON) STYLES
+                                                                                                                                ========================================================== */
         .fab-group-wrapper {
             position: fixed;
             bottom: 30px;
@@ -297,8 +297,8 @@
         }
 
         /* ==========================================================
-                                                                                                                               MOBILE RESPONSIVE (Pojok Kiri & Pojok Kanan)
-                                                                                                                            ========================================================== */
+                                                                                                                                   MOBILE RESPONSIVE (Pojok Kiri & Pojok Kanan)
+                                                                                                                                ========================================================== */
         @media (max-width: 768px) {
             .fab-group-wrapper {
                 position: static;
@@ -604,7 +604,9 @@
                         <h6 class="fw-bold mb-1 text-info-emphasis">Wajib Input Tilawah Dahulu</h6>
                         <p class="text-muted small mb-0">
                             Sistem memiliki validasi cerdas. Anda harus mencatat <b>Target Tilawah (Juz)</b>
-                            terlebih dahulu (Klik tombol Hijau <span class="badge bg-success rounded-pill p-2"><i class="bi bi-journal-bookmark"></i></span>). Sistem akan otomatis menolak/melewati santri yang capaian Tilawah-nya belum
+                            terlebih dahulu (Klik tombol Hijau <span class="badge bg-success rounded-pill p-2"><i
+                                    class="bi bi-journal-bookmark"></i></span>). Sistem akan otomatis menolak/melewati
+                            santri yang capaian Tilawah-nya belum
                             memenuhi syarat minimal Jilid Tahsin yang dipilih.
                         </p>
                     </div>
@@ -614,7 +616,8 @@
                         <span class="guide-number">2</span>
                         <h6 class="fw-bold mb-1 text-adaptive-purple">Input Materi Tahsin Masal</h6>
                         <p class="text-muted small mb-0">
-                            Klik tombol ungu <span class="badge bg-primary rounded-pill p-2"><i class="bi bi-book"></i></span>
+                            Klik tombol ungu <span class="badge bg-primary rounded-pill p-2"><i
+                                    class="bi bi-book"></i></span>
                             di pojok kanan bawah. Tetapkan Buku & Halaman hari ini, seluruh santri yang memenuhi syarat
                             Tilawah akan otomatis tercatat <b>Hadir</b>.
                         </p>
@@ -1015,26 +1018,6 @@
                 $('#edit_tilawah_status').val(d.status);
                 $('#edit_tilawah_catatan').val(d.catatan);
                 modalEditTilawah.show();
-            });
-
-            $('#formEditTilawah').on('submit', function(e) {
-                e.preventDefault();
-                $.ajax({
-                    url: "{{ url('musyrif/tilawah') }}/" + $('#edit_tilawah_id').val(),
-                    type: 'POST', // Gunakan POST karena method PUT diselipkan via @method('PUT')
-                    data: $(this).serialize(),
-                    success: res => {
-                        modalEditTilawah.hide();
-                        tableTilawah.ajax.reload();
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Diperbarui!',
-                            text: res.message,
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-                    }
-                });
             });
 
             // --- DETAIL TILAWAH ---
@@ -1440,6 +1423,35 @@
             $(document).on('click', '.btn-delete-tilawah', function() {
                 // Pastikan route delete tilawah dibuat di web.php
                 handleDelete("{{ url('musyrif/tilawah') }}/" + $(this).data('id'), tableTilawah);
+            });
+
+            $('#formEditTilawah').on('submit', function(e) {
+                e.preventDefault();
+
+                // Ambil semua data form, lalu PAKSA tambahkan _method=PUT secara manual
+                let formData = $(this).serialize() + '&_method=PUT';
+
+                $.ajax({
+                    url: "{{ url('musyrif/tilawah') }}/" + $('#edit_tilawah_id').val(),
+                    type: 'POST', // Tetap POST, Laravel akan membaca _method=PUT dari formData
+                    data: formData, // Gunakan formData yang sudah dimodifikasi
+                    success: res => {
+                        modalEditTilawah.hide();
+                        tableTilawah.ajax.reload(null, false);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Diperbarui!',
+                            text: res.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    },
+                    error: xhr => {
+                        Swal.fire('Gagal!', 'Terjadi kesalahan. Cek log console.', 'error');
+                        console.log(xhr
+                        .responseText); // Untuk mengecek pesan error asli dari Laravel
+                    }
+                });
             });
 
             function handleDelete(url, tableInstance) {

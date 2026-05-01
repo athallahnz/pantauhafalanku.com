@@ -226,8 +226,8 @@ class TilawahController extends Controller
         // Cari data musyrif berdasarkan user yang sedang login
         $musyrif = Musyrif::where('user_id', Auth::id())->first();
 
-        // Pastikan musyrif ditemukan dan ID-nya cocok dengan pemilik data tilawah
-        if (!$musyrif || $tilawah->musyrif_id !== $musyrif->id) {
+        // PERBAIKAN: Gunakan (int) agar tipe datanya persis sama (Strict Comparison)
+        if (!$musyrif || (int) $tilawah->musyrif_id !== (int) $musyrif->id) {
             return response()->json([
                 'message' => 'Unauthorized! Data ini bukan milik Anda.'
             ], 403);
