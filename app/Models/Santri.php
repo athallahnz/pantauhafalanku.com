@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Traits\LogsActivity; // <-- 1. Import Trait untuk logging aktivitas
 
 class Santri extends Model
@@ -44,6 +45,22 @@ class Santri extends Model
     public function hafalans()
     {
         return $this->hasMany(Hafalan::class);
+    }
+
+    /**
+     * Relasi ke model Tahsin
+     */
+    public function tahsins(): HasMany
+    {
+        return $this->hasMany(Tahsin::class, 'santri_id');
+    }
+
+    /**
+     * Relasi ke model Tilawah
+     */
+    public function tilawahs(): HasMany
+    {
+        return $this->hasMany(Tilawah::class, 'santri_id');
     }
 
     private array $namaAliases = [

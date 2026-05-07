@@ -49,9 +49,25 @@
     </ul>
 </li>
 
-<li class="nav-item">
-    <a class="nav-link {{ request()->routeIs('santri.master.*') ? 'active' : '' }}"
-        href="{{ route('santri.master.index') }}">
+{{-- MENU SANTRI DROPDOWN (COLLAPSE) --}}
+<li class="nav-group {{ request()->routeIs('santri.master.*') ? 'show' : '' }} mb-1">
+    <a class="nav-link nav-group-toggle" href="#">
         <i class="nav-icon bi bi-people-fill"></i> <span>Santri</span>
     </a>
+    <ul class="nav-group-items">
+        {{-- Data Master Santri --}}
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('santri.master.index') ? 'active' : '' }}"
+                href="{{ route('santri.master.index') }}">
+                <i class="nav-icon bi bi-circle-fill" style="font-size: 0.4rem;"></i> Data Master
+            </a>
+        </li>
+        {{-- Laporan Analisis Pelanggaran (Alpha) --}}
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('santri.master.violation.report') ? 'active' : '' }}"
+                href="{{ route('santri.master.violation.report') }}">
+                <i class="nav-icon bi bi-circle-fill" style="font-size: 0.4rem;"></i> Analisis Pelanggaran
+            </a>
+        </li>
+    </ul>
 </li>

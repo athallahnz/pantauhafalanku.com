@@ -3,70 +3,73 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Models\Kelas;
 use App\Models\Musyrif;
 use App\Models\Hafalan;
 use App\Models\MusyrifAttendance;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    /**
-     * Menampilkan Dashboard Admin dengan statistik realtime.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $now = Carbon::now();
-        $today = Carbon::today()->toDateString();
+        // Definisikan periode (default: bulan ini)
+        $startDate = $request->input('start_date')
+            ? Carbon::parse($request->input('start_date'))->startOfDay()
+            : Carbon::now()->startOfMonth();
 
-        // 1. STATISTIK UTAMA (Stats Cards)
+        $endDate = $request->input('end_date')
+            ? Carbon::parse($request->input('end_date'))->endOfDay()
+            : Carbon::now()->endOfMonth();
+
+        // 1. STATISTIK UTAMA (Dalam Range)
         $jumlahKelas = Kelas::count();
         $jumlahMusyrif = Musyrif::count();
 
-        // PERBAIKAN: Menghitung setoran santri HANYA yang berstatus lulus/ulang
-        $setoranBulanIni = Hafalan::whereMonth('tanggal_setoran', $now->month)
-            ->whereYear('tanggal_setoran', $now->year)
-            ->whereIn('status', ['lulus', 'ulang']) // <-- TAMBAHKAN INI
+        $setoranBulanIni = Hafalan::whereBetween('tanggal_setoran', [$startDate, $endDate])
+            ->whereIn('status', ['lulus', 'ulang'])
             ->count();
 
-        // Menghitung kehadiran musyrif hari ini
         $absensiMusyrifHariIni = MusyrifAttendance::whereDate('attendance_at', now()->format('Y-m-d'))
-            // ->where('status', 'valid')
             ->distinct('musyrif_id')
             ->count();
 
-        // 2. DATA CHART: Rata-rata Hafalan per Kelas (Bulan Ini)
-        // PERBAIKAN: Eager loading hafalans juga harus difilter statusnya
-        $chartData = Kelas::with(['santris.hafalans' => function ($q) use ($now) {
-            $q->whereMonth('tanggal_setoran', $now->month)
-                ->whereYear('tanggal_setoran', $now->year)
-                ->whereIn('status', ['lulus', 'ulang']); // <-- TAMBAHKAN INI JUGA
-        }])
-            ->get()
-            ->map(function ($kelas) {
-                // Hitung total setoran (karena sudah difilter di atas, tinggal di-count)
-                $totalSetoran = $kelas->santris->sum(function ($santri) {
-                    return $santri->hafalans->count();
-                });
+        // 2. DATA CHART 1: Rata-rata Hafalan
+        $chartData = Kelas::with(['santris.hafalans' => function ($q) use ($startDate, $endDate) {
+            $q->whereBetween('tanggal_setoran', [$startDate, $endDate])
+                ->whereIn('status', ['lulus', 'ulang']);
+        }])->get()->map(function ($kelas) use ($startDate, $endDate) {
+            $totalSetoran = $kelas->santris->sum(fn($s) => $s->hafalans->count());
+            $jumlahSantri = $kelas->santris->count();
+            return [
+                'nama_kelas' => $kelas->nama_kelas,
+                'rata_rata'  => $jumlahSantri > 0 ? round($totalSetoran / $jumlahSantri, 1) : 0
+            ];
+        });
 
-                // Hitung rata-rata per santri
-                $jumlahSantri = $kelas->santris->count();
-                $rataRata = $jumlahSantri > 0 ? round($totalSetoran / $jumlahSantri, 1) : 0;
+        // 3. DATA CHART 2: Tahsin & Tilawah
+        $chartTahsinTilawahData = Kelas::with([
+            'santris.tahsins' => fn($q) => $q->whereBetween('tanggal', [$startDate, $endDate]),
+            'santris.tilawahs' => fn($q) => $q->whereBetween('tanggal', [$startDate, $endDate])
+        ])->get()->map(function ($kelas) {
+            $jumlahSantri = $kelas->santris->count();
+            return [
+                'nama_kelas' => $kelas->nama_kelas,
+                'rata_tahsin'  => $jumlahSantri > 0 ? round($kelas->santris->sum(fn($s) => $s->tahsins->count()) / $jumlahSantri, 1) : 0,
+                'rata_tilawah' => $jumlahSantri > 0 ? round($kelas->santris->sum(fn($s) => $s->tilawahs->count()) / $jumlahSantri, 1) : 0
+            ];
+        });
 
-                return [
-                    'nama_kelas' => $kelas->nama_kelas,
-                    'rata_rata'  => $rataRata
-                ];
-            });
-
-        // 3. RETURN KE VIEW
         return view('admin.dashboard', compact(
             'jumlahKelas',
             'jumlahMusyrif',
             'setoranBulanIni',
             'absensiMusyrifHariIni',
-            'chartData'
+            'chartData',
+            'chartTahsinTilawahData',
+            'startDate',
+            'endDate'
         ));
     }
 }

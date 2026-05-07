@@ -75,27 +75,160 @@
         [data-coreui-theme="dark"] .text-adaptive-purple {
             color: #ffffff !important;
         }
+
+        input[type="date"].form-control {
+            font-weight: 600;
+            color: var(--islamic-purple-700);
+            transition: var(--transition-smooth);
+        }
+
+        input[type="date"].form-control:focus {
+            background: #fff !important;
+            box-shadow: 0 0 0 4px rgba(111, 66, 193, 0.1);
+            border: 1px solid rgba(111, 66, 193, 0.3) !important;
+        }
+
+        [data-coreui-theme="dark"] input[type="date"].form-control {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: #fff;
+        }
+
+        /* Menyamakan lebar tombol di filter */
+        .flex-fill-custom {
+            min-width: 120px;
+            /* Atur lebar minimal agar sama besar */
+            flex: 0 1 auto;
+        }
+
+        /* Memastikan dropdown button mengikuti lebar container */
+        .dropdown.flex-fill-custom .btn {
+            height: 100%;
+        }
+
+        /* Memastikan dropdown mengikuti tema glassmorphism jika dihover */
+        .dropdown-item:hover {
+            background-color: var(--islamic-purple-50) !important;
+            color: var(--islamic-purple-700) !important;
+        }
+
+        .min-btn-width {
+            min-width: 110px;
+        }
+
+        /* Responsif: Di mobile tombol akan memenuhi layar */
+        @media (max-width: 768px) {
+            .flex-fill-custom {
+                flex: 1 1 0;
+                min-width: 0;
+                font-size: 0.85rem;
+                padding-left: 10px !important;
+                padding-right: 10px !important;
+            }
+        }
+
+        /* Responsivitas khusus mobile */
+        @media (max-width: 575.98px) {
+            .kpi-label {
+                font-size: 0.65rem;
+            }
+
+            input[type="date"].form-control {
+                font-size: 0.8rem;
+                padding: 0.5rem 0.75rem !important;
+            }
+
+            .w-100-mobile {
+                width: 100% !important;
+            }
+
+            /* Agar header tidak terlalu memakan tempat di mobile */
+            h4 {
+                font-size: 1.5rem;
+            }
+        }
     </style>
 
     {{-- Elemen Audio Tersembunyi --}}
     <audio id="notifSound" src="{{ asset('sounds/notif.mp3') }}" preload="auto"></audio>
 
     {{-- HEADER TITLE --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h4 class="mb-0 fw-bold text-adaptive-purple">Dashboard Departemen</h4>
-            <span class="text-muted small">Ringkasan aktivitas bulan {{ now()->translatedFormat('F Y') }}</span>
+    <div class="row align-items-center mb-4 g-3">
+        <div class="col-12 col-md-6 text-center text-md-start">
+            <h4 class="mb-1 fw-bold text-adaptive-purple">Dashboard Departemen</h4>
+            <span class="text-muted small">
+                Periode: <b class="text-dark">{{ $startDate->translatedFormat('d M Y') }}</b> s/d
+                <b class="text-dark">{{ $endDate->translatedFormat('d M Y') }}</b>
+            </span>
         </div>
-        <div class="col-auto">
-            {{-- Indikator Suara Realtime --}}
-            {{-- Letakkan di dekat judul atau tombol header --}}
-            <button id="audioStatusBtn" class="btn btn-sm btn-light border rounded-pill px-4 shadow-sm transition-smooth">
-                <i class="bi bi-volume-mute text-danger me-1"></i>
-                <span class="small fw-bold text-muted">Suara Off</span>
-            </button>
-            <a href="{{ route('admin.musyrif.index') }}" class="btn btn-primary rounded-pill px-4 shadow-sm">
-                <i class="bi bi-person-plus me-1"></i> Musyrif Baru
-            </a>
+        <div class="col-12 col-md-6">
+            <div class="d-flex justify-content-center justify-content-md-end gap-2">
+                <button id="audioStatusBtn"
+                    class="btn btn-sm btn-light border rounded-pill px-3 shadow-sm transition-smooth">
+                    <i class="bi bi-volume-mute text-danger me-1"></i>
+                    <span class="small fw-bold text-muted">Suara Off</span>
+                </button>
+                <a href="{{ route('admin.musyrif.index') }}" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm">
+                    <i class="bi bi-person-plus me-1"></i> Musyrif Baru
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {{-- FILTER SECTION --}}
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-3 p-md-4">
+            <form action="{{ route('admin.dashboard') }}" method="GET">
+                <div class="row g-3 align-items-end">
+                    {{-- Input Tanggal --}}
+                    <div class="col-6 col-md-3">
+                        <label class="kpi-label mb-1">Mulai Tanggal</label>
+                        <input type="date" name="start_date"
+                            class="form-control form-control-sm rounded-pill border-0 bg-light px-3"
+                            value="{{ $startDate->format('Y-m-d') }}">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="kpi-label mb-1">Sampai Tanggal</label>
+                        <input type="date" name="end_date"
+                            class="form-control form-control-sm rounded-pill border-0 bg-light px-3"
+                            value="{{ $endDate->format('Y-m-d') }}">
+                    </div>
+
+                    {{-- Grouping Tombol --}}
+                    <div class="col-12 col-md-6">
+                        <div class="d-grid d-md-flex gap-2 justify-content-md-start">
+                            {{-- Terapkan & Reset (Bersebelahan di mobile) --}}
+                            <div class="d-flex gap-2 w-100">
+                                <button type="submit"
+                                    class="btn btn-primary rounded-pill px-3 flex-grow-1 flex-md-grow-0 min-btn-width">
+                                    <i class="bi bi-filter-left me-1"></i> Terapkan
+                                </button>
+                                <a href="{{ route('admin.dashboard') }}"
+                                    class="btn btn-light border rounded-pill px-3 flex-grow-1 flex-md-grow-0 min-btn-width text-muted text-center">
+                                    Reset
+                                </a>
+                            </div>
+                            {{-- Dropdown Cepat (Full width di mobile) --}}
+                            <div class="dropdown w-100-mobile">
+                                <button class="btn btn-outline-secondary dropdown-toggle rounded-pill px-4 w-100"
+                                    type="button" data-coreui-toggle="dropdown">
+                                    Cepat
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 mt-2">
+                                    <li><a class="dropdown-item small py-2"
+                                            href="?start_date={{ now()->startOfMonth()->format('Y-m-d') }}&end_date={{ now()->endOfMonth()->format('Y-m-d') }}">Bulan
+                                            Ini</a></li>
+                                    <li><a class="dropdown-item small py-2"
+                                            href="?start_date={{ now()->subMonths(3)->startOfMonth()->format('Y-m-d') }}&end_date={{ now()->endOfMonth()->format('Y-m-d') }}">Triwulan</a>
+                                    </li>
+                                    <li><a class="dropdown-item small py-2"
+                                            href="?start_date={{ now()->startOfYear()->format('Y-m-d') }}&end_date={{ now()->endOfYear()->format('Y-m-d') }}">Tahun
+                                            Ini</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -186,15 +319,41 @@
         </div>
     </div>
 
-    {{-- CHART --}}
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-header bg-white border-0 py-3">
-            <h5 class="mb-0 fw-semibold text-white"><i class="bi bi-graph-up me-2"></i> Capaian Hafalan per Kelas
-            </h5>
+    {{-- CHARTS SECTION --}}
+    <div class="row g-4 mb-4">
+        {{-- Chart Hafalan --}}
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-semibold text-white"><i class="bi bi-graph-up me-2"></i> Capaian Hafalan per Kelas
+                    </h5>
+                    <span class="text-white small d-block mt-1"><i class="bi bi-info-circle me-1"></i> Rata-rata jumlah
+                        setoran
+                        hafalan per santri bulan ini</span>
+                </div>
+                <div class="card-body p-4">
+                    <div style="position: relative; height: 320px; width: 100%;">
+                        <canvas id="hafalanChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body p-4">
-            <div style="position: relative; height: 320px; width: 100%;">
-                <canvas id="hafalanChart"></canvas>
+
+        {{-- Chart Tahsin & Tilawah --}}
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-semibold text-white">
+                        <i class="bi bi-bar-chart-line me-2"></i> Capaian Tahsin & Tilawah
+                    </h5>
+                    <span class="text-white small d-block mt-1"><i class="bi bi-info-circle me-1"></i> Rata-rata frekuensi
+                        tahsin/tilawah per santri bulan ini</span>
+                </div>
+                <div class="card-body p-4">
+                    <div style="position: relative; height: 320px; width: 100%;">
+                        <canvas id="tahsinTilawahChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -209,6 +368,7 @@
             const state = {
                 totalMusyrif: {{ $jumlahMusyrif }},
                 chartData: @json($chartData),
+                tahsinTilawahData: @json($chartTahsinTilawahData), // Tambahkan data ini
                 isInteracted: false,
                 baseUrl: "{{ route('admin.musyrif.attendances', ':id') }}",
                 elements: {
@@ -288,49 +448,126 @@
                 },
 
                 initChart: () => {
-                    const ctx = document.getElementById('hafalanChart').getContext('2d');
-                    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                    gradient.addColorStop(0, 'rgba(107, 78, 255, 0.4)');
-                    gradient.addColorStop(1, 'rgba(107, 78, 255, 0.0)');
+                    // --- Konfigurasi Chart Hafalan ---
+                    const canvasHafalan = document.getElementById('hafalanChart');
+                    if (canvasHafalan) {
+                        const ctxHafalan = canvasHafalan.getContext('2d');
+                        const gradient = ctxHafalan.createLinearGradient(0, 0, 0, 300);
+                        gradient.addColorStop(0, 'rgba(107, 78, 255, 0.4)');
+                        gradient.addColorStop(1, 'rgba(107, 78, 255, 0.0)');
 
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: state.chartData.map(d => d.nama_kelas),
-                            datasets: [{
-                                label: 'Rata-rata Setoran',
-                                data: state.chartData.map(d => d.rata_rata),
-                                borderColor: '#6b4eff',
-                                backgroundColor: gradient,
-                                borderWidth: 3,
-                                fill: true,
-                                tension: 0.4,
-                                pointRadius: 4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    display: false
-                                }
+                        new Chart(ctxHafalan, {
+                            type: 'line',
+                            data: {
+                                labels: state.chartData.map(d => d.nama_kelas),
+                                datasets: [{
+                                    label: 'Hafalan',
+                                    data: state.chartData.map(d => d.rata_rata),
+                                    borderColor: '#6b4eff',
+                                    backgroundColor: gradient,
+                                    borderWidth: 3,
+                                    fill: true,
+                                    tension: 0.4,
+                                    pointRadius: 4
+                                }]
                             },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: {
-                                        color: 'rgba(0,0,0,0.05)'
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        display: false
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                return ` ${context.parsed.y} Setoran / Santri`;
+                                            }
+                                        }
                                     }
                                 },
-                                x: {
-                                    grid: {
-                                        display: false
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        grid: {
+                                            color: 'rgba(0,0,0,0.05)'
+                                        }
+                                    },
+                                    x: {
+                                        grid: {
+                                            display: false
+                                        }
                                     }
                                 }
                             }
-                        }
-                    });
+                        });
+                    }
+
+                    // --- Konfigurasi Chart Tahsin & Tilawah ---
+                    const canvasTahsinTilawah = document.getElementById('tahsinTilawahChart');
+                    if (canvasTahsinTilawah) {
+                        new Chart(canvasTahsinTilawah.getContext('2d'), {
+                            type: 'bar',
+                            data: {
+                                labels: state.tahsinTilawahData.map(d => d.nama_kelas),
+                                datasets: [{
+                                        label: 'Tahsin',
+                                        data: state.tahsinTilawahData.map(d => d.rata_tahsin),
+                                        backgroundColor: 'rgba(20, 184, 166, 0.85)',
+                                        borderRadius: 6
+                                    },
+                                    {
+                                        label: 'Tilawah',
+                                        data: state.tahsinTilawahData.map(d => d.rata_tilawah),
+                                        backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                                        borderRadius: 6
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        display: true,
+                                        position: 'bottom',
+                                        labels: {
+                                            usePointStyle: true,
+                                            boxWidth: 8
+                                        }
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                let label = context.dataset.label || '';
+                                                if (label) {
+                                                    label += ': ';
+                                                }
+                                                if (context.parsed.y !== null) {
+                                                    label +=
+                                                        `${context.parsed.y} Kali / Santri`;
+                                                }
+                                                return label;
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        grid: {
+                                            color: 'rgba(0,0,0,0.05)'
+                                        }
+                                    },
+                                    x: {
+                                        grid: {
+                                            display: false
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
                 }
             };
 

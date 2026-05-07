@@ -7,11 +7,13 @@ use App\Models\Santri;
 use App\Models\Kelas;
 use App\Models\Musyrif;
 use App\Models\User;
+use App\Models\PelanggaranPoint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
+use Carbon\Carbon;
 
 class SantriController extends Controller
 {
@@ -621,5 +623,121 @@ class SantriController extends Controller
                 'message' => 'Gagal import: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Menampilkan detail santri (untuk AJAX/Modal atau Halaman Profile)
+     */
+    public function show($id)
+    {
+        $santri = Santri::with(['kelas', 'musyrif', 'user'])->findOrFail($id);
+
+        if (request()->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'data' => $santri
+            ]);
+        }
+
+        // Jika Anda ingin membuat halaman profile terpisah nantinya
+        return view('admin.santri.show', compact('santri'));
+    }
+
+    /**
+     * Laporan Analisis Kehadiran/Pelanggaran untuk Manager
+     */
+    public function violationReport(Request $request)
+    {
+        $startDate = $request->filled('start_date') ? Carbon::parse($request->start_date)->startOfDay() : now()->startOfMonth();
+        $endDate = $request->filled('end_date') ? Carbon::parse($request->end_date)->endOfDay() : now()->endOfMonth();
+
+        // Untuk Yajra DataTables (Ajax Request)
+        if ($request->ajax()) {
+            $query = PelanggaranPoint::with('musyrif')
+                ->whereBetween('tanggal', [$startDate, $endDate])
+                ->select('musyrif_id', DB::raw('count(*) as total_alpha'))
+                ->groupBy('musyrif_id');
+
+            return DataTables::of($query)
+                ->addIndexColumn()
+                ->addColumn('musyrif_nama', fn($row) => $row->musyrif->nama ?? 'N/A')
+                ->addColumn('status', function ($row) {
+                    if ($row->total_alpha > 15) return '<span class="badge bg-danger-subtle text-danger rounded-pill px-3">Kontrol Lemah</span>';
+                    if ($row->total_alpha > 5) return '<span class="badge bg-warning-subtle text-warning rounded-pill px-3">Waspada</span>';
+                    return '<span class="badge bg-success-subtle text-success rounded-pill px-3">Sangat Baik</span>';
+                })
+                ->addColumn('aksi', function ($row) {
+                    return '
+        <div class="text-end pe-2">
+            <button class="btn btn-sm rounded-pill px-3 fw-bold btn-detail-action btn-detail-musyrif"
+                    data-id="' . $row->musyrif_id . '"
+                    style="font-size: 0.75rem;">
+                <i class="bi bi-layout-text-sidebar-reverse me-1"></i> Detail Kelas
+            </button>
+        </div>';
+                })
+                ->rawColumns(['status', 'aksi'])
+                ->make(true);
+        }
+        // Model PelanggaranPoint diasumsikan sudah ada
+        $baseQuery = PelanggaranPoint::whereBetween('tanggal', [$startDate, $endDate]);
+
+        // 2. Insight: Hari Rawan (Temporal Analysis)
+        $dayLabels = ['Monday' => 'Senin', 'Tuesday' => 'Selasa', 'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu', 'Sunday' => 'Ahad'];
+        $dayDataRaw = (clone $baseQuery)
+            ->select(DB::raw('DAYNAME(tanggal) as day'), DB::raw('count(*) as total'))
+            ->groupBy('day')
+            ->get()
+            ->pluck('total', 'day');
+
+        $chartDays = [];
+        foreach ($dayLabels as $eng => $id) {
+            $chartDays[] = ['hari' => $id, 'total' => $dayDataRaw[$eng] ?? 0];
+        }
+
+        // 3. Insight: Evaluasi Musyrif (Operational Control)
+        $musyrifAnalysis = (clone $baseQuery)
+            ->with('musyrif')
+            ->select('musyrif_id', DB::raw('count(*) as total_alpha'))
+            ->groupBy('musyrif_id')
+            ->orderBy('total_alpha', 'desc')
+            ->get();
+
+        // 4. Insight: Santri Kritis (Intervention Needed)
+        $topViolators = (clone $baseQuery)
+            ->with(['santri.kelas'])
+            ->select('santri_id', DB::raw('sum(poin) as total_poin'))
+            ->groupBy('santri_id')
+            ->orderBy('total_poin', 'desc')
+            ->limit(10)
+            ->get();
+
+        return view('admin.santri.violation_report', compact(
+            'chartDays',
+            'musyrifAnalysis',
+            'topViolators',
+            'startDate',
+            'endDate'
+        ));
+    }
+
+    public function violationMusyrifDetail(Request $request, $id)
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        // Ambil data pelanggaran spesifik musyrif ini
+        $details = PelanggaranPoint::with(['santri.kelas'])
+            ->where('musyrif_id', $id)
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->select('santri_id', DB::raw('count(*) as total_alpha'), DB::raw('sum(poin) as total_poin'))
+            ->groupBy('santri_id')
+            ->orderBy('total_alpha', 'desc')
+            ->get();
+
+        return response()->json([
+            'musyrif' => \App\Models\Musyrif::find($id)->nama,
+            'data' => $details
+        ]);
     }
 }

@@ -488,7 +488,6 @@
         </div>
     </div>
 
-    {{-- Modal Riwayat Santri (Yang sudah ada sebelumnya) --}}
     {{-- MODAL PREVIEW FOTO ABSENSI --}}
     <div class="modal fade" id="modalPreviewPhoto" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">

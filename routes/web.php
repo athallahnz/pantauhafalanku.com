@@ -329,24 +329,39 @@ Route::prefix('santri-master')
     ->name('santri.master.')
     ->middleware(['auth', 'role:superadmin|admin|musyrif'])
     ->group(function () {
+
+        /* | 1. RUTE STATIS (HARUS DI ATAS)
+        | Daftar rute tanpa parameter dinamis diletakkan paling awal.
+        */
         Route::get('/', [AdminSantriController::class, 'index'])->name('index');
         Route::get('/datatable', [AdminSantriController::class, 'getData'])->name('datatable');
-        Route::post('/', [AdminSantriController::class, 'store'])->name('store');
-        Route::put('/{id}', [AdminSantriController::class, 'update'])->name('update');
-        Route::delete('/{id}', [AdminSantriController::class, 'destroy'])->name('destroy');
-        Route::get('/{id}', [AdminSantriController::class, 'show'])->name('show');
-        Route::get('/get-by-kelas/{kelas_id}', [AdminSantriController::class, 'getByKelas'])->name('get_by_kelas');
-        // PUT khusus untuk assign / update user
-        Route::put('/{id}/assign-user', [AdminSantriController::class, 'addUser'])->name('addUser');
 
+        // PINDAH KE SINI: Agar tidak tertabrak rute /{id}
+        Route::get('/violation-report', [AdminSantriController::class, 'violationReport'])->name('violation.report');
+        Route::get('/violation-report/musyrif/{id}', [AdminSantriController::class, 'violationMusyrifDetail'])->name('violation.musyrif.detail');
+
+        Route::get('/get-by-kelas/{kelas_id}', [AdminSantriController::class, 'getByKelas'])->name('get_by_kelas');
+
+        /* | 2. RUTE IMPORT
+        */
         Route::post('/import/upload', [AdminSantriController::class, 'importUpload'])->name('import.upload');
         Route::post('/import/preview', [AdminSantriController::class, 'importPreview'])->name('import.preview');
         Route::post('/import/process', [AdminSantriController::class, 'importProcess'])->name('import.process');
+
+        /* | 3. RUTE DINAMIS (HARUS DI BAWAH)
+        | Rute dengan parameter {id} diletakkan paling akhir dalam grup.
+        */
+        Route::get('/{id}', [AdminSantriController::class, 'show'])->name('show');
+        Route::put('/{id}', [AdminSantriController::class, 'update'])->name('update');
+        Route::delete('/{id}', [AdminSantriController::class, 'destroy'])->name('destroy');
+        Route::put('/{id}/assign-user', [AdminSantriController::class, 'addUser'])->name('addUser');
+
+        // Peringatan: Jangan ada Route::post('/') lagi di bawah sini
+        Route::post('/', [AdminSantriController::class, 'store'])->name('store');
     });
 
 
 /*
-|--------------------------------------------------------------------------
 | SANTRI
 |--------------------------------------------------------------------------
 */
