@@ -8,12 +8,15 @@ use App\Models\Kelas;
 use App\Models\Musyrif;
 use App\Models\User;
 use App\Models\PelanggaranPoint;
+use App\Exports\ViolationReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class SantriController extends Controller
 {
@@ -643,6 +646,157 @@ class SantriController extends Controller
         return view('admin.santri.show', compact('santri'));
     }
 
+
+    private function getViolationData($request)
+    {
+        $startDate = $request->filled('start_date')
+            ? Carbon::parse($request->start_date)->startOfDay()
+            : now()->startOfMonth();
+
+        $endDate = $request->filled('end_date')
+            ? Carbon::parse($request->end_date)->endOfDay()
+            : now()->endOfMonth();
+
+        /**
+         * BASE QUERY
+         */
+        $baseQuery = PelanggaranPoint::query()
+            ->whereBetween('tanggal', [$startDate, $endDate]);
+
+        /**
+         * MUSYRIF ANALYTICS
+         */
+        $musyrifAnalysis = (clone $baseQuery)
+
+            ->with('musyrif')
+            ->select(
+                'musyrif_id',
+                DB::raw('COUNT(*) as total_alpha'),
+                DB::raw('SUM(poin) as total_poin'),
+                DB::raw('COUNT(DISTINCT santri_id) as total_santri')
+            )
+            ->groupBy('musyrif_id')
+            ->orderByDesc('total_alpha')
+            ->get();
+
+        /**
+         * TOP SANTRI KRITIS
+         */
+        $topSantri = (clone $baseQuery)
+            ->with([
+                'santri.kelas',
+                'musyrif'
+            ])
+            ->select(
+                'santri_id',
+                'musyrif_id',
+                DB::raw('COUNT(*) as total_alpha'),
+                DB::raw('SUM(poin) as total_poin')
+            )
+            ->groupBy(
+                'santri_id',
+                'musyrif_id'
+            )
+            ->orderByDesc('total_poin')
+            ->limit(15)
+            ->get();
+        /**
+         * ANALYSIS PER KELAS
+         */
+        $kelasAnalysis = (clone $baseQuery)
+            ->join('santris', 'santris.id', '=', 'pelanggaran_points.santri_id')
+            ->join('kelas', 'kelas.id', '=', 'santris.kelas_id')
+            ->select(
+                'kelas.nama_kelas',
+                DB::raw('COUNT(*) as total_pelanggaran'),
+                DB::raw('SUM(poin) as total_poin')
+            )
+            ->groupBy('kelas.nama_kelas')
+            ->orderByDesc('total_pelanggaran')
+            ->get();
+
+        /**
+         * HARI RAWAN
+         */
+        $dayLabels = [
+            'Monday' => 'Senin',
+            'Tuesday' => 'Selasa',
+            'Wednesday' => 'Rabu',
+            'Thursday' => 'Kamis',
+            'Friday' => 'Jumat',
+            'Saturday' => 'Sabtu',
+            'Sunday' => 'Ahad'
+        ];
+
+        $dayRaw = (clone $baseQuery)
+            ->select(
+                DB::raw('DAYNAME(tanggal) as day'),
+                DB::raw('COUNT(*) as total')
+            )
+            ->groupBy('day')
+            ->pluck('total', 'day');
+        $dayAnalysis = [];
+        foreach ($dayLabels as $eng => $id) {
+            $dayAnalysis[] = [
+                'hari' => $id,
+                'total' => $dayRaw[$eng] ?? 0
+            ];
+        }
+
+        /**
+         * SUMMARY KPI
+         */
+        $summary = [
+            'total_pelanggaran' => (clone $baseQuery)->count(),
+            'total_poin' => (clone $baseQuery)->sum('poin'),
+            'total_santri_terlibat' => (clone $baseQuery)
+                ->distinct('santri_id')
+                ->count('santri_id'),
+            'total_musyrif' => $musyrifAnalysis->count(),
+            'avg_poin_per_santri' => round(
+                $topSantri->avg('total_poin'),
+                2
+            ),
+            'hari_terrawan' => collect($dayAnalysis)
+                ->sortByDesc('total')
+                ->first()['hari'] ?? '-',
+        ];
+
+        /**
+         * INSIGHT ENGINE
+         */
+        $riskInsight = [
+            'critical_santri' => $topSantri
+                ->where('total_poin', '>=', 50)
+                ->count(),
+            'high_risk_musyrif' => $musyrifAnalysis
+                ->where('total_alpha', '>', 15)
+                ->count(),
+            'most_problematic_kelas' => optional(
+                $kelasAnalysis->first()
+            )->nama_kelas,
+            'most_problematic_musyrif' => optional(
+                $musyrifAnalysis->first()
+            )->musyrif->nama,
+            'trend' => (
+                $summary['total_pelanggaran'] > 100
+            )
+                ? 'Tinggi'
+                : 'Terkendali',
+        ];
+
+        return [
+            'summary' => $summary,
+            'topMusyrif' => $musyrifAnalysis,
+            'topSantri' => $topSantri,
+            'kelasAnalysis' => $kelasAnalysis,
+            'dayAnalysis' => $dayAnalysis,
+            'riskInsight' => $riskInsight,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+    }
+
     /**
      * Laporan Analisis Kehadiran/Pelanggaran untuk Manager
      */
@@ -736,8 +890,56 @@ class SantriController extends Controller
             ->get();
 
         return response()->json([
-            'musyrif' => \App\Models\Musyrif::find($id)->nama,
+            'musyrif' => Musyrif::find($id)->nama,
             'data' => $details
         ]);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $result = $this->getViolationData($request);
+
+        return Excel::download(
+
+            new ViolationReportExport(
+                $result['topMusyrif']
+            ),
+
+            'laporan-pelanggaran.xlsx'
+        );
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $result = $this->getViolationData($request);
+
+        $pdf = Pdf::loadView(
+            'admin.santri.export.violation_pdf',
+
+            [
+
+                'summary' => $result['summary'],
+
+                'topMusyrif' => $result['topMusyrif'],
+
+                'topSantri' => $result['topSantri'],
+
+                'kelasAnalysis' => $result['kelasAnalysis'],
+
+                'dayAnalysis' => $result['dayAnalysis'],
+
+                'riskInsight' => $result['riskInsight'],
+
+                'startDate' => $result['startDate'],
+
+                'endDate' => $result['endDate'],
+            ]
+        )
+
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream(
+            'laporan-pelanggaran.pdf'
+        );
     }
 }

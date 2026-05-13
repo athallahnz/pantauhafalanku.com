@@ -1,15 +1,14 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <title>Executive Report Hafalan per Kelas</title>
+    <meta charset="utf-8">
+
+    <title>
+        Executive Discipline Intelligence Report
+    </title>
 
     <style>
-        @page {
-            margin: 18mm 14mm;
-        }
-
         * {
             box-sizing: border-box;
         }
@@ -24,15 +23,16 @@
         }
 
         .wrapper {
-            padding: 8px;
+            padding: 24px;
         }
 
         /* HERO */
+
         .hero {
             background: #0f172a;
             color: white;
-            padding: 24px;
             border-radius: 16px;
+            padding: 24px;
             margin-bottom: 24px;
         }
 
@@ -42,13 +42,13 @@
             margin-bottom: 6px;
         }
 
-        .hero-subtitle {
+        .hero-sub {
             font-size: 12px;
             color: #cbd5e1;
         }
 
         .period {
-            margin-top: 14px;
+            margin-top: 12px;
             display: inline-block;
             background: rgba(255, 255, 255, 0.12);
             padding: 6px 12px;
@@ -57,6 +57,7 @@
         }
 
         /* KPI */
+
         .kpi-table {
             width: 100%;
             margin-bottom: 24px;
@@ -68,8 +69,8 @@
         }
 
         .kpi-card {
-            background: #f8fafc;
             border: 1px solid #e2e8f0;
+            background: #f8fafc;
             border-radius: 14px;
             padding: 16px;
         }
@@ -87,6 +88,7 @@
         }
 
         /* SECTION */
+
         .section {
             margin-bottom: 26px;
         }
@@ -99,6 +101,7 @@
         }
 
         /* BOX */
+
         .box {
             border: 1px solid #e2e8f0;
             border-radius: 14px;
@@ -106,26 +109,8 @@
             background: white;
         }
 
-        /* PROGRESS */
-        .progress-item {
-            margin-bottom: 14px;
-        }
-
-        .bar-wrap {
-            width: 100%;
-            height: 10px;
-            background: #e2e8f0;
-            border-radius: 999px;
-            overflow: hidden;
-            margin-top: 5px;
-        }
-
-        .bar {
-            height: 10px;
-            background: #0f172a;
-        }
-
         /* TABLE */
+
         .report-table {
             width: 100%;
             border-collapse: collapse;
@@ -152,17 +137,8 @@
             text-align: center;
         }
 
-        /* RANK */
-        .rank-badge {
-            background: #0f172a;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 10px;
-            font-weight: bold;
-        }
+        /* BADGE */
 
-        /* PERFORMANCE BADGE */
         .badge {
             padding: 4px 10px;
             border-radius: 999px;
@@ -171,9 +147,9 @@
             display: inline-block;
         }
 
-        .badge-success {
-            background: #dcfce7;
-            color: #166534;
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
         }
 
         .badge-warning {
@@ -181,14 +157,20 @@
             color: #92400e;
         }
 
-        .badge-danger {
-            background: #fee2e2;
-            color: #991b1b;
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
         }
 
-        /* FOOTER */
+        /* INSIGHT */
+
+        .insight {
+            line-height: 1.9;
+            font-size: 11px;
+        }
+
         .footer {
-            margin-top: 26px;
+            margin-top: 30px;
             border-top: 1px solid #e2e8f0;
             padding-top: 10px;
             text-align: center;
@@ -204,211 +186,271 @@
 
         {{-- HERO --}}
         <div class="hero">
+
             <div class="hero-title">
-                Executive Report Hafalan per Kelas
+                Executive Discipline Intelligence Report
             </div>
 
-            <div class="hero-subtitle">
-                Dashboard performa hafalan & produktivitas kelas santri
+            <div class="hero-sub">
+                Monitoring kedisiplinan & evaluasi halaqah santri
             </div>
 
             <div class="period">
-                Periode: {{ \Carbon\Carbon::createFromFormat('Y-m', $periode)->translatedFormat('F Y') }}
+
+                Periode:
+
+                {{ $startDate->translatedFormat('d F Y') }}
+
+                —
+
+                {{ $endDate->translatedFormat('d F Y') }}
+
             </div>
+
         </div>
 
         {{-- KPI --}}
         <table class="kpi-table">
+
             <tr>
+
                 <td>
                     <div class="kpi-card">
-                        <div class="kpi-label">TOTAL KELAS</div>
+                        <div class="kpi-label">
+                            TOTAL PELANGGARAN
+                        </div>
+
                         <div class="kpi-value">
-                            {{ $summary['total_kelas'] }}
+                            {{ $summary['total_pelanggaran'] }}
                         </div>
                     </div>
                 </td>
 
                 <td>
                     <div class="kpi-card">
-                        <div class="kpi-label">TOTAL SANTRI</div>
+                        <div class="kpi-label">
+                            TOTAL POIN
+                        </div>
+
                         <div class="kpi-value">
-                            {{ $summary['total_santri'] }}
+                            {{ $summary['total_poin'] }}
                         </div>
                     </div>
                 </td>
 
                 <td>
                     <div class="kpi-card">
-                        <div class="kpi-label">TOTAL SETORAN</div>
+                        <div class="kpi-label">
+                            SANTRI TERLIBAT
+                        </div>
+
                         <div class="kpi-value">
-                            {{ $summary['total_setoran'] }}
+                            {{ $summary['total_santri_terlibat'] }}
                         </div>
                     </div>
                 </td>
 
                 <td>
                     <div class="kpi-card">
-                        <div class="kpi-label">AVG NILAI</div>
+                        <div class="kpi-label">
+                            HARI TERAWAN
+                        </div>
+
                         <div class="kpi-value">
-                            {{ $summary['avg_nilai'] }}
+                            {{ $summary['hari_terrawan'] }}
                         </div>
                     </div>
                 </td>
+
             </tr>
+
         </table>
 
-        {{-- ANALYTICS --}}
+        {{-- INSIGHT --}}
         <div class="section">
+
             <div class="section-title">
-                Trend & Insight Kelas
+                Risk Insight Analytics
             </div>
 
-            <div class="box">
+            <div class="box insight">
 
-                <div class="progress-item">
-                    Produktivitas Setoran
-
-                    <div class="bar-wrap">
-                        <div class="bar" style="width: 84%;"></div>
-                    </div>
+                <div>
+                    • Santri kritis:
+                    <strong>
+                        {{ $riskInsight['critical_santri'] }}
+                    </strong>
                 </div>
 
-                <div class="progress-item">
-                    Konsistensi Hafalan
-
-                    <div class="bar-wrap">
-                        <div class="bar" style="width: 78%;"></div>
-                    </div>
+                <div>
+                    • Musyrif high-risk:
+                    <strong>
+                        {{ $riskInsight['high_risk_musyrif'] }}
+                    </strong>
                 </div>
 
-                <div class="progress-item">
-                    Performa Akademik
+                <div>
+                    • Kelas paling bermasalah:
+                    <strong>
+                        {{ $riskInsight['most_problematic_kelas'] ?? '-' }}
+                    </strong>
+                </div>
 
-                    <div class="bar-wrap">
-                        <div class="bar" style="width: {{ min($summary['avg_nilai'], 100) }}%;">
-                        </div>
-                    </div>
+                <div>
+                    • Musyrif paling bermasalah:
+                    <strong>
+                        {{ $riskInsight['most_problematic_musyrif'] ?? '-' }}
+                    </strong>
+                </div>
+
+                <div>
+                    • Trend pelanggaran:
+                    <strong>
+                        {{ $riskInsight['trend'] }}
+                    </strong>
                 </div>
 
             </div>
+
         </div>
 
-        {{-- TOP 10 --}}
+        {{-- TOP MUSYRIF --}}
         <div class="section">
+
             <div class="section-title">
-                Ranking Top 10 Kelas
+                Top Musyrif Monitoring
             </div>
 
             <table class="report-table">
+
                 <thead>
                     <tr>
-                        <th width="10%">Rank</th>
-                        <th>Kelas</th>
-                        <th width="18%">Jumlah Santri</th>
-                        <th width="18%">Setoran</th>
-                        <th width="18%">Nilai</th>
-                        <th width="18%">Performa</th>
+                        <th>#</th>
+                        <th>Musyrif</th>
+                        <th class="text-center">
+                            Total Alpha
+                        </th>
+                        <th class="text-center">
+                            Total Poin
+                        </th>
+                        <th class="text-center">
+                            Total Santri
+                        </th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    @foreach ($topKelas as $row)
-                        @php
-                            $badge = 'badge-danger';
-                            $label = 'Perlu Evaluasi';
 
-                            if ($row->rata_nilai >= 90) {
-                                $badge = 'badge-success';
-                                $label = 'Excellent';
-                            } elseif ($row->rata_nilai >= 80) {
-                                $badge = 'badge-warning';
-                                $label = 'Good';
-                            }
-                        @endphp
-
+                    @foreach ($topMusyrif as $item)
                         <tr>
-                            <td class="text-center">
-                                <span class="rank-badge">
-                                    #{{ $loop->iteration }}
-                                </span>
-                            </td>
 
                             <td>
-                                {{ $row->nama_kelas }}
-                            </td>
-
-                            <td class="text-center">
-                                {{ $row->jumlah_santri }}
-                            </td>
-
-                            <td class="text-center">
-                                {{ $row->total_setor }}
-                            </td>
-
-                            <td class="text-center">
-                                {{ number_format($row->rata_nilai, 2) }}
-                            </td>
-
-                            <td class="text-center">
-                                <span class="badge {{ $badge }}">
-                                    {{ $label }}
-                                </span>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-
-        {{-- DETAIL TABLE --}}
-        <div class="section">
-            <div class="section-title">
-                Detail Rekap Kelas
-            </div>
-
-            <table class="report-table">
-                <thead>
-                    <tr>
-                        <th width="6%">No</th>
-                        <th>Kelas</th>
-                        <th width="18%">Jumlah Santri</th>
-                        <th width="18%">Jumlah Setoran</th>
-                        <th width="18%">Rata-rata</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach ($data as $row)
-                        <tr>
-                            <td class="text-center">
                                 {{ $loop->iteration }}
                             </td>
 
                             <td>
-                                {{ $row->nama_kelas }}
+                                {{ $item->musyrif->nama ?? '-' }}
                             </td>
 
                             <td class="text-center">
-                                {{ $row->jumlah_santri }}
+                                {{ $item->total_alpha }}
                             </td>
 
                             <td class="text-center">
-                                {{ $row->total_setor }}
+                                {{ $item->total_poin }}
                             </td>
 
                             <td class="text-center">
-                                {{ !is_null($row->rata_nilai) ? number_format($row->rata_nilai, 2) : '-' }}
+                                {{ $item->total_santri }}
                             </td>
+
                         </tr>
                     @endforeach
+
                 </tbody>
+
             </table>
+
+        </div>
+
+        {{-- TOP SANTRI --}}
+        <div class="section">
+
+            <div class="section-title">
+                Santri Paling Kritis
+            </div>
+
+            <table class="report-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>#</th>
+
+                        <th>Santri</th>
+
+                        <th>Kelas</th>
+
+                        <th>Musyrif</th>
+
+                        <th class="text-center">
+                            Alpha
+                        </th>
+
+                        <th class="text-center">
+                            Poin
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @foreach ($topSantri as $item)
+                        <tr>
+
+                            <td>
+                                {{ $loop->iteration }}
+                            </td>
+
+                            <td>
+                                {{ $item->santri->nama ?? '-' }}
+                            </td>
+
+                            <td>
+                                {{ $item->santri->kelas->nama_kelas ?? '-' }}
+                            </td>
+
+                            <td>
+                                {{ $item->musyrif->nama ?? '-' }}
+                            </td>
+
+                            <td class="text-center">
+                                {{ $item->total_alpha }}
+                            </td>
+
+                            <td class="text-center">
+                                {{ $item->total_poin }}
+                            </td>
+
+                        </tr>
+                    @endforeach
+
+                </tbody>
+
+            </table>
+
         </div>
 
         {{-- FOOTER --}}
         <div class="footer">
-            Generated by SIMTAQU at {{ now()->format('d M Y H:i') }}
+
+            Generated by SIMTAQU at •
+
+            {{ now()->translatedFormat('d F Y H:i') }}
+
         </div>
 
     </div>

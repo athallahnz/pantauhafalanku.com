@@ -18,13 +18,15 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanController extends Controller
 {
-    private function sqlNilaiLabelToAngka(): string
+    private function sqlNilaiLabelToAngka(string $table = ''): string
     {
+        $prefix = $table ? $table . '.' : '';
+
         return "CASE
-        WHEN hafalans.nilai_label = 'mumtaz' THEN 95
-        WHEN hafalans.nilai_label = 'jayyid_jiddan' THEN 85
-        WHEN hafalans.nilai_label = 'jayyid' THEN 75
-        WHEN hafalans.nilai_label = 'mardud' THEN 65
+        WHEN {$prefix}nilai_label = 'mumtaz' THEN 95
+        WHEN {$prefix}nilai_label = 'jayyid_jiddan' THEN 85
+        WHEN {$prefix}nilai_label = 'jayyid' THEN 75
+        WHEN {$prefix}nilai_label = 'mardud' THEN 65
         ELSE NULL
     END";
     }
@@ -36,285 +38,6 @@ class LaporanController extends Controller
         $defaultPeriode = now()->format('Y-m');
 
         return view('admin.laporan.index', compact('kelasList', 'musyrifList', 'defaultPeriode'));
-    }
-
-    /**
-     * Rekap per Santri (server-side DataTables)
-     */
-
-    public function getRekapSantri(Request $request)
-    {
-        if (!$request->ajax()) {
-            abort(404);
-        }
-
-        $kelasId = $request->input('kelas_id');
-        $musyrifId = $request->input('musyrif_id');
-        $periode = $request->input('periode'); // YYYY-MM
-
-        [$startDate, $endDate] = $this->getRangeFromPeriode($periode);
-
-        // Query dasar santri (untuk filter & summary)
-        $baseQuery = Santri::query()
-            ->when($kelasId, fn($q) => $q->where('kelas_id', $kelasId))
-            ->when($musyrifId, fn($q) => $q->where('musyrif_id', $musyrifId));
-
-        // Summary (tanpa pagination)
-        $summaryQuery = clone $baseQuery;
-        $santriIds = $summaryQuery->pluck('id');
-        $totalSantri = $santriIds->count();
-
-        $hafalanSummary = Hafalan::whereIn('santri_id', $santriIds);
-
-        if ($startDate && $endDate) {
-            $hafalanSummary->whereBetween('tanggal_setoran', [$startDate, $endDate]);
-        }
-
-        $totalSetor = (clone $hafalanSummary)
-            ->whereIn('status', ['lulus', 'ulang'])
-            ->count();
-
-        $totalHadirTidakSetor = (clone $hafalanSummary)
-            ->where('status', 'hadir_tidak_setor')
-            ->count();
-
-        $totalAlpha = (clone $hafalanSummary)
-            ->where('status', 'alpha')
-            ->count();
-
-        $avgNilai = (clone $hafalanSummary)
-            ->whereIn('status', ['lulus', 'ulang'])
-            ->selectRaw("AVG(" . $this->sqlNilaiLabelToAngka() . ") as avg_nilai")
-            ->value('avg_nilai');
-
-        $avgNilai = $avgNilai ? round($avgNilai, 2) : 0;
-
-        // ===== TAMBAHAN UNTUK KPI MUSYRIF =====
-        // Hitung total musyrif sesuai filter
-        $totalMusyrif = Musyrif::when($musyrifId, fn($q) => $q->where('id', $musyrifId))->count();
-
-        // Hitung persentase kehadiran (Valid / Total Absensi) di periode tersebut
-        $attendanceQuery = DB::table('musyrif_attendances')
-            ->when($musyrifId, fn($q) => $q->where('musyrif_id', $musyrifId));
-
-        if ($startDate && $endDate) {
-            $attendanceQuery->whereBetween('attendance_at', [
-                $startDate . ' 00:00:00',
-                $endDate . ' 23:59:59'
-            ]);
-        }
-
-        $totalAttendances = $attendanceQuery->count();
-        $validAttendances = (clone $attendanceQuery)->where('status', 'valid')->count();
-        $kehadiranMusyrif = $totalAttendances > 0 ? round(($validAttendances / $totalAttendances) * 100) : 0;
-        // ======================================
-
-        $hafalanAgg = Hafalan::query()
-            ->select(
-                'santri_id',
-                DB::raw("SUM(CASE WHEN status IN ('lulus','ulang') THEN 1 ELSE 0 END) as total_setor"),
-                DB::raw("SUM(CASE WHEN status = 'hadir_tidak_setor' THEN 1 ELSE 0 END) as hadir_tidak_setor"),
-                DB::raw("SUM(CASE WHEN status = 'sakit' THEN 1 ELSE 0 END) as sakit"), // <-- TAMBAHAN
-                DB::raw("SUM(CASE WHEN status = 'izin' THEN 1 ELSE 0 END) as izin"),   // <-- TAMBAHAN
-                DB::raw("SUM(CASE WHEN status = 'alpha' THEN 1 ELSE 0 END) as alpha"),
-                DB::raw("AVG(CASE WHEN status IN ('lulus','ulang') THEN " . $this->sqlNilaiLabelToAngka() . " ELSE NULL END) as rata_nilai")
-            )
-            ->when($startDate && $endDate, fn($q) => $q->whereBetween('tanggal_setoran', [$startDate, $endDate]))
-            ->groupBy('santri_id');
-
-        $dataQuery = Santri::with(['kelas', 'musyrif'])
-            ->leftJoinSub($hafalanAgg, 'h', 'h.santri_id', '=', 'santris.id')
-            ->select(
-                'santris.*',
-                'h.total_setor',
-                'h.hadir_tidak_setor',
-                'h.alpha',
-                'h.rata_nilai'
-            )
-            ->when($kelasId, fn($q) => $q->where('santris.kelas_id', $kelasId))
-            ->when($musyrifId, fn($q) => $q->where('santris.musyrif_id', $musyrifId));
-
-        return DataTables::of($dataQuery)
-            ->addIndexColumn()
-            ->addColumn('kelas', function ($row) {
-                return $row->kelas->nama_kelas ?? '-';
-            })
-            ->addColumn('musyrif', function ($row) {
-                return $row->musyrif->nama ?? '-';
-            })
-            ->addColumn('nama_santri', function ($row) {
-                return $row->nama ?? '-';
-            })
-            ->editColumn('total_setor', fn($row) => (int) ($row->total_setor ?? 0))
-            ->editColumn('hadir_tidak_setor', fn($row) => (int) ($row->hadir_tidak_setor ?? 0))
-            ->editColumn('alpha', fn($row) => (int) ($row->alpha ?? 0))
-            ->editColumn('sakit', fn($row) => (int) ($row->sakit ?? 0))
-            ->editColumn('izin', fn($row) => (int) ($row->izin ?? 0))
-            ->editColumn('rata_nilai', function ($row) {
-                return is_null($row->rata_nilai) ? '-' : number_format($row->rata_nilai, 2);
-            })
-
-            ->addColumn('aksi', function ($row) {
-                $btn = '<button type="button" class="btn btn-sm btn-primary btn-detail-santri"
-                        data-id="' . $row->id . '"
-                        data-nama="' . e($row->nama) . '">
-                        <i class="bi bi-eye" data-toggle="tooltip" data-placement="top" title="Lihat Detail"></i>
-                    </button>';
-                return $btn;
-            })
-            ->rawColumns(['aksi'])
-            ->with([
-                'summary' => [
-                    'total_santri' => $totalSantri,
-                    'total_setor' => $totalSetor,
-                    'hadir_tidak_setor' => $totalHadirTidakSetor,
-                    'alpha' => $totalAlpha,
-                    'avg_nilai' => $avgNilai,
-                    // Tambahkan 2 key ini untuk dikirim ke Frontend
-                    'total_musyrif'     => $totalMusyrif,
-                    'kehadiran_musyrif' => $kehadiranMusyrif,
-                ]
-            ])
-            ->make(true);
-    }
-
-    /**
-     * Rekap per Kelas
-     */
-    public function getRekapKelas(Request $request)
-    {
-        if (!$request->ajax()) {
-            abort(404);
-        }
-
-        $kelasId   = $request->input('kelas_id');
-        $musyrifId = $request->input('musyrif_id');
-        $periode   = $request->input('periode');
-
-        [$startDate, $endDate] = $this->getRangeFromPeriode($periode);
-
-        $query = Kelas::select(
-            'kelas.id', // Gunakan nama tabel yang sesuai di DB
-            'kelas.nama_kelas',
-            DB::raw('COUNT(DISTINCT santris.id) as jumlah_santri'),
-            DB::raw("SUM(CASE WHEN hafalans.status IN ('lulus','ulang') THEN 1 ELSE 0 END) as total_setor"),
-            DB::raw("SUM(CASE WHEN hafalans.status = 'hadir_tidak_setor' THEN 1 ELSE 0 END) as hadir_tidak_setor"),
-            DB::raw("SUM(CASE WHEN status = 'sakit' THEN 1 ELSE 0 END) as sakit"), // <-- TAMBAHAN
-            DB::raw("SUM(CASE WHEN status = 'izin' THEN 1 ELSE 0 END) as izin"),   // <-- TAMBAHAN
-            DB::raw("SUM(CASE WHEN hafalans.status = 'alpha' THEN 1 ELSE 0 END) as alpha"),
-            DB::raw("AVG(CASE WHEN hafalans.status IN ('lulus','ulang') THEN {$this->sqlNilaiLabelToAngka()} ELSE NULL END) as rata_nilai")
-        )
-            ->leftJoin('santris', 'santris.kelas_id', '=', 'kelas.id')
-            ->leftJoin('hafalans', function ($join) use ($startDate, $endDate) {
-                $join->on('hafalans.santri_id', '=', 'santris.id');
-                if ($startDate && $endDate) {
-                    $join->whereBetween('hafalans.tanggal_setoran', [$startDate, $endDate]);
-                }
-            })
-            // Filter Kelas/Musyrif harus di luar join agar data Kelas tetap muncul meski tidak ada santrinya (Left Join)
-            ->when($kelasId, fn($q) => $q->where('kelas.id', $kelasId))
-            ->when($musyrifId, fn($q) => $q->where('santris.musyrif_id', $musyrifId))
-            ->groupBy('kelas.id', 'kelas.nama_kelas');
-
-        return DataTables::of($query)
-
-            ->addIndexColumn()
-
-            ->editColumn(
-                'jumlah_santri',
-                fn($row) =>
-                (int) $row->jumlah_santri
-            )
-
-            ->editColumn(
-                'total_setor',
-                fn($row) =>
-                (int) $row->total_setor
-            )
-
-            ->editColumn(
-                'hadir_tidak_setor',
-                fn($row) =>
-                (int) $row->hadir_tidak_setor
-            )
-
-            ->editColumn('sakit', fn($row) => (int) ($row->sakit ?? 0))
-
-            ->editColumn('izin', fn($row) => (int) ($row->izin ?? 0))
-
-            ->editColumn(
-                'alpha',
-                fn($row) =>
-                (int) $row->alpha
-            )
-
-            ->editColumn(
-                'rata_nilai',
-                fn($row) =>
-                is_null($row->rata_nilai)
-                    ? '-'
-                    : number_format($row->rata_nilai, 2)
-            )
-
-            ->make(true);
-    }
-
-    /**
-     * Rekap per Musyrif
-     */
-    public function getRekapMusyrif(Request $request)
-    {
-        if (!$request->ajax()) {
-            abort(404);
-        }
-
-        $kelasId = $request->input('kelas_id');
-        $musyrifId = $request->input('musyrif_id');
-        $periode = $request->input('periode');
-
-        [$startDate, $endDate] = $this->getRangeFromPeriode($periode);
-
-        $query = Musyrif::select(
-            'musyrifs.id',
-            'musyrifs.nama',
-            DB::raw('COUNT(DISTINCT santris.id) as jumlah_santri'),
-            DB::raw("SUM(CASE WHEN hafalans.status IN ('lulus','ulang') THEN 1 ELSE 0 END) as total_setor"),
-            DB::raw("SUM(CASE WHEN hafalans.status = 'hadir_tidak_setor' THEN 1 ELSE 0 END) as hadir_tidak_setor"),
-            DB::raw("SUM(CASE WHEN status = 'sakit' THEN 1 ELSE 0 END) as sakit"), // <-- TAMBAHAN
-            DB::raw("SUM(CASE WHEN status = 'izin' THEN 1 ELSE 0 END) as izin"),   // <-- TAMBAHAN
-            DB::raw("SUM(CASE WHEN hafalans.status = 'alpha' THEN 1 ELSE 0 END) as alpha"),
-            DB::raw("AVG(CASE WHEN hafalans.status IN ('lulus','ulang') THEN " . $this->sqlNilaiLabelToAngka() . " ELSE NULL END) as rata_nilai"),
-        )
-            ->leftJoin('santris', 'santris.musyrif_id', '=', 'musyrifs.id')
-            ->leftJoin('hafalans', 'hafalans.santri_id', '=', 'santris.id')
-            ->when($musyrifId, function ($q) use ($musyrifId) {
-                $q->where('musyrifs.id', $musyrifId);
-            })
-            ->when($kelasId, function ($q) use ($kelasId) {
-                $q->where('santris.kelas_id', $kelasId);
-            });
-
-        if ($startDate && $endDate) {
-            $query->when(true, function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('hafalans.tanggal_setoran', [$startDate, $endDate]);
-            });
-        }
-
-        $query->groupBy('musyrifs.id', 'musyrifs.nama');
-
-        return DataTables::of($query)
-            ->addIndexColumn()
-            ->editColumn('jumlah_santri', fn($row) => (int) ($row->jumlah_santri ?? 0))
-            ->editColumn('total_setor', fn($row) => (int) ($row->total_setor ?? 0))
-            ->editColumn('sakit', fn($row) => (int) ($row->sakit ?? 0))
-            ->editColumn('izin', fn($row) => (int) ($row->izin ?? 0))
-            ->editColumn('rata_nilai', function ($row) {
-                if (is_null($row->rata_nilai)) {
-                    return '-';
-                }
-                return number_format($row->rata_nilai, 2);
-            })
-            ->make(true);
     }
 
     /**
@@ -376,6 +99,502 @@ class LaporanController extends Controller
         }
     }
 
+    /**
+     * Rekap per Santri (server-side DataTables)
+     */
+
+    public function getRekapSantri(Request $request)
+    {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        $kelasId = $request->input('kelas_id');
+        $musyrifId = $request->input('musyrif_id');
+        $periode = $request->input('periode'); // YYYY-MM
+
+        [$startDate, $endDate] = $this->getRangeFromPeriode($periode);
+
+        // Query dasar santri (untuk filter & summary)
+        $baseQuery = Santri::query()
+            ->when($kelasId, fn($q) => $q->where('kelas_id', $kelasId))
+            ->when($musyrifId, fn($q) => $q->where('musyrif_id', $musyrifId));
+
+        // Summary (tanpa pagination)
+        $summaryQuery = clone $baseQuery;
+        $santriIds = $summaryQuery->pluck('id');
+        $totalSantri = $santriIds->count();
+
+        $hafalanSummary = Hafalan::whereIn('santri_id', $santriIds);
+
+        if ($startDate && $endDate) {
+            $hafalanSummary->whereBetween('tanggal_setoran', [$startDate, $endDate]);
+        }
+
+        $totalSetor = (clone $hafalanSummary)
+            ->whereIn('status', ['lulus', 'ulang'])
+            ->count();
+
+        $totalHadirTidakSetor = (clone $hafalanSummary)
+            ->where('status', 'hadir_tidak_setor')
+            ->count();
+
+        $totalAlpha = (clone $hafalanSummary)
+            ->where('status', 'alpha')
+            ->count();
+
+        $avgNilai = (clone $hafalanSummary)
+            ->whereIn('status', ['lulus', 'ulang'])
+            ->selectRaw("AVG(" . $this->sqlNilaiLabelToAngka('hafalans') . ") as avg_nilai")
+            ->value('avg_nilai');
+
+        $avgNilai = $avgNilai ? round($avgNilai, 2) : 0;
+
+        // ===== TAMBAHAN UNTUK KPI MUSYRIF =====
+        // Hitung total musyrif sesuai filter
+        $totalMusyrif = Musyrif::when($musyrifId, fn($q) => $q->where('id', $musyrifId))->count();
+
+        // Hitung persentase kehadiran (Valid / Total Absensi) di periode tersebut
+        $attendanceQuery = DB::table('musyrif_attendances')
+            ->when($musyrifId, fn($q) => $q->where('musyrif_id', $musyrifId));
+
+        if ($startDate && $endDate) {
+            $attendanceQuery->whereBetween('attendance_at', [
+                $startDate . ' 00:00:00',
+                $endDate . ' 23:59:59'
+            ]);
+        }
+
+        $totalAttendances = $attendanceQuery->count();
+        $validAttendances = (clone $attendanceQuery)->where('status', 'valid')->count();
+        $kehadiranMusyrif = $totalAttendances > 0 ? round(($validAttendances / $totalAttendances) * 100) : 0;
+        // ======================================
+
+        $hafalanAgg = Hafalan::query()
+            ->select(
+                'santri_id',
+
+                // Total setoran valid
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status IN ('lulus', 'ulang')
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as total_setor
+                "),
+
+                // Hadir tidak setor
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'hadir_tidak_setor'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as hadir_tidak_setor
+                "),
+
+                // Alpha
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'alpha'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as alpha
+                "),
+
+                // Izin
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'izin'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as izin
+                "),
+
+                // Sakit
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'sakit'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as sakit
+                "),
+
+                // Rata-rata nilai
+                DB::raw("
+                    ROUND(
+                        AVG(
+                            CASE
+                                WHEN status = 'lulus'
+                                THEN
+                                    CASE
+                                        WHEN nilai_label = 'mumtaz' THEN 95
+                                        WHEN nilai_label = 'jayyid_jiddan' THEN 85
+                                        WHEN nilai_label = 'jayyid' THEN 75
+                                        WHEN nilai_label = 'mardud' THEN 65
+                                        ELSE NULL
+                                    END
+                                ELSE NULL
+                            END
+                        ),
+                    2)
+                as rata_nilai
+                ")
+            )
+            ->when($startDate && $endDate, fn($q) => $q->whereBetween('tanggal_setoran', [$startDate, $endDate]))
+            ->groupBy('santri_id');
+
+        $dataQuery = Santri::with(['kelas', 'musyrif'])
+            ->leftJoinSub($hafalanAgg, 'h', 'h.santri_id', '=', 'santris.id')
+            ->select(
+                'santris.*',
+                'h.total_setor',
+                'h.hadir_tidak_setor',
+                'h.alpha',
+                'h.izin',
+                'h.sakit',
+                'h.rata_nilai'
+            )
+            ->when($kelasId, fn($q) => $q->where('santris.kelas_id', $kelasId))
+            ->when($musyrifId, fn($q) => $q->where('santris.musyrif_id', $musyrifId));
+
+        return DataTables::of($dataQuery)
+            ->addIndexColumn()
+            ->addColumn('kelas', function ($row) {
+                return $row->kelas->nama_kelas ?? '-';
+            })
+            ->addColumn('musyrif', function ($row) {
+                return $row->musyrif->nama ?? '-';
+            })
+            ->addColumn('nama_santri', function ($row) {
+                return $row->nama ?? '-';
+            })
+            ->editColumn('total_setor', fn($r) => (int) ($r->total_setor ?? 0))
+            ->editColumn('hadir_tidak_setor', fn($row) => (int) ($row->hadir_tidak_setor ?? 0))
+            ->editColumn('alpha', fn($row) => (int) ($row->alpha ?? 0))
+            ->editColumn('sakit', fn($row) => (int) ($row->sakit ?? 0))
+            ->editColumn('izin', fn($row) => (int) ($row->izin ?? 0))
+            ->editColumn('rata_nilai', function ($row) {
+                return is_null($row->rata_nilai) ? '-' : number_format($row->rata_nilai, 2);
+            })
+
+            ->addColumn('aksi', function ($row) {
+                $btn = '<button type="button" class="btn btn-sm btn-primary btn-detail-santri"
+                        data-id="' . $row->id . '"
+                        data-nama="' . e($row->nama) . '">
+                        <i class="bi bi-eye" data-toggle="tooltip" data-placement="top" title="Lihat Detail"></i>
+                    </button>';
+                return $btn;
+            })
+            ->rawColumns(['aksi'])
+            ->with([
+                'summary' => [
+                    'total_santri' => $totalSantri,
+                    'total_setor' => $totalSetor,
+                    'hadir_tidak_setor' => $totalHadirTidakSetor,
+                    'alpha' => $totalAlpha,
+                    'avg_nilai' => $avgNilai,
+                    // Tambahkan 2 key ini untuk dikirim ke Frontend
+                    'total_musyrif'     => $totalMusyrif,
+                    'kehadiran_musyrif' => $kehadiranMusyrif,
+                ]
+            ])
+            ->make(true);
+    }
+
+    /**
+     * Rekap per Kelas
+     */
+    public function getRekapKelas(Request $request)
+    {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        $kelasId   = $request->input('kelas_id');
+        $musyrifId = $request->input('musyrif_id');
+        $periode   = $request->input('periode');
+
+        [$startDate, $endDate] = $this->getRangeFromPeriode($periode);
+        $hafalanAgg = DB::table('hafalans')
+            ->select(
+                'santri_id',
+
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'lulus'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as total_setor
+                "),
+
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'hadir_tidak_setor'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as hadir_tidak_setor
+                "),
+
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'sakit'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as sakit
+                "),
+
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'izin'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as izin
+                "),
+
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'alpha'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as alpha
+                "),
+
+                DB::raw("
+                    ROUND(
+                        AVG(
+                            CASE
+                                WHEN status = 'lulus'
+                                THEN
+                                    CASE
+                                        WHEN nilai_label = 'mumtaz' THEN 95
+                                        WHEN nilai_label = 'jayyid_jiddan' THEN 85
+                                        WHEN nilai_label = 'jayyid' THEN 75
+                                        WHEN nilai_label = 'mardud' THEN 65
+                                        ELSE NULL
+                                    END
+                            END
+                        ),
+                    2) as rata_nilai
+                ")
+            )
+
+            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('tanggal_setoran', [$startDate, $endDate]);
+            })
+
+            ->groupBy('santri_id');
+
+        $query = Kelas::select(
+            'kelas.id',
+            'kelas.nama_kelas',
+
+            DB::raw('COUNT(DISTINCT santris.id) as jumlah_santri'),
+
+            DB::raw('SUM(h.total_setor) as total_setor'),
+            DB::raw('SUM(h.hadir_tidak_setor) as hadir_tidak_setor'),
+            DB::raw('SUM(h.sakit) as sakit'),
+            DB::raw('SUM(h.izin) as izin'),
+            DB::raw('SUM(h.alpha) as alpha'),
+
+            DB::raw('ROUND(AVG(h.rata_nilai),2) as rata_nilai')
+        )
+
+            ->leftJoin('santris', 'santris.kelas_id', '=', 'kelas.id')
+
+            ->leftJoinSub($hafalanAgg, 'h', function ($join) {
+                $join->on('h.santri_id', '=', 'santris.id');
+            })
+
+            ->when($kelasId, fn($q) => $q->where('kelas.id', $kelasId))
+
+            ->when(
+                $musyrifId,
+                fn($q) =>
+                $q->where('santris.musyrif_id', $musyrifId)
+            )
+
+            ->groupBy('kelas.id', 'kelas.nama_kelas');
+
+        return DataTables::of($query)
+
+            ->addIndexColumn()
+
+            ->editColumn(
+                'jumlah_santri',
+                fn($row) =>
+                (int) $row->jumlah_santri
+            )
+
+            ->editColumn(
+                'total_setor',
+                fn($row) =>
+                (int) $row->total_setor
+            )
+
+            ->editColumn(
+                'hadir_tidak_setor',
+                fn($row) =>
+                (int) $row->hadir_tidak_setor
+            )
+
+            ->editColumn('sakit', fn($row) => (int) ($row->sakit ?? 0))
+
+            ->editColumn('izin', fn($row) => (int) ($row->izin ?? 0))
+
+            ->editColumn(
+                'alpha',
+                fn($row) =>
+                (int) $row->alpha
+            )
+
+            ->editColumn(
+                'rata_nilai',
+                fn($row) =>
+                is_null($row->rata_nilai)
+                    ? '-'
+                    : number_format($row->rata_nilai, 2)
+            )
+
+            ->make(true);
+    }
+
+    /**
+     * Rekap per Musyrif
+     */
+    public function getRekapMusyrif(Request $request)
+    {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        $kelasId = $request->input('kelas_id');
+        $musyrifId = $request->input('musyrif_id');
+        $periode = $request->input('periode');
+
+        [$startDate, $endDate] = $this->getRangeFromPeriode($periode);
+
+        $hafalanAgg = DB::table('hafalans')
+            ->select(
+                'santri_id',
+
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'lulus'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as total_setor
+                "),
+
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'hadir_tidak_setor'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as hadir_tidak_setor
+                "),
+
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'sakit'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as sakit
+                "),
+
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'izin'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as izin
+                "),
+
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'alpha'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as alpha
+                "),
+
+                DB::raw("
+                    ROUND(
+                        AVG(
+                            CASE
+                                WHEN status = 'lulus'
+                                THEN
+                                    CASE
+                                        WHEN nilai_label = 'mumtaz' THEN 95
+                                        WHEN nilai_label = 'jayyid_jiddan' THEN 85
+                                        WHEN nilai_label = 'jayyid' THEN 75
+                                        WHEN nilai_label = 'mardud' THEN 65
+                                        ELSE NULL
+                                    END
+                            END
+                        ),
+                    2) as rata_nilai
+                ")
+            )
+
+            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('tanggal_setoran', [$startDate, $endDate]);
+            })
+
+            ->groupBy('santri_id');
+
+        $query = Musyrif::select('musyrifs.id', 'musyrifs.nama', DB::raw('COUNT(DISTINCT santris.id) as jumlah_santri'), DB::raw('COALESCE(SUM(h.total_setor),0) as total_setor'), DB::raw('COALESCE(SUM(h.hadir_tidak_setor),0) as hadir_tidak_setor'), DB::raw('COALESCE(SUM(h.sakit),0) as sakit'), DB::raw('COALESCE(SUM(h.izin),0) as izin'), DB::raw('COALESCE(SUM(h.alpha),0) as alpha'), DB::raw('ROUND(AVG(h.rata_nilai),2) as rata_nilai'))->leftJoin('santris', 'santris.musyrif_id', '=', 'musyrifs.id')->leftJoinSub($hafalanAgg, 'h', function ($join) {
+            $join->on('h.santri_id', '=', 'santris.id');
+        })->when($musyrifId, function ($q) use ($musyrifId) {
+            $q->where('musyrifs.id', $musyrifId);
+        })->when($kelasId, function ($q) use ($kelasId) {
+            $q->where('santris.kelas_id', $kelasId);
+        })->groupBy('musyrifs.id', 'musyrifs.nama');
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->editColumn('jumlah_santri', fn($row) => (int) ($row->jumlah_santri ?? 0))
+            ->editColumn('total_setor', fn($row) => (int) ($row->total_setor ?? 0))
+            ->editColumn('sakit', fn($row) => (int) ($row->sakit ?? 0))
+            ->editColumn('izin', fn($row) => (int) ($row->izin ?? 0))
+            ->editColumn('rata_nilai', function ($row) {
+                if (is_null($row->rata_nilai)) {
+                    return '-';
+                }
+                return number_format($row->rata_nilai, 2);
+            })
+            ->make(true);
+    }
+
     // Chart data endpoints
     public function getChartKelas(Request $request)
     {
@@ -392,7 +611,7 @@ class LaporanController extends Controller
             DB::raw("
             COALESCE(SUM(
                 CASE
-                    WHEN hafalans.status IN ('lulus','ulang')
+                    WHEN hafalans.status IN ('lulus')
                     THEN 1 ELSE 0
                 END
             ),0) as total_setor
@@ -435,7 +654,6 @@ class LaporanController extends Controller
         ]);
     }
 
-
     public function getChartMusyrif(Request $request)
     {
         $kelasId   = $request->input('kelas_id');
@@ -456,7 +674,7 @@ class LaporanController extends Controller
             COALESCE(
                 SUM(
                     CASE
-                        WHEN hafalans.status IN ('lulus','ulang')
+                        WHEN hafalans.status IN ('lulus')
                         THEN 1 ELSE 0
                     END
                 ), 0
@@ -501,7 +719,6 @@ class LaporanController extends Controller
                 ->values(),
         ]);
     }
-
 
     public function getChartJuzLulus(Request $request)
     {
@@ -671,19 +888,100 @@ class LaporanController extends Controller
         $periode = $request->input('periode');
         [$startDate, $endDate] = $this->getRangeFromPeriode($periode);
 
-        $hafalanAgg = Hafalan::select(
-            'santri_id',
-            DB::raw("SUM(CASE WHEN status IN ('lulus','ulang') THEN 1 ELSE 0 END) as total_setor"),
-            DB::raw("SUM(CASE WHEN status = 'hadir_tidak_setor' THEN 1 ELSE 0 END) as hadir_tidak_setor"),
-            DB::raw("SUM(CASE WHEN status = 'alpha' THEN 1 ELSE 0 END) as alpha"),
-            DB::raw("AVG(CASE WHEN status IN ('lulus','ulang') THEN " . $this->sqlNilaiLabelToAngka() . " ELSE NULL END) as rata_nilai")
-        )
+        $hafalanAgg = Hafalan::query()
+            ->select(
+                'santri_id',
+
+                // Total setoran valid
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status IN ('lulus', 'ulang')
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as total_setor
+                "),
+
+                // Hadir tidak setor
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'hadir_tidak_setor'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as hadir_tidak_setor
+                "),
+
+                // Alpha
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'alpha'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as alpha
+                "),
+
+                // Izin
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'izin'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as izin
+                "),
+
+                // Sakit
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN status = 'sakit'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) as sakit
+                "),
+
+                // Rata-rata nilai
+                DB::raw("
+                    ROUND(
+                        AVG(
+                            CASE
+                                WHEN status = 'lulus'
+                                THEN
+                                    CASE
+                                        WHEN nilai_label = 'mumtaz' THEN 95
+                                        WHEN nilai_label = 'jayyid_jiddan' THEN 85
+                                        WHEN nilai_label = 'jayyid' THEN 75
+                                        WHEN nilai_label = 'mardud' THEN 65
+                                        ELSE NULL
+                                    END
+                                ELSE NULL
+                            END
+                        ),
+                    2)
+                as rata_nilai
+                ")
+            )
             ->when($startDate && $endDate, fn($q) => $q->whereBetween('tanggal_setoran', [$startDate, $endDate]))
             ->groupBy('santri_id');
 
         $data = Santri::with(['kelas', 'musyrif'])
             ->leftJoinSub($hafalanAgg, 'h', 'h.santri_id', '=', 'santris.id')
-            ->select('santris.*', 'h.total_setor', 'h.hadir_tidak_setor', 'h.alpha', 'h.rata_nilai')
+            ->select(
+                'santris.*',
+                'h.total_setor',
+                'h.hadir_tidak_setor',
+                'h.alpha',
+                'h.izin',
+                'h.sakit',
+                'h.rata_nilai'
+            )
             ->when($kelasId, fn($q) => $q->where('santris.kelas_id', $kelasId))
             ->when($musyrifId, fn($q) => $q->where('santris.musyrif_id', $musyrifId))
             ->orderBy('kelas_id')
@@ -695,63 +993,297 @@ class LaporanController extends Controller
 
     private function fetchRekapKelasRaw(Request $request)
     {
-        $kelasId = $request->input('kelas_id');
+        $kelasId   = $request->input('kelas_id');
         $musyrifId = $request->input('musyrif_id');
-        $periode = $request->input('periode');
-        [$startDate, $endDate] = $this->getRangeFromPeriode($periode);
+        $periode   = $request->input('periode');
 
-        $query = Kelas::select(
+        [$startDate, $endDate] =
+            $this->getRangeFromPeriode($periode);
+
+        /**
+         * Aggregate hafalan per santri
+         */
+        $hafalanAgg = DB::table('hafalans')
+            ->select(
+
+                'santri_id',
+
+                DB::raw("
+                SUM(
+                    CASE
+                        WHEN status = 'lulus'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) as total_setor
+            "),
+
+                DB::raw("
+                SUM(
+                    CASE
+                        WHEN status = 'hadir_tidak_setor'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) as hadir_tidak_setor
+            "),
+
+                DB::raw("
+                SUM(
+                    CASE
+                        WHEN status = 'sakit'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) as sakit
+            "),
+
+                DB::raw("
+                SUM(
+                    CASE
+                        WHEN status = 'izin'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) as izin
+            "),
+
+                DB::raw("
+                SUM(
+                    CASE
+                        WHEN status = 'alpha'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) as alpha
+            "),
+
+                DB::raw("
+                ROUND(
+                    AVG(
+                        CASE
+                            WHEN status = 'lulus'
+                            THEN
+                                CASE
+                                    WHEN nilai_label = 'mumtaz' THEN 95
+                                    WHEN nilai_label = 'jayyid_jiddan' THEN 85
+                                    WHEN nilai_label = 'jayyid' THEN 75
+                                    WHEN nilai_label = 'mardud' THEN 65
+                                    ELSE NULL
+                                END
+                        END
+                    ),
+                2) as rata_nilai
+            ")
+            )
+
+            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                $q->whereBetween(
+                    'tanggal_setoran',
+                    [$startDate, $endDate]
+                );
+            })
+
+            ->groupBy('santri_id');
+
+        return Kelas::select(
+
             'kelas.id',
             'kelas.nama_kelas',
-            DB::raw("COUNT(DISTINCT santris.id) as jumlah_santri"),
-            DB::raw("SUM(CASE WHEN hafalans.status IN ('lulus','ulang') THEN 1 ELSE 0 END) as total_setor"),
-            DB::raw("SUM(CASE WHEN hafalans.status = 'hadir_tidak_setor' THEN 1 ELSE 0 END) as hadir_tidak_setor"),
-            DB::raw("SUM(CASE WHEN hafalans.status = 'alpha' THEN 1 ELSE 0 END) as alpha"),
-            DB::raw("AVG(CASE WHEN hafalans.status IN ('lulus','ulang') THEN " . $this->sqlNilaiLabelToAngka() . " ELSE NULL END) as rata_nilai")
+
+            DB::raw('COUNT(DISTINCT santris.id) as jumlah_santri'),
+
+            DB::raw('COALESCE(SUM(h.total_setor),0) as total_setor'),
+
+            DB::raw('COALESCE(SUM(h.hadir_tidak_setor),0) as hadir_tidak_setor'),
+
+            DB::raw('COALESCE(SUM(h.sakit),0) as sakit'),
+
+            DB::raw('COALESCE(SUM(h.izin),0) as izin'),
+
+            DB::raw('COALESCE(SUM(h.alpha),0) as alpha'),
+
+            DB::raw('ROUND(AVG(h.rata_nilai),2) as rata_nilai')
         )
 
-            ->leftJoin('santris', 'santris.kelas_id', '=', 'kelas.id')
-            ->leftJoin('hafalans', 'hafalans.santri_id', '=', 'santris.id')
-            ->when($kelasId, fn($q) => $q->where('kelas.id', $kelasId))
-            ->when($musyrifId, fn($q) => $q->where('santris.musyrif_id', $musyrifId));
+            ->leftJoin(
+                'santris',
+                'santris.kelas_id',
+                '=',
+                'kelas.id'
+            )
 
-        if ($startDate && $endDate) {
-            $query->whereBetween('hafalans.tanggal_setoran', [$startDate, $endDate]);
-        }
+            ->leftJoinSub($hafalanAgg, 'h', function ($join) {
+                $join->on('h.santri_id', '=', 'santris.id');
+            })
 
-        return $query->groupBy('kelas.id', 'kelas.nama_kelas')
+            ->when(
+                $kelasId,
+                fn($q) =>
+                $q->where('kelas.id', $kelasId)
+            )
+
+            ->when(
+                $musyrifId,
+                fn($q) =>
+                $q->where('santris.musyrif_id', $musyrifId)
+            )
+
+            ->groupBy(
+                'kelas.id',
+                'kelas.nama_kelas'
+            )
+
             ->orderBy('kelas.nama_kelas')
+
             ->get();
     }
 
     private function fetchRekapMusyrifRaw(Request $request)
     {
-        $kelasId = $request->input('kelas_id');
+        $kelasId   = $request->input('kelas_id');
         $musyrifId = $request->input('musyrif_id');
-        $periode = $request->input('periode');
-        [$startDate, $endDate] = $this->getRangeFromPeriode($periode);
+        $periode   = $request->input('periode');
 
-        $query = Musyrif::select(
+        [$startDate, $endDate] =
+            $this->getRangeFromPeriode($periode);
+
+        /**
+         * Aggregate hafalan per santri
+         */
+        $hafalanAgg = DB::table('hafalans')
+            ->select(
+
+                'santri_id',
+
+                DB::raw("
+                SUM(
+                    CASE
+                        WHEN status = 'lulus'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) as total_setor
+            "),
+
+                DB::raw("
+                SUM(
+                    CASE
+                        WHEN status = 'hadir_tidak_setor'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) as hadir_tidak_setor
+            "),
+
+                DB::raw("
+                SUM(
+                    CASE
+                        WHEN status = 'sakit'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) as sakit
+            "),
+
+                DB::raw("
+                SUM(
+                    CASE
+                        WHEN status = 'izin'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) as izin
+            "),
+
+                DB::raw("
+                SUM(
+                    CASE
+                        WHEN status = 'alpha'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) as alpha
+            "),
+
+                DB::raw("
+                ROUND(
+                    AVG(
+                        CASE
+                            WHEN status = 'lulus'
+                            THEN
+                                CASE
+                                    WHEN nilai_label = 'mumtaz' THEN 95
+                                    WHEN nilai_label = 'jayyid_jiddan' THEN 85
+                                    WHEN nilai_label = 'jayyid' THEN 75
+                                    WHEN nilai_label = 'mardud' THEN 65
+                                    ELSE NULL
+                                END
+                        END
+                    ),
+                2) as rata_nilai
+            ")
+            )
+
+            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                $q->whereBetween(
+                    'tanggal_setoran',
+                    [$startDate, $endDate]
+                );
+            })
+
+            ->groupBy('santri_id');
+
+        return Musyrif::select(
+
             'musyrifs.id',
             'musyrifs.nama',
-            DB::raw("COUNT(DISTINCT santris.id) as jumlah_santri"),
-            DB::raw("SUM(CASE WHEN hafalans.status IN ('lulus','ulang') THEN 1 ELSE 0 END) as total_setor"),
-            DB::raw("SUM(CASE WHEN hafalans.status = 'hadir_tidak_setor' THEN 1 ELSE 0 END) as hadir_tidak_setor"),
-            DB::raw("SUM(CASE WHEN hafalans.status = 'alpha' THEN 1 ELSE 0 END) as alpha"),
-            DB::raw("AVG(CASE WHEN hafalans.status IN ('lulus','ulang') THEN " . $this->sqlNilaiLabelToAngka() . " ELSE NULL END) as rata_nilai")
+
+            DB::raw('COUNT(DISTINCT santris.id) as jumlah_santri'),
+
+            DB::raw('COALESCE(SUM(h.total_setor),0) as total_setor'),
+
+            DB::raw('COALESCE(SUM(h.hadir_tidak_setor),0) as hadir_tidak_setor'),
+
+            DB::raw('COALESCE(SUM(h.sakit),0) as sakit'),
+
+            DB::raw('COALESCE(SUM(h.izin),0) as izin'),
+
+            DB::raw('COALESCE(SUM(h.alpha),0) as alpha'),
+
+            DB::raw('ROUND(AVG(h.rata_nilai),2) as rata_nilai')
         )
 
-            ->leftJoin('santris', 'santris.musyrif_id', '=', 'musyrifs.id')
-            ->leftJoin('hafalans', 'hafalans.santri_id', '=', 'santris.id')
-            ->when($musyrifId, fn($q) => $q->where('musyrifs.id', $musyrifId))
-            ->when($kelasId, fn($q) => $q->where('santris.kelas_id', $kelasId));
+            ->leftJoin(
+                'santris',
+                'santris.musyrif_id',
+                '=',
+                'musyrifs.id'
+            )
 
-        if ($startDate && $endDate) {
-            $query->whereBetween('hafalans.tanggal_setoran', [$startDate, $endDate]);
-        }
+            ->leftJoinSub($hafalanAgg, 'h', function ($join) {
+                $join->on('h.santri_id', '=', 'santris.id');
+            })
 
-        return $query->groupBy('musyrifs.id', 'musyrifs.nama')
+            ->when(
+                $musyrifId,
+                fn($q) =>
+                $q->where('musyrifs.id', $musyrifId)
+            )
+
+            ->when(
+                $kelasId,
+                fn($q) =>
+                $q->where('santris.kelas_id', $kelasId)
+            )
+
+            ->groupBy(
+                'musyrifs.id',
+                'musyrifs.nama'
+            )
+
             ->orderBy('musyrifs.nama')
+
             ->get();
     }
 
@@ -834,42 +1366,168 @@ class LaporanController extends Controller
 
     // PDF Exports
 
+    private function buildExecutiveAnalytics($data): array
+    {
+        return [
+
+            'summary' => [
+                'total_santri' => $data->count(),
+
+                'total_setoran' => $data->sum('total_setor'),
+
+                'avg_nilai' => round(
+                    $data->whereNotNull('rata_nilai')
+                        ->avg('rata_nilai'),
+                    2
+                ),
+
+                'santri_aktif' => $data
+                    ->where('total_setor', '>', 0)
+                    ->count(),
+            ],
+
+            'topSantri' => $data
+                ->whereNotNull('rata_nilai')
+                ->sortByDesc('rata_nilai')
+                ->take(10)
+                ->values(),
+
+            'statusDistribution' => [
+
+                'mumtaz' => $data
+                    ->where('rata_nilai', '>=', 90)
+                    ->count(),
+
+                'jayyid_jiddan' => $data
+                    ->whereBetween('rata_nilai', [80, 89.99])
+                    ->count(),
+
+                'jayyid' => $data
+                    ->whereBetween('rata_nilai', [70, 79.99])
+                    ->count(),
+
+                'mardud' => $data
+                    ->where('rata_nilai', '<', 70)
+                    ->whereNotNull('rata_nilai')
+                    ->count(),
+            ]
+        ];
+    }
+
     public function exportSantriPdf(Request $request)
     {
         $data = $this->fetchRekapSantriRaw($request);
-        $periode = $request->input('periode') ?: now()->format('Y-m');
 
-        $pdf = Pdf::loadView('admin.laporan.export.rekap-santri-pdf', [
-            'data' => $data,
-            'periode' => $periode,
-        ])->setPaper('A4', 'portrait');
+        $periode = $request->input('periode')
+            ?: now()->format('Y-m');
 
-        return $pdf->download('rekap_hafalan_santri_' . $periode . '.pdf');
+        $analytics = $this->buildExecutiveAnalytics($data);
+
+        $pdf = Pdf::loadView(
+            'admin.laporan.export.rekap-santri-pdf',
+            [
+
+                'data' => $data,
+
+                'periode' => $periode,
+
+                'summary' => $analytics['summary'],
+
+                'topSantri' => $analytics['topSantri'],
+
+                'statusDistribution' => $analytics['statusDistribution'],
+            ]
+        )
+            ->setPaper('A4', 'portrait');
+
+        return $pdf->download(
+            'rekap_hafalan_santri_' . $periode . '.pdf'
+        );
     }
 
     public function exportKelasPdf(Request $request)
     {
         $data = $this->fetchRekapKelasRaw($request);
-        $periode = $request->input('periode') ?: now()->format('Y-m');
 
-        $pdf = Pdf::loadView('admin.laporan.export.rekap-kelas-pdf', [
-            'data' => $data,
-            'periode' => $periode,
-        ])->setPaper('A4', 'portrait');
+        $periode = $request->input('periode')
+            ?: now()->format('Y-m');
 
-        return $pdf->download('rekap_hafalan_kelas_' . $periode . '.pdf');
+        $summary = [
+            'total_kelas' => $data->count(),
+
+            'total_setoran' => $data->sum('total_setor'),
+
+            'avg_nilai' => round(
+                $data->whereNotNull('rata_nilai')
+                    ->avg('rata_nilai'),
+                2
+            ),
+
+            'total_santri' => $data->sum('jumlah_santri'),
+        ];
+
+        $topKelas = $data
+            ->whereNotNull('rata_nilai')
+            ->sortByDesc('rata_nilai')
+            ->take(10)
+            ->values();
+
+        $pdf = Pdf::loadView(
+            'admin.laporan.export.rekap-kelas-pdf',
+            compact(
+                'data',
+                'periode',
+                'summary',
+                'topKelas'
+            )
+        )
+            ->setPaper('A4', 'portrait');
+
+        return $pdf->download(
+            'rekap_hafalan_kelas_' . $periode . '.pdf'
+        );
     }
 
     public function exportMusyrifPdf(Request $request)
     {
         $data = $this->fetchRekapMusyrifRaw($request);
-        $periode = $request->input('periode') ?: now()->format('Y-m');
 
-        $pdf = Pdf::loadView('admin.laporan.export.rekap-musyrif-pdf', [
-            'data' => $data,
-            'periode' => $periode,
-        ])->setPaper('A4', 'portrait');
+        $periode = $request->input('periode')
+            ?: now()->format('Y-m');
 
-        return $pdf->download('rekap_hafalan_musyrif_' . $periode . '.pdf');
+        $summary = [
+            'total_musyrif' => $data->count(),
+
+            'total_setoran' => $data->sum('total_setor'),
+
+            'avg_nilai' => round(
+                $data->whereNotNull('rata_nilai')
+                    ->avg('rata_nilai'),
+                2
+            ),
+
+            'total_santri' => $data->sum('jumlah_santri'),
+        ];
+
+        $topMusyrif = $data
+            ->whereNotNull('rata_nilai')
+            ->sortByDesc('rata_nilai')
+            ->take(10)
+            ->values();
+
+        $pdf = Pdf::loadView(
+            'admin.laporan.export.rekap-musyrif-pdf',
+            compact(
+                'data',
+                'periode',
+                'summary',
+                'topMusyrif'
+            )
+        )
+            ->setPaper('A4', 'portrait');
+
+        return $pdf->download(
+            'rekap_hafalan_musyrif_' . $periode . '.pdf'
+        );
     }
 }

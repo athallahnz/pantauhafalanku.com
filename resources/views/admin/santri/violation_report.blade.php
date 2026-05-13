@@ -133,10 +133,17 @@
                     {{ $startDate->translatedFormat('d M Y') }} — {{ $endDate->translatedFormat('d M Y') }}
                 </p>
             </div>
-            <div class="col-md-6 text-md-end">
-                <button onclick="window.print()" class="btn btn-white border rounded-pill px-4 shadow-sm">
-                    <i class="bi bi-printer me-2"></i>Cetak
-                </button>
+            <div class="col-md-6 text-md-end d-flex gap-2 justify-content-md-end">
+
+                <a href="{{ route('santri.master.violation.export.excel', request()->query()) }}" target="_blank"
+                    class="btn btn-outline-success px-3 rounded-pill fw-bold">
+                    <i class="bi bi-file-earmark-excel me-2"></i>Excel
+                </a>
+
+                <a href="{{ route('santri.master.violation.export.pdf', request()->query()) }}" target="_blank"
+                    class="btn btn-danger text-white rounded-pill px-3 fw-bold">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>PDF
+                </a>
             </div>
         </div>
 

@@ -342,6 +342,12 @@ Route::prefix('santri-master')
 
         Route::get('/get-by-kelas/{kelas_id}', [AdminSantriController::class, 'getByKelas'])->name('get_by_kelas');
 
+
+        Route::get('/violation-report/export/excel', [AdminSantriController::class, 'exportExcel'])
+            ->name('violation.export.excel');
+
+        Route::get('/violation-report/export/pdf', [AdminSantriController::class, 'exportPdf'])
+            ->name('violation.export.pdf');
         /* | 2. RUTE IMPORT
         */
         Route::post('/import/upload', [AdminSantriController::class, 'importUpload'])->name('import.upload');
