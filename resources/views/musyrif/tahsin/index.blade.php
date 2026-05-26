@@ -98,7 +98,6 @@
         @media (max-width: 767.98px) {
             .kpi-value {
                 font-size: 1.5rem !important;
-                /* Sedikit dikecilkan dari ukuran Desktop */
             }
 
             .kpi-icon {
@@ -159,9 +158,6 @@
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
 
-        /* ==========================================================
-                                                                                                                                   MODAL GUIDE STYLES
-                                                                                                                                ========================================================== */
         .guide-step {
             position: relative;
             border-left: 3px solid var(--cui-info);
@@ -185,9 +181,7 @@
             font-weight: bold;
         }
 
-        /* ==========================================================
-                                                                                                                                   FAB (FLOATING ACTION BUTTON) STYLES
-                                                                                                                                ========================================================== */
+        /* FAB (FLOATING ACTION BUTTON) STYLES */
         .fab-group-wrapper {
             position: fixed;
             bottom: 30px;
@@ -195,35 +189,28 @@
             z-index: 1050;
             display: flex;
             align-items: flex-end;
-            /* Rata bawah */
             justify-content: flex-end;
             gap: 15px;
             pointer-events: none;
-            /* Agar area kosong tidak menghalangi tabel */
         }
 
         .fab-left,
         .fab-right {
             pointer-events: auto;
-            /* Kembalikan pointer events untuk tombol */
         }
 
-        /* Tumpukan tombol utama di kanan */
         .fab-right {
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            /* Rata kanan */
             gap: 12px;
         }
 
-        /* Posisi tombol info di kiri (Desktop: bersebelahan dengan grup kanan) */
         .fab-left {
             position: relative;
             display: flex;
             align-items: flex-end;
             margin-bottom: 4px;
-            /* Penyesuaian visual agar sejajar */
         }
 
         .btn-fab-main {
@@ -296,16 +283,41 @@
             color: #fff;
         }
 
-        /* ==========================================================
-                                                                                                                                   MOBILE RESPONSIVE (Pojok Kiri & Pojok Kanan)
-                                                                                                                                ========================================================== */
+        /* CUSTOM CHECKBOX LIST CONTAINER FOR MATERI */
+        .materi-checkbox-container {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid var(--cui-border-color, #d8dbe0);
+            border-radius: 12px;
+            padding: 12px;
+            background-color: var(--cui-body-bg);
+        }
+
+        .materi-item-box {
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            border: 1px solid transparent;
+        }
+
+        .materi-item-box:hover {
+            background-color: var(--cui-tertiary-bg, #f8f9fa);
+        }
+
+        .materi-item-box.selected-item {
+            background-color: rgba(111, 66, 193, 0.08);
+            border-color: rgba(111, 66, 193, 0.2);
+        }
+
         @media (max-width: 768px) {
             .fab-group-wrapper {
                 position: static;
                 display: block;
             }
 
-            /* Tombol Info & Bubble pindah ke pojok KIRI bawah */
             .fab-left {
                 position: fixed;
                 left: 20px;
@@ -320,7 +332,6 @@
                 font-size: 1.3rem;
             }
 
-            /* Tombol Utama tetap di KANAN bawah, menumpuk rapi */
             .fab-right {
                 position: fixed;
                 right: 20px;
@@ -331,7 +342,6 @@
                 gap: 12px;
             }
 
-            /* Ubah tombol utama jadi bulat (icon saja) di Mobile */
             .btn-fab-main {
                 width: 60px;
                 height: 60px;
@@ -348,7 +358,6 @@
                 font-size: 1.8rem;
             }
 
-            /* Penyesuaian Bubble di HP */
             .help-bubble {
                 bottom: 75px;
                 left: 0px;
@@ -360,7 +369,6 @@
                 left: 25px;
             }
 
-            /* Styling Tabs Tahsin & Tilawah */
             .nav-tabs .nav-link {
                 color: var(--cui-secondary-color);
                 border-bottom: 3px solid transparent !important;
@@ -385,6 +393,7 @@
         </div>
     </div>
 
+    {{-- KPI Cards Section --}}
     <div class="row g-3 mb-4 px-3 px-md-0">
         <div class="col-12 col-md-6 col-lg-3">
             <div class="card kpi-card h-100 border-0 shadow-sm">
@@ -472,6 +481,7 @@
         </div>
     </div>
 
+    {{-- Main Data Card --}}
     <div class="card main-card spotlight-card shadow-sm border-0">
         <div class="card-header card-header-purple bg-body-tertiary py-3 px-3 px-md-4 border-bottom-0">
             <div
@@ -516,6 +526,7 @@
             </ul>
 
             <div class="tab-content">
+                {{-- Tab Tahsin --}}
                 <div class="tab-pane fade show active p-3 p-md-4" id="tab-tahsin" role="tabpanel">
                     <div class="table-responsive">
                         <table id="tahsin-table" class="table table-hover align-middle w-100 text-nowrap mb-0">
@@ -524,7 +535,8 @@
                                     <th class="border-top-0 ps-3">No.</th>
                                     <th class="border-top-0">Santri</th>
                                     <th class="border-top-0">Buku/Jilid</th>
-                                    <th class="border-top-0">Halaman</th>
+                                    <th class="border-top-0">Halaman/Materi</th>
+                                    <th class="border-top-0">Nilai</th>
                                     <th class="border-top-0">Status</th>
                                     <th class="text-end pe-4 border-top-0">Aksi</th>
                                 </tr>
@@ -534,6 +546,7 @@
                     </div>
                 </div>
 
+                {{-- Tab Tilawah --}}
                 <div class="tab-pane fade p-3 p-md-4" id="tab-tilawah" role="tabpanel">
                     <div class="table-responsive">
                         <table id="tilawah-table" class="table table-hover align-middle w-100 text-nowrap mb-0">
@@ -557,6 +570,7 @@
 @endsection
 
 @push('modals')
+    {{-- FAB wrapper --}}
     <div class="fab-group-wrapper">
         <div class="fab-left">
             <div id="bubbleHelp" class="help-bubble">
@@ -565,7 +579,6 @@
                 </div>
                 <div class="bubble-arrow"></div>
             </div>
-
             <button class="btn btn-fab-info" data-coreui-toggle="modal" data-coreui-target="#modalPanduanTahsin">
                 <i class="bi bi-question-circle-fill"></i>
             </button>
@@ -576,7 +589,6 @@
                 <i class="bi bi-journal-bookmark me-md-2"></i>
                 <span class="fab-text">Catat Tilawah</span>
             </button>
-
             <button class="btn btn-primary btn-fab-main shadow" id="btnAddTahsin">
                 <i class="bi bi-book me-md-2"></i>
                 <span class="fab-text">Input Tahsin Masal</span>
@@ -588,7 +600,6 @@
     <div class="modal fade" id="modalPanduanTahsin" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 25px;">
-                {{-- Gunakan bg-body-tertiary agar adaptif di Dark/Light mode --}}
                 <div class="modal-header px-4 bg-body-tertiary border-bottom-0"
                     style="border-top-left-radius: 25px; border-top-right-radius: 25px;">
                     <h5 class="modal-title fw-bold text-adaptive-purple">
@@ -597,52 +608,42 @@
                     <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4 pt-3">
-
-                    {{-- STEP 1: Aturan Tilawah (BARU) --}}
                     <div class="guide-step mb-4" style="border-left-color: #0dcaf0;">
                         <span class="guide-number" style="background: #0dcaf0; color: white;">1</span>
                         <h6 class="fw-bold mb-1 text-info-emphasis">Wajib Input Tilawah Dahulu</h6>
                         <p class="text-muted small mb-0">
-                            Sistem memiliki validasi cerdas. Anda harus mencatat <b>Target Tilawah (Juz)</b>
-                            terlebih dahulu (Klik tombol Hijau <span class="badge bg-success rounded-pill p-2"><i
-                                    class="bi bi-journal-bookmark"></i></span>). Sistem akan otomatis menolak/melewati
-                            santri yang capaian Tilawah-nya belum
-                            memenuhi syarat minimal Jilid Tahsin yang dipilih.
+                            Sistem memiliki validasi cerdas. Anda harus mencatat <b>Target Tilawah (Juz)</b> terlebih
+                            dahulu. Sistem akan otomatis menolak/melewati santri yang capaian Tilawah-nya belum memenuhi
+                            syarat minimal Jilid Tahsin yang dipilih.
                         </p>
                     </div>
 
-                    {{-- STEP 2: Input Tahsin --}}
                     <div class="guide-step mb-4">
                         <span class="guide-number">2</span>
                         <h6 class="fw-bold mb-1 text-adaptive-purple">Input Materi Tahsin Masal</h6>
                         <p class="text-muted small mb-0">
-                            Klik tombol ungu <span class="badge bg-primary rounded-pill p-2"><i
-                                    class="bi bi-book"></i></span>
-                            di pojok kanan bawah. Tetapkan Buku & Halaman hari ini, seluruh santri yang memenuhi syarat
-                            Tilawah akan otomatis tercatat <b>Hadir</b>.
+                            Klik tombol ungu di pojok kanan bawah. Pilih Jilid & Centang materi/halaman berjalan hari ini
+                            (Bisa pilih lebih dari satu materi sekaligus).
                         </p>
                     </div>
 
-                    {{-- STEP 3: Koreksi --}}
                     <div class="guide-step mb-4" style="border-left-color: #ffc107;">
                         <span class="guide-number text-dark" style="background: #ffc107;">3</span>
                         <h6 class="fw-bold mb-1 text-warning-emphasis">Koreksi Absensi Individu</h6>
                         <p class="text-muted small mb-0">
-                            Jika ada santri yang berhalangan (Sakit/Izin/Alpha), klik tombol <b>Edit (Pensil)</b> pada baris
-                            nama santri di tabel riwayat untuk mengubah status kehadirannya.
+                            Jika ada santri yang berhalangan, klik tombol <b>Edit (Pensil)</b> pada baris nama santri di
+                            tabel riwayat untuk mengubah status kehadirannya.
                         </p>
                     </div>
 
-                    {{-- STEP 4: Pantau --}}
                     <div class="guide-step" style="border-left-color: #198754; margin-bottom: 0;">
                         <span class="guide-number" style="background: #198754; color: white;">4</span>
                         <h6 class="fw-bold mb-1 text-success">Pantau Progres</h6>
                         <p class="text-muted small mb-0">
-                            Gunakan tombol <b>Detail (Mata)</b> untuk melihat riwayat spesifik, atau klik nama santri untuk
-                            melihat halaman analitik dan <i>timeline</i> lengkap mereka.
+                            Gunakan tombol <b>Detail (Mata)</b> untuk melihat riwayat spesifik, catatan khusus, dan evaluasi
+                            pengajar.
                         </p>
                     </div>
-
                 </div>
                 <div class="modal-footer border-0 p-4 pt-0">
                     <button type="button" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm"
@@ -652,45 +653,47 @@
         </div>
     </div>
 
-    {{-- MODAL INPUT MASAL --}}
+    {{-- MODAL INPUT MASAL (TAHSIN) - FULLY DARK/LIGHT COMPATIBLE --}}
     <div class="modal fade" id="modalTahsin" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <form id="formTahsin" novalidate>
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <form id="formTahsin" class="w-100" novalidate>
                 @csrf
-                <div class="modal-content shadow-lg">
-                    <div class="modal-header px-4">
-                        <h5 class="modal-title fw-bold text-adaptive-purple"><i class="bi bi-people-fill me-2"></i>Materi
-                            Hari Ini</h5>
-                        <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal"></button>
+                <div class="modal-content border-0 shadow-lg" style="border-radius: 24px;">
+                    <div class="modal-header px-4 py-3 border-0">
+                        <h5 class="modal-title fw-bold text-primary"><i class="bi bi-people-fill me-2"></i>Materi Hari Ini
+                        </h5>
+                        <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                     </div>
+
                     <div class="modal-body p-4">
-                        <div class="alert alert-warning border-0 rounded-4 shadow-sm mb-4 small">
+                        {{-- Alert menggunakan bg-warning-subtle agar kontrasnya pas di kedua mode --}}
+                        <div
+                            class="alert alert-warning border-0 rounded-4 shadow-sm mb-4 bg-warning-subtle text-warning-emphasis">
                             <div class="d-flex align-items-start">
-                                <i class="bi bi-exclamation-triangle-fill text-warning fs-4 me-3 mt-1"></i>
-                                <div>
-                                    <strong class="text-dark d-block mb-1">Validasi Syarat Tilawah</strong>
-                                    Pastikan Anda sudah mencatat <b>Tilawah</b> terlebih dahulu. Sistem akan
-                                    menolak/melewati santri yang capaian Tilawahnya belum memenuhi standar Jilid/Buku Tahsin
-                                    yang dipilih.
-                                </div>
+                                <i class="bi bi-info-circle-fill fs-5 me-3 mt-1"></i>
+                                <small>Sistem akan otomatis melewati santri yang belum memenuhi syarat Juz Tilawah.</small>
                             </div>
                         </div>
 
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">BUKU / JILID</label>
-                                <select name="buku" id="buku" class="form-select bg-body-tertiary border-0"
-                                    required>
-                                    <option value="">-- Pilih --</option>
-                                    <option value="ummi_1">Ummi Jilid 1</option>
-                                    <option value="ummi_2">Ummi Jilid 2</option>
-                                    <option value="ummi_3">Ummi Jilid 3</option>
-                                    <option value="gharib_1">Gharib 1</option>
-                                    <option value="gharib_2">Gharib 2</option>
-                                    <option value="tajwid">Tajwid</option>
-                                </select>
-
-                                <div id="eligibility-container" class="mt-3 p-2 bg-light rounded-3 border"
+                        <div class="row g-4">
+                            {{-- KOLOM KIRI --}}
+                            <div class="col-12 col-md-5">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-body-secondary text-uppercase">Buku /
+                                        Jilid</label>
+                                    <select name="buku" id="buku"
+                                        class="form-select form-select-lg bg-body-tertiary border-0 text-body" required>
+                                        <option value="">-- Pilih Buku --</option>
+                                        <option value="ummi_1">Ummi Jilid 1</option>
+                                        <option value="ummi_2">Ummi Jilid 2</option>
+                                        <option value="ummi_3">Ummi Jilid 3</option>
+                                        <option value="gharib_1">Gharib Jilid 1</option>
+                                        <option value="gharib_2">Gharib Jilid 2</option>
+                                        <option value="tajwid">Tajwid Ummi</option>
+                                    </select>
+                                </div>
+                                {{-- Eligibility Container --}}
+                                <div id="eligibility-container" class="mt-3 p-3 bg-light rounded-3 border"
                                     style="display: none;">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <small class="fw-bold text-muted"
@@ -704,36 +707,60 @@
                                             class="progress-bar progress-bar-striped progress-bar-animated"
                                             role="progressbar" style="width: 0%;"></div>
                                     </div>
-                                    <small id="elig-warning" class="text-danger fw-bold"
+                                    <small id="elig-warning" class="text-danger fw-bold d-block mt-1"
                                         style="font-size: 10px; display: none; line-height: 1.2;"></small>
+                                </div>
+                                <div class="mt-3">
+                                    <label
+                                        class="form-label small fw-bold text-body-secondary text-uppercase">Nilai</label>
+                                    <select name="nilai_label"
+                                        class="form-select form-select-lg bg-body-tertiary border-0 text-body">
+                                        <option value="">-- Belum Dinilai --</option>
+                                        <option value="mumtaz">ممتاز (Mumtaz)</option>
+                                        <option value="jayyid_jiddan">جيد جدًا (Jayyid Jiddan)</option>
+                                        <option value="jayyid">جيد (Jayyid)</option>
+                                        <option value="mardud">مردود (Mardud)</option>
+                                    </select>
                                 </div>
                             </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">HALAMAN</label>
-                                <select name="halaman" id="halaman" class="form-select bg-body-tertiary border-0"
-                                    required></select>
+                            {{-- KOLOM KANAN --}}
+                            <div class="col-12 col-md-7">
+                                <label
+                                    class="form-label small fw-bold text-body-secondary text-uppercase d-flex justify-content-between mb-3">
+                                    <span>PILIH HALAMAN</span>
+                                    <span id="counter-materi-selected" class="badge bg-primary rounded-pill">0
+                                        Terpilih</span>
+                                </label>
+
+                                <div class="materi-checkbox-container p-3 rounded-4 bg-body-tertiary"
+                                    id="container-materi-checkbox" style="max-height: 280px; overflow-y: auto;">
+                                    <p class="text-body-secondary small text-center my-4">-- Pilih Buku Terlebih Dahulu --
+                                    </p>
+                                </div>
                             </div>
 
                             <div class="col-12">
-                                <label class="form-label small fw-bold">CATATAN UMUM (OPTIONAL)</label>
-                                <textarea name="catatan" class="form-control bg-body-tertiary border-0" rows="2"
-                                    placeholder="Catatan untuk seluruh santri..."></textarea>
+                                <label class="form-label small fw-bold text-body-secondary text-uppercase">Catatan
+                                    Umum</label>
+                                <textarea name="catatan" class="form-control bg-body-tertiary border-0 rounded-4 text-body" rows="2"
+                                    placeholder="Tulis catatan jika perlu..."></textarea>
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer border-0 p-4 pt-0">
-                        <button type="button" class="btn btn-light rounded-pill px-4"
+
+                    <div class="modal-footer border-0 p-4 pt-0 mt-2">
+                        <button type="button" class="btn btn-light rounded-pill px-4 fw-bold"
                             data-coreui-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary rounded-pill px-4 shadow"
-                            id="btnSubmitTahsin">Terapkan Materi</button>
+                        <button type="submit" class="btn btn-primary text-white rounded-pill px-4 shadow-sm fw-bold"
+                            id="btnSubmitTilawah">Simpan Tahsin</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
-    {{-- MODAL EDIT STATUS --}}
+    {{-- MODAL EDIT STATUS TAHSIN --}}
     <div class="modal fade" id="modalEditTahsin" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form id="formEditTahsin">
@@ -744,11 +771,9 @@
                         <h6 class="modal-title fw-bold text-adaptive-purple">
                             <i class="bi bi-pencil-square me-2"></i>Update Kehadiran Individu
                         </h6>
-                        {{-- Hapus btn-close-white agar icon close otomatis adaptif (hitam di light, putih di dark) --}}
                         <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                     </div>
                     <div class="modal-body p-4 pt-2">
-                        {{-- Gunakan bg-body-tertiary agar otomatis menyesuaikan gelap/terang --}}
                         <div class="text-center p-3 mb-4 rounded-4 bg-body-tertiary border-0 shadow-sm">
                             <h6 class="fw-bold mb-0 text-primary" id="edit_nama_santri"></h6>
                             <small class="text-muted d-block mt-1" id="edit_info_materi"></small>
@@ -763,13 +788,24 @@
                                 <option value="alpha" class="text-danger">Alpha</option>
                             </select>
                         </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">NILAI MATERI</label>
+                            <select name="nilai_label" id="edit_nilai_label"
+                                class="form-select bg-body-tertiary border-0 fw-bold" style="font-size: 1.05rem;">
+                                <option value="">-- Belum Dinilai --</option>
+                                <option value="mumtaz" class="text-success">ممتاز (Mumtaz)</option>
+                                <option value="jayyid_jiddan" class="text-primary">جيد جدًا (Jayyid Jiddan)</option>
+                                <option value="jayyid" class="text-info">جيد (Jayyid)</option>
+                                <option value="mardud" class="text-danger">مردود (Mardud)</option>
+                            </select>
+                        </div>
                         <div class="mb-0">
                             <label class="form-label small fw-bold">CATATAN KHUSUS</label>
                             <textarea name="catatan" id="edit_catatan" class="form-control bg-body-tertiary border-0" rows="2"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer border-0 p-4 pt-0">
-                        {{-- Tombol batal dibuat adaptif --}}
                         <button type="button"
                             class="btn btn-secondary bg-body-tertiary border-0 text-body rounded-pill px-4"
                             data-coreui-dismiss="modal">Batal</button>
@@ -781,14 +817,15 @@
         </div>
     </div>
 
-    {{-- MODAL DETAIL --}}
+    {{-- MODAL DETAIL TAHSIN (REVAMPED FOR LIGHT/DARK THEME) --}}
     <div class="modal fade" id="modalDetailTahsin" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg overflow-hidden" style="border-radius: 28px;">
-                {{-- Ganti hardcoded linear-gradient menjadi bg-body-tertiary agar aman di Dark Mode --}}
+
+                {{-- HEADER --}}
                 <div class="p-4 text-center bg-body-tertiary border-bottom">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                        <span class="badge rounded-pill bg-dark px-3 py-2" id="det_status_badge"
+                        <span class="badge rounded-pill px-3 py-2 shadow-sm" id="det_status_badge"
                             style="font-size: 10px; letter-spacing: 1px;"></span>
                         <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                     </div>
@@ -797,30 +834,38 @@
                         id="det_tanggal_label"></p>
                 </div>
 
+                {{-- BODY --}}
                 <div class="modal-body p-4">
-                    {{-- Ganti bg-light border-white menjadi bg-body-tertiary border-0 --}}
+
+                    {{-- 1. Info Santri --}}
                     <div class="d-flex align-items-center mb-4 p-3 rounded-4 bg-body-tertiary border-0 shadow-sm">
-                        {{-- Ganti bg-white menjadi bg-body agar membaur natural di dark mode --}}
                         <div class="flex-shrink-0 bg-body rounded-circle d-flex align-items-center justify-content-center shadow-sm"
                             style="width: 50px; height: 50px;">
                             <i class="bi bi-person-fill text-primary fs-4"></i>
                         </div>
                         <div class="ms-3">
-                            <h6 class="fw-bold mb-0" id="det_santri_nama"></h6>
+                            <h6 class="fw-bold mb-0 text-body" id="det_santri_nama"></h6>
                             <small class="text-muted">Santri Binaan</small>
                         </div>
                     </div>
 
-                    {{-- bg-primary-subtle sudah support dark mode bawaan Bootstrap 5.3 --}}
-                    <div class="p-3 rounded-4 border-start border-primary border-4 bg-primary-subtle bg-opacity-10">
-                        <small class="fw-bold text-primary d-block mb-1" style="font-size: 10px;">
+                    {{-- 2. Nilai Capaian (Menggunakan bg-body-secondary agar adaptif di Dark Mode) --}}
+                    <div class="mb-4 p-3 rounded-4 bg-body-secondary border-0 text-center shadow-sm">
+                        <small class="fw-bold text-muted d-block mb-2" style="letter-spacing: 1px;">NILAI CAPAIAN</small>
+                        <h5 class="mb-0 fw-bold" id="det_nilai_label"></h5>
+                    </div>
+
+                    {{-- 3. Evaluasi Pengajar --}}
+                    <div class="p-3 rounded-4 border-start border-primary border-4 bg-primary-subtle">
+                        <small class="fw-bold text-primary d-block mb-2" style="font-size: 10px; letter-spacing: 0.5px;">
                             <i class="bi bi-chat-left-text-fill me-1"></i> EVALUASI PENGAJAR
                         </small>
-                        {{-- Ganti text-dark menjadi text-body agar berubah putih saat dark mode --}}
                         <p class="small mb-0 fst-italic text-body text-opacity-75" id="det_catatan_val"></p>
                     </div>
+
                 </div>
 
+                {{-- FOOTER --}}
                 <div class="modal-footer border-0 p-4 pt-0">
                     <button type="button" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm"
                         data-coreui-dismiss="modal">Tutup Detail</button>
@@ -880,9 +925,7 @@
                         <button type="button" class="btn btn-light rounded-pill px-4 fw-bold"
                             data-coreui-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-success text-white rounded-pill px-4 shadow-sm fw-bold"
-                            id="btnSubmitTilawah">
-                            Simpan Tilawah
-                        </button>
+                            id="btnSubmitTilawah">Simpan Tilawah</button>
                     </div>
                 </div>
             </form>
@@ -949,7 +992,6 @@
                     <p class="text-muted small fw-bold mb-0 text-uppercase" style="letter-spacing: 2px;"
                         id="det_tilawah_tanggal_label"></p>
                 </div>
-
                 <div class="modal-body p-4">
                     <div class="d-flex align-items-center mb-4 p-3 rounded-4 bg-body-tertiary border-0 shadow-sm">
                         <div class="flex-shrink-0 bg-body rounded-circle d-flex align-items-center justify-content-center shadow-sm"
@@ -961,7 +1003,6 @@
                             <small class="text-muted">Santri Binaan</small>
                         </div>
                     </div>
-
                     <div class="p-3 rounded-4 border-start border-success border-4 bg-success bg-opacity-10">
                         <small class="fw-bold text-success d-block mb-1" style="font-size: 10px;">
                             <i class="bi bi-card-text me-1"></i> DETAIL AYAT & CATATAN
@@ -969,7 +1010,6 @@
                         <p class="small mb-0 fst-italic text-body text-opacity-75" id="det_tilawah_catatan_val"></p>
                     </div>
                 </div>
-
                 <div class="modal-footer border-0 p-4 pt-0">
                     <button type="button" class="btn btn-success text-white w-100 py-3 rounded-pill fw-bold shadow-sm"
                         data-coreui-dismiss="modal">Tutup Detail</button>
@@ -981,13 +1021,152 @@
 
 @push('scripts')
     <script>
-        const MAP_HALAMAN = {
-            'ummi_1': 40,
-            'ummi_2': 40,
-            'ummi_3': 40,
-            'gharib_1': 28,
-            'gharib_2': 28,
-            'tajwid': 50
+        /**
+         * @typedef {Object} MateriItem
+         * @property {number} halaman
+         * @property {string} materi
+         */
+
+        /**
+         * HARDCODED MAP DATA MATERI (Mencocokkan spreadsheet Ghorib & Tajwid Anda)
+         * @type {Object.<string, MateriItem[]>}
+         */
+        const DATA_MATERI = {
+            'ummi_1': Array.from({
+                length: 40
+            }, (_, i) => ({
+                halaman: i + 1,
+                materi: `Halaman ${i+1}`
+            })),
+            'ummi_2': Array.from({
+                length: 40
+            }, (_, i) => ({
+                halaman: i + 1,
+                materi: `Halaman ${i+1}`
+            })),
+            'ummi_3': Array.from({
+                length: 40
+            }, (_, i) => ({
+                halaman: i + 1,
+                materi: `Halaman ${i+1}`
+            })),
+
+            // Gharib Jilid 1 (Halaman 1 s/d 14 dari file Ghorib.csv)
+            'gharib_1': [{
+                    halaman: 1,
+                    materi: 'Ana'
+                },
+                {
+                    halaman: 2,
+                    materi: 'Anaaba'
+                },
+                {
+                    halaman: 4,
+                    materi: 'Afain / Min naba-in'
+                },
+                {
+                    halaman: 5,
+                    materi: 'Malaa-ihim / Malaa-ihii'
+                },
+                {
+                    halaman: 6,
+                    materi: 'Mi-ataini / Litatsluwa'
+                },
+                {
+                    halaman: 9,
+                    materi: 'Laakinna / Walaakinna'
+                },
+                {
+                    halaman: 10,
+                    materi: 'Addzunuuna'
+                },
+                {
+                    halaman: 12,
+                    materi: 'Tsamuuda'
+                },
+                {
+                    halaman: 13,
+                    materi: 'Salaasila / Qowaariiro'
+                }
+            ],
+
+            // Gharib Jilid 2 (Halaman 15 s/d 26 - Mulai tanda G 2 Yabsuthu)
+            'gharib_2': [{
+                    halaman: 15,
+                    materi: 'Yabsuthu / Basthotan (Shod dibaca Sin)'
+                },
+                {
+                    halaman: 16,
+                    materi: 'Amhumulmushoithiruuna / Bimushoithirin'
+                },
+                {
+                    halaman: 17,
+                    materi: 'Baroo-atun'
+                },
+                {
+                    halaman: 18,
+                    materi: 'Majreeha (Imalah) / Laata-manwna (Isymam)'
+                },
+                {
+                    halaman: 19,
+                    materi: 'Iwajaa_Qoyyiman (Saktah)'
+                },
+                {
+                    halaman: 21,
+                    materi: "Dho'fin-Dho'fan / Aa'jamiyyu (Tashil)"
+                },
+                {
+                    halaman: 22,
+                    materi: 'I-tuunii'
+                },
+                {
+                    halaman: 23,
+                    materi: "Bi'sal-ismu (Naql)"
+                }
+            ],
+
+            // Tajwid Ummi (Dari file Tajwid.csv)
+            'tajwid': [{
+                    halaman: 1,
+                    materi: 'BAB I Hukum nun sukun/tanwin (Idzhar Halqi)'
+                },
+                {
+                    halaman: 2,
+                    materi: 'Id-ghom Bighunnah / Id-ghom Bilaghunnah'
+                },
+                {
+                    halaman: 3,
+                    materi: "Iqlab / Ikhfa' Haqiqi"
+                },
+                {
+                    halaman: 5,
+                    materi: 'BAB II Hukum mim & nun bertasydid / BAB III Hukum mim sukun'
+                },
+                {
+                    halaman: 6,
+                    materi: "Ikhfa' Syafawi / BAB IV Id-ghom Mutamatsilain & Mutajanisain"
+                },
+                {
+                    halaman: 7,
+                    materi: 'Id-ghom Mutaqoribain / BAB V Hukum Lafadz Allah'
+                },
+                {
+                    halaman: 8,
+                    materi: 'BAB VI Hukum Qolqolah / BAB VII Hukum Idzhar Wajib'
+                },
+                {
+                    halaman: 9,
+                    materi: "BAB VII Hukum Ro' (Ro' Tafkhim)"
+                },
+                {
+                    halaman: 10,
+                    materi: "Ro' Tarqiq"
+                },
+                {
+                    halaman: 11,
+                    materi: "BAB VIII Lam Ta'rif (Idzhar Qomariyah & Id-ghom Syamsiyah)"
+                }
+            ]
         };
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -1005,7 +1184,6 @@
             const modalEdit = new coreui.Modal(document.getElementById('modalEditTahsin'));
             const modalDetail = new coreui.Modal(document.getElementById('modalDetailTahsin'));
             const modalTilawah = new coreui.Modal(document.getElementById('modalTilawah'));
-            // Inisialisasi Modal Tilawah tambahan
             const modalEditTilawah = new coreui.Modal(document.getElementById('modalEditTilawah'));
             const modalDetailTilawah = new coreui.Modal(document.getElementById('modalDetailTilawah'));
 
@@ -1083,6 +1261,10 @@
                     {
                         data: 'halaman',
                         name: 'halaman'
+                    },
+                    {
+                        data: 'nilai_format',
+                        name: 'nilai_label'
                     },
                     {
                         data: 'status_label',
@@ -1164,12 +1346,10 @@
             /* =========================================================
                MODAL & FORM LOGIC: TILAWAH MASAL
                ========================================================= */
-            // 1. Ambil data template tilawah saat halaman dimuat
             $.get("{{ route('musyrif.tilawah.progress') }}", function(res) {
                 tilawahTemplates = res.templates;
             });
 
-            // 2. Buka Modal Tilawah
             $('#btnAddTilawah').on('click', function() {
                 $('#formTilawah')[0].reset();
                 $('#formTilawah').find('.is-invalid').removeClass('is-invalid');
@@ -1178,7 +1358,6 @@
                 modalTilawah.show();
             });
 
-            // 3. Dropdown Juz -> Target Bacaan
             $('#juz_tilawah').on('change', function() {
                 const selectedJuz = $(this).val();
                 const $templateSelect = $('#template_tilawah');
@@ -1195,7 +1374,6 @@
                 }
             });
 
-            // 4. Submit Tilawah
             $('#formTilawah').on('submit', function(e) {
                 e.preventDefault();
                 const btn = $('#btnSubmitTilawah');
@@ -1210,7 +1388,7 @@
                     success: res => {
                         modalTilawah.hide();
                         btn.prop('disabled', false).html('Simpan Tilawah');
-                        tableTilawah.ajax.reload(); // Reload tabel tilawah
+                        tableTilawah.ajax.reload();
 
                         if (window.AppAlert) AppAlert.success(res.message);
                         else Swal.fire({
@@ -1240,82 +1418,130 @@
             });
 
             /* =========================================================
-               MODAL & FORM LOGIC: TAHSIN MASAL
+               MODAL & FORM LOGIC: TAHSIN MASAL (CHECKBOX MULTIPLE)
                ========================================================= */
             $('#btnAddTahsin').on('click', () => {
                 $('#formTahsin')[0].reset();
                 $('#formTahsin').find('.is-invalid').removeClass('is-invalid');
-                $('#halaman').html('<option value="">-- Pilih Buku Dulu --</option>');
+                $('#container-materi-checkbox').html(
+                    '<p class="text-muted small text-center my-4">-- Silakan Pilih Buku/Jilid Terlebih Dahulu --</p>'
+                );
+                $('#counter-materi-selected').text('0 Terpilih').removeClass('bg-primary text-white')
+                    .addClass('bg-secondary-subtle text-secondary');
+                $('#eligibility-container').hide();
                 modalTahsin.show();
             });
 
+            // Handle Perubahan Dropdown Buku -> Render UI Checkbox List Dinamis
             $('#buku').on('change', function() {
-                const buku = $(this).val();
-                const $h = $('#halaman');
+                const bukuKey = $(this).val();
+                const $container = $('#container-materi-checkbox');
 
-                $h.html('<option value="">-- Pilih --</option>');
-                $('#eligibility-container').hide(); // Sembunyikan progress bar dulu
+                $container.empty();
+                $('#counter-materi-selected').text('0 Terpilih').removeClass('bg-primary text-white')
+                    .addClass('bg-secondary-subtle text-secondary');
+                $('#eligibility-container').hide();
 
-                if (buku) {
-                    // 1. Render Pilihan Halaman
-                    if (MAP_HALAMAN[buku]) {
-                        for (let i = 1; i <= MAP_HALAMAN[buku]; i++) {
-                            $h.append(`<option value="${i}">${i}</option>`);
+                if (!bukuKey || !DATA_MATERI[bukuKey]) {
+                    $container.html(
+                        '<p class="text-muted small text-center my-4">-- Silakan Pilih Buku/Jilid Terlebih Dahulu --</p>'
+                    );
+                    return;
+                }
+
+                // Render Hardcoded Checkbox berdasarkan dataset di atas
+                DATA_MATERI[bukuKey].forEach(item => {
+                    $container.append(`
+                        <div class="materi-item-box" id="box-materi-${item.halaman}">
+                            <div class="form-check w-100 cursor-pointer">
+                                <input class="form-check-input checkbox-materi-item" type="checkbox"
+                                    name="halaman[]"
+                                    value="${item.halaman}"
+                                    id="materi-${item.halaman}"
+                                    data-materi-name="${item.materi}">
+                                <label class="form-check-label d-block cursor-pointer fw-semibold w-100 text-body" for="materi-${item.halaman}">
+                                    <span class="text-primary me-2">[Hal. ${item.halaman}]</span> ${item.materi}
+                                </label>
+                            </div>
+                        </div>
+                    `);
+                });
+
+                // Fetch Eligibility Check (Sinkronisasi Validasi Tilawah)
+                $.ajax({
+                    url: "{{ route('musyrif.tahsin.check') }}",
+                    type: "GET",
+                    data: {
+                        buku: bukuKey
+                    },
+                    beforeSend: function() {
+                        $('#eligibility-container').fadeIn('fast');
+                        $('#elig-progress').removeClass('bg-success bg-warning').addClass(
+                            'bg-primary').css('width', '100%');
+                        $('#req-juz').text('...');
+                        $('#elig-warning').hide();
+                    },
+                    success: function(res) {
+                        $('#req-juz').text(res.syarat_juz);
+                        $('#elig-count').text(res.eligible);
+                        $('#elig-total').text(res.total);
+
+                        let pct = res.total > 0 ? (res.eligible / res.total) * 100 : 0;
+                        $('#elig-progress').css('width', pct + '%');
+
+                        if (res.eligible < res.total) {
+                            $('#elig-progress').removeClass('bg-primary bg-success').addClass(
+                                'bg-warning');
+                            let selisih = res.total - res.eligible;
+                            $('#elig-warning').text(
+                                `*Ada ${selisih} santri yang otomatis terlewati karena Tilawah belum sampai Juz ${res.syarat_juz}.`
+                            ).slideDown('fast');
+                        } else {
+                            $('#elig-progress').removeClass('bg-primary bg-warning').addClass(
+                                'bg-success');
+                            $('#elig-warning').hide();
                         }
                     }
+                });
+            });
 
-                    // 2. Fetch Eligibility Check (Kesesuaian Tilawah)
-                    $.ajax({
-                        url: "{{ route('musyrif.tahsin.check') }}",
-                        type: "GET",
-                        data: {
-                            buku: buku
-                        },
-                        beforeSend: function() {
-                            $('#eligibility-container').fadeIn('fast');
-                            $('#elig-progress').removeClass('bg-success bg-warning').addClass(
-                                'bg-primary').css('width', '100%');
-                            $('#req-juz').text('...');
-                            $('#elig-warning').hide();
-                        },
-                        success: function(res) {
-                            $('#req-juz').text(res.syarat_juz);
-                            $('#elig-count').text(res.eligible);
-                            $('#elig-total').text(res.total);
+            // Efek Visual Klik Highlight Row & Realtime Badge Counter
+            $(document).on('change', '.checkbox-materi-item', function() {
+                const halId = $(this).val();
+                const isChecked = $(this).is(':checked');
+                const $box = $(`#box-materi-${halId}`);
 
-                            // Hitung persentase bar
-                            let pct = res.total > 0 ? (res.eligible / res.total) * 100 : 0;
-                            $('#elig-progress').css('width', pct + '%');
+                if (isChecked) {
+                    $box.addClass('selected-item');
+                } else {
+                    $box.removeClass('selected-item');
+                }
 
-                            // Logika Warna dan Peringatan Bawah
-                            if (res.eligible < res.total) {
-                                $('#elig-progress').removeClass('bg-primary bg-success')
-                                    .addClass('bg-warning');
-                                let selisih = res.total - res.eligible;
-                                $('#elig-warning').text(
-                                    `*Ada ${selisih} santri yang otomatis terlewati karena Tilawah belum sampai Juz ${res.syarat_juz}.`
-                                ).slideDown('fast');
-                            } else {
-                                $('#elig-progress').removeClass('bg-primary bg-warning')
-                                    .addClass('bg-success');
-                                $('#elig-warning').hide();
-                            }
-                        }
-                    });
+                // Update Counter
+                const totalChecked = $('.checkbox-materi-item:checked').length;
+                const $badge = $('#counter-materi-selected');
+                $badge.text(`${totalChecked} Terpilih`);
+
+                if (totalChecked > 0) {
+                    $badge.removeClass('bg-secondary-subtle text-secondary').addClass(
+                        'bg-primary text-white');
+                } else {
+                    $badge.removeClass('bg-primary text-white').addClass(
+                        'bg-secondary-subtle text-secondary');
                 }
             });
 
-            // Pastikan reset state progress bar saat tombol Add Tahsin diklik
-            $('#btnAddTahsin').on('click', () => {
-                $('#formTahsin')[0].reset();
-                $('#formTahsin').find('.is-invalid').removeClass('is-invalid');
-                $('#halaman').html('<option value="">-- Pilih Buku Dulu --</option>');
-                $('#eligibility-container').hide(); // Sembunyikan container
-                modalTahsin.show();
-            });
-
+            // Submit AJAX Form Masal Tahsin
             $('#formTahsin').on('submit', function(e) {
                 e.preventDefault();
+
+                // Validasi Client-side: Minimal wajib memilih 1 materi/halaman
+                if ($('.checkbox-materi-item:checked').length === 0 && $('#buku').val() !== "") {
+                    Swal.fire('Perhatian',
+                        'Silakan pilih minimal 1 halaman/materi materi sebelum menyimpan!', 'warning');
+                    return;
+                }
+
                 const btn = $('#btnSubmitTahsin');
                 $(this).find('.is-invalid').removeClass('is-invalid');
                 btn.prop('disabled', true).html(
@@ -1328,35 +1554,25 @@
                     success: res => {
                         modalTahsin.hide();
                         tableTahsin.ajax.reload();
-                        btn.prop('disabled', false).html('Terapkan Materi');
+                        btn.prop('disabled', false).html('Catat Materi');
 
+                        // Swal sekarang dinamis berdasarkan icon dari controller
                         Swal.fire({
-                            icon: res.icon ?? 'success',
-                            title: res.icon === 'warning' ? 'Berhasil Sebagian' :
+                            icon: res.icon, // 'success' atau 'warning'
+                            title: res.icon === 'warning' ? 'Tindakan Selesai' :
                                 'Berhasil!',
                             text: res.message,
-                            timer: res.icon === 'warning' ? undefined : 2000,
-                            showConfirmButton: res.icon === 'warning'
+                            confirmButtonText: 'Tutup'
                         });
                     },
                     error: xhr => {
-                        btn.prop('disabled', false).html('Terapkan Materi');
-                        if (xhr.status === 422) {
-                            const res = xhr.responseJSON;
-                            if (res.message && !res.errors) Swal.fire({
-                                icon: 'warning',
-                                title: 'Perhatian',
-                                text: res.message
-                            });
-                            if (res.errors) $.each(res.errors, (k, v) => $(`[name="${k}"]`)
-                                .addClass('is-invalid'));
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Oops...',
-                                text: 'Terjadi kesalahan pada server.'
-                            });
-                        }
+                        btn.prop('disabled', false).html('Catat Materi');
+                        const res = xhr.responseJSON;
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: res.message || 'Terjadi kesalahan sistem.'
+                        });
                     }
                 });
             });
@@ -1364,13 +1580,13 @@
             /* =========================================================
                CRUD ACTIONS: EDIT & DELETE & DETAIL
                ========================================================= */
-            // --- EDIT STATUS TAHSIN ---
             $(document).on('click', '.btn-edit', function() {
                 const d = $(this).data();
                 $('#edit_id').val(d.id);
                 $('#edit_nama_santri').text(d.santri_nama);
                 $('#edit_info_materi').text(d.buku_label + ' - Halaman ' + d.halaman);
                 $('#edit_status').val(d.status);
+                $('#edit_nilai_label').val(d.nilai_label || ''); // Setel nilai jika ada
                 $('#edit_catatan').val(d.catatan);
                 modalEdit.show();
             });
@@ -1395,7 +1611,7 @@
                 });
             });
 
-            // --- DETAIL TAHSIN ---
+            // 3. Update Event Klik Detail
             $(document).on('click', '.btn-detail', function() {
                 const d = $(this).data();
                 $('#det_santri_nama').text(d.santri_nama);
@@ -1403,6 +1619,17 @@
                 $('#det_tanggal_label').text(d.tanggal_label);
                 $('#det_catatan_val').text(d.catatan || 'Tidak ada catatan khusus.');
 
+                // Format Text Nilai di Modal Detail dengan bahasa Arab
+                const nilaiText = {
+                    'mumtaz': '<span class="text-success fs-4" dir="rtl">ممتاز</span>',
+                    'jayyid_jiddan': '<span class="text-primary fs-4" dir="rtl">جيد جدًا</span>',
+                    'jayyid': '<span class="text-info fs-4" dir="rtl">جيد</span>',
+                    'mardud': '<span class="text-danger fs-4" dir="rtl">مردود</span>',
+                };
+                $('#det_nilai_label').html(nilaiText[d.nilai_label] ||
+                    '<span class="text-muted fst-italic">Belum Dinilai</span>');
+
+                // Setel badge status (sama seperti sebelumnya)
                 const badge = $('#det_status_badge').text(d.status_text.toUpperCase()).removeClass(
                     'bg-success bg-secondary bg-primary bg-danger text-dark');
                 const colorClass = {
@@ -1412,29 +1639,26 @@
                     'alpha': 'bg-danger'
                 } [d.status_text] || 'bg-light text-dark';
                 badge.addClass(colorClass);
+
                 modalDetail.show();
             });
 
-            // --- DELETE TAHSIN & TILAWAH ---
             $(document).on('click', '.btn-delete', function() {
                 handleDelete("{{ url('musyrif/tahsin') }}/" + $(this).data('id'), tableTahsin);
             });
 
             $(document).on('click', '.btn-delete-tilawah', function() {
-                // Pastikan route delete tilawah dibuat di web.php
                 handleDelete("{{ url('musyrif/tilawah') }}/" + $(this).data('id'), tableTilawah);
             });
 
             $('#formEditTilawah').on('submit', function(e) {
                 e.preventDefault();
-
-                // Ambil semua data form, lalu PAKSA tambahkan _method=PUT secara manual
                 let formData = $(this).serialize() + '&_method=PUT';
 
                 $.ajax({
                     url: "{{ url('musyrif/tilawah') }}/" + $('#edit_tilawah_id').val(),
-                    type: 'POST', // Tetap POST, Laravel akan membaca _method=PUT dari formData
-                    data: formData, // Gunakan formData yang sudah dimodifikasi
+                    type: 'POST',
+                    data: formData,
                     success: res => {
                         modalEditTilawah.hide();
                         tableTilawah.ajax.reload(null, false);
@@ -1448,8 +1672,7 @@
                     },
                     error: xhr => {
                         Swal.fire('Gagal!', 'Terjadi kesalahan. Cek log console.', 'error');
-                        console.log(xhr
-                        .responseText); // Untuk mengecek pesan error asli dari Laravel
+                        console.log(xhr.responseText);
                     }
                 });
             });

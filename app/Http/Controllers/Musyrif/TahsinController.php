@@ -101,7 +101,6 @@ class TahsinController extends Controller
             'mayoritasBuku'
         ));
     }
-
     /**
      * DATATABLE (Server Side)
      */
@@ -111,7 +110,8 @@ class TahsinController extends Controller
 
         $query = Tahsin::where('musyrif_id', $musyrif->id)
             ->with(['santri.kelas'])
-            ->select('tahsins.*');
+            ->select('tahsins.*')
+            ->orderBy('tanggal', 'desc');
 
         // Logic Filter Tanggal
         if ($request->filter_tanggal == 'today') {
@@ -125,9 +125,21 @@ class TahsinController extends Controller
         return DataTables::of($query)
             ->addIndexColumn()
             ->addColumn('santri', fn($row) => $row->santri->nama)
-            ->addColumn('kelas', fn($row) => $row->santri->kelas->nama_kelas ?? '-')
-            ->addColumn('buku_label', fn($row) => $row->buku_label)
-            ->addColumn('tanggal', fn($row) => $row->tanggal->format('d F Y'))
+            ->addColumn('buku_label', fn($row) => $row->buku_label ?? ucfirst(str_replace('_', ' ', $row->buku)))
+            ->addColumn('halaman', fn($row) => 'Hal. ' . $row->halaman)
+            ->addColumn('tanggal', fn($row) => \Carbon\Carbon::parse($row->tanggal)->format('d M Y'))
+            ->addColumn('nilai_format', function ($row) {
+                if (!$row->nilai_label) return '<span class="text-muted small fst-italic">-</span>';
+
+                // Menggunakan bahasa Arab dengan tambahan fs-6 agar huruf hijaiyah terbaca jelas
+                $badges = [
+                    'mumtaz'        => '<span class="badge bg-success-subtle text-success border border-success fs-6">ممتاز</span>',
+                    'jayyid_jiddan' => '<span class="badge bg-primary-subtle text-primary border border-primary fs-6">جيد جدًا</span>',
+                    'jayyid'        => '<span class="badge bg-info-subtle text-info border border-info fs-6">جيد</span>',
+                    'mardud'        => '<span class="badge bg-danger-subtle text-danger border border-danger fs-6">مردود</span>',
+                ];
+                return $badges[$row->nilai_label] ?? '-';
+            })
             ->addColumn('status_label', function ($row) {
                 $color = match ($row->status) {
                     'hadir' => 'success',
@@ -140,13 +152,14 @@ class TahsinController extends Controller
             })
             ->addColumn('aksi', function ($row) {
                 return '
-        <div class="d-flex gap-2 flex-nowrap">
+        <div class="d-flex gap-2 flex-nowrap justify-content-end">
             <button type="button" class="btn btn-sm btn-info btn-detail"
                 data-santri_nama="' . e($row->santri->nama) . '"
-                data-buku_label="' . e($row->buku_label) . '"
+                data-buku_label="' . e($row->buku_label ?? ucfirst(str_replace('_', ' ', $row->buku))) . '"
                 data-halaman="' . e($row->halaman) . '"
-                data-tanggal_label="' . $row->tanggal->format('d M Y') . '"
+                data-tanggal_label="' . \Carbon\Carbon::parse($row->tanggal)->format('d M Y') . '"
                 data-status_text="' . $row->status . '"
+                data-nilai_label="' . $row->nilai_label . '"
                 data-catatan="' . e($row->catatan ?? 'Tidak ada catatan.') . '"
                 data-coreui-toggle="tooltip" title="Lihat Detail">
                 <i class="bi bi-eye text-white"></i>
@@ -156,8 +169,9 @@ class TahsinController extends Controller
                 data-id="' . $row->id . '"
                 data-santri_nama="' . e($row->santri->nama) . '"
                 data-status="' . $row->status . '"
-                data-buku_label="' . e($row->buku_label) . '"
+                data-buku_label="' . e($row->buku_label ?? ucfirst(str_replace('_', ' ', $row->buku))) . '"
                 data-halaman="' . $row->halaman . '"
+                data-nilai_label="' . $row->nilai_label . '"
                 data-catatan="' . e($row->catatan) . '"
                 data-coreui-toggle="tooltip" title="Edit Status">
                 <i class="bi bi-pencil-square"></i>
@@ -170,7 +184,7 @@ class TahsinController extends Controller
             </button>
         </div>';
             })
-            ->rawColumns(['status_label', 'aksi'])
+            ->rawColumns(['status_label', 'nilai_format', 'aksi'])
             ->make(true);
     }
 
@@ -186,7 +200,7 @@ class TahsinController extends Controller
         $santris = Santri::where('musyrif_id', $musyrif->id)->pluck('id');
         $total = $santris->count();
 
-        // Ambil syarat dari konstanta TARGET_TILAWAH yang sudah kita buat sebelumnya
+        // Ambil syarat dari konstanta TARGET_TILAWAH
         $syaratJuz = self::TARGET_TILAWAH[$buku] ?? 1;
 
         $tilawahProgress = DB::table('tilawahs')
@@ -212,31 +226,27 @@ class TahsinController extends Controller
         ]);
     }
 
+    /**
+     * SIMPAN DATA MASAL
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'buku'    => ['required', Rule::in(['ummi_1', 'ummi_2', 'ummi_3', 'gharib_1', 'gharib_2', 'tajwid'])],
-            'halaman' => 'required|integer|min:1',
-            'catatan' => 'nullable|string',
+            'buku'        => ['required', Rule::in(['ummi_1', 'ummi_2', 'ummi_3', 'gharib_1', 'gharib_2', 'tajwid'])],
+            'halaman'     => 'required|array|min:1',
+            'halaman.*'   => 'required|integer',
+            'nilai_label' => 'nullable|in:mumtaz,jayyid_jiddan,jayyid,mardud',
+            'catatan'     => 'nullable|string',
         ]);
 
         try {
             $musyrif = Musyrif::where('user_id', auth()->id())->firstOrFail();
             $tanggal = now()->toDateString();
-
             $santris = Santri::where('musyrif_id', $musyrif->id)->get(['id', 'nama']);
-
-            if ($santris->isEmpty()) {
-                return response()->json([
-                    'ok' => false,
-                    'message' => 'Gagal! Anda belum memiliki santri binaan. Silakan hubungi admin.'
-                ], 422);
-            }
 
             $bukuTujuan = $validated['buku'];
             $syaratJuz = self::TARGET_TILAWAH[$bukuTujuan] ?? 1;
 
-            // Optimasi: Ambil target Juz tertinggi yang pernah dicapai setiap santri dalam 1 Query
             $tilawahProgress = DB::table('tilawahs')
                 ->join('hafalan_templates', 'tilawahs.hafalan_template_id', '=', 'hafalan_templates.id')
                 ->whereIn('santri_id', $santris->pluck('id'))
@@ -249,63 +259,51 @@ class TahsinController extends Controller
             $skippedNames = [];
 
             foreach ($santris as $santri) {
-                // Cek progress tilawah santri ini
                 $juzDicapai = $tilawahProgress[$santri->id] ?? 0;
 
-                // Jika belum mencapai syarat, lewati santri ini dan catat namanya
                 if ($juzDicapai < $syaratJuz) {
                     $skippedNames[] = $santri->nama;
                     continue;
                 }
 
-                Tahsin::updateOrCreate(
-                    [
-                        'santri_id' => $santri->id,
-                        'tanggal'   => $tanggal,
-                    ],
-                    [
-                        'musyrif_id' => $musyrif->id,
-                        'status'     => 'hadir',
-                        'buku'       => $validated['buku'],
-                        'halaman'    => $validated['halaman'],
-                        'catatan'    => $validated['catatan'],
-                    ]
-                );
+                foreach ($validated['halaman'] as $hal) {
+                    Tahsin::updateOrCreate(
+                        ['santri_id' => $santri->id, 'tanggal' => $tanggal, 'buku' => $bukuTujuan, 'halaman' => $hal],
+                        ['musyrif_id' => $musyrif->id, 'status' => 'hadir', 'nilai_label' => $validated['nilai_label'] ?? null, 'catatan' => $validated['catatan']]
+                    );
+                }
                 $insertedCount++;
             }
 
-            // Bangun pesan respon dinamis
-            $message = "Berhasil! Materi diterapkan ke {$insertedCount} santri.";
-            $icon = 'success';
-
-            if (count($skippedNames) > 0) {
-                $icon = 'warning';
-                $message .= "\nNamun, ada " . count($skippedNames) . " santri dilewati karena target Tilawah belum mencapai Juz {$syaratJuz}:\n" . implode(', ', $skippedNames);
-            }
-
-            // Jika tidak ada satupun yang memenuhi syarat
+            // LOGIKA NOTIFIKASI BARU
             if ($insertedCount === 0) {
                 return response()->json([
                     'ok' => false,
+                    'icon' => 'error',
                     'message' => "Gagal! Semua santri belum mencapai target Tilawah Juz {$syaratJuz}."
                 ], 422);
             }
 
-            return response()->json([
-                'ok' => true,
-                'icon' => $icon,
-                'message' => $message
-            ]);
+            if (count($skippedNames) > 0) {
+                return response()->json([
+                    'ok' => true,
+                    'icon' => 'warning', // Gunakan warning untuk skipped
+                    'message' => "Berhasil untuk {$insertedCount} santri. Namun, " . count($skippedNames) . " santri dilewati (Tilawah belum mencapai Juz {$syaratJuz})."
+                ]);
+            }
+
+            return response()->json(['ok' => true, 'icon' => 'success', 'message' => "Berhasil! Materi diterapkan ke semua santri."]);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Terjadi kesalahan sistem.'], 500);
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
 
     public function update(Request $request, Tahsin $tahsin)
     {
         $validated = $request->validate([
-            'status'  => 'required|in:hadir,izin,sakit,alpha',
-            'catatan' => 'nullable|string',
+            'status'      => 'required|in:hadir,izin,sakit,alpha',
+            'nilai_label' => 'nullable|in:mumtaz,jayyid_jiddan,jayyid,mardud', // VALIDASI NILAI BARU
+            'catatan'     => 'nullable|string',
         ]);
 
         $tahsin->update($validated);
@@ -314,12 +312,25 @@ class TahsinController extends Controller
 
     public function destroy(Tahsin $tahsin)
     {
-        // Cari data musyrif berdasarkan user yang sedang login
-        $musyrif = Musyrif::where('user_id', Auth::id())->first();
+        // 1. Dapatkan user ID yang sedang login
+        $userId = Auth::id();
 
-        // Pastikan musyrif ditemukan dan ID-nya cocok dengan pemilik data tahsin
-        if (!$musyrif || $tahsin->musyrif_id !== $musyrif->id) {
-            return response()->json(['message' => 'Unauthorized! Data ini bukan milik Anda.'], 403);
+        // 2. Cari Musyrif berdasarkan user_id
+        $musyrif = Musyrif::where('user_id', $userId)->first();
+
+        // 3. Debugging: Cek apakah musyrif ketemu dan apakah ID-nya cocok
+        if (!$musyrif) {
+            return response()->json(['message' => 'Unauthorized! Data Musyrif tidak ditemukan untuk user ini.'], 403);
+        }
+
+        if ((int)$tahsin->musyrif_id !== (int)$musyrif->id) {
+            // Log ini akan sangat membantu di file laravel.log
+            \Log::warning("Percobaan hapus ilegal. User: $userId, Tahsin ID: {$tahsin->id}, Musyrif Target: {$tahsin->musyrif_id}, Musyrif Login: {$musyrif->id}");
+
+            return response()->json([
+                'message' => 'Unauthorized! Data ini bukan milik Anda.',
+                'debug' => 'Musyrif ID mismatch'
+            ], 403);
         }
 
         $tahsin->delete();
@@ -442,7 +453,7 @@ class TahsinController extends Controller
             ->make(true);
     }
 
-    // TAMBAHKAN METHOD BARU INI UNTUK TIMELINE TILAWAH:
+    // TIMELINE TILAWAH:
     public function timelineTilawah(Request $request, Santri $santri)
     {
         if (!$request->ajax()) abort(404);

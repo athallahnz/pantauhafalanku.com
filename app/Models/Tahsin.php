@@ -17,6 +17,7 @@ class Tahsin extends Model
         'status',
         'buku',
         'halaman',
+        'nilai_label',
         'catatan',
     ];
 
