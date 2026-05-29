@@ -371,18 +371,21 @@ Route::prefix('santri-master')
 | SANTRI
 |--------------------------------------------------------------------------
 */
-// routes/web.php
 
 Route::prefix('santri')
     ->name('santri.')
-    ->middleware(['auth', 'role:santri', 'approved']) // pastikan middleware 'approved' sudah ditambahkan di Kernel.php
+    ->middleware(['auth', 'role:santri', 'approved'])
     ->group(function () {
         Route::get('/dashboard', [SantriDashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/ringkasan-data', [SantriDashboardController::class, 'ringkasanData'])->name('dashboard.ringkasan-data');
         Route::get('/dashboard/timeline-data', [SantriDashboardController::class, 'timelineData'])->name('dashboard.timeline-data');
 
+        // Menyatukan seluruh progress di halaman Hafalan
         Route::get('/hafalan', [SantriHafalanController::class, 'index'])->name('hafalan.index');
+        Route::get('/hafalan/export-pdf', [SantriHafalanController::class, 'exportPdf'])->name('hafalan.export-pdf');
+
+        // Endpoint DataTables
         Route::get('/hafalan/timeline', [SantriHafalanController::class, 'timeline'])->name('hafalan.timeline');
-        Route::get('/hafalan/export-pdf', [SantriHafalanController::class, 'exportPdf'])
-            ->name('hafalan.export-pdf');
+        Route::get('/tahsin/timeline', [SantriHafalanController::class, 'tahsinTimeline'])->name('tahsin.timeline');
+        Route::get('/tilawah/timeline', [SantriHafalanController::class, 'tilawahTimeline'])->name('tilawah.timeline');
     });

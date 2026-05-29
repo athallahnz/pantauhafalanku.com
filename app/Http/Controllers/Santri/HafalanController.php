@@ -4,60 +4,60 @@ namespace App\Http\Controllers\Santri;
 
 use App\Http\Controllers\Controller;
 use App\Models\Hafalan;
-use App\Models\HafalanTemplate;
-use Illuminate\Http\Request;
-use Yajra\DataTables\Facades\DataTables;
+use App\Models\Tahsin;
+use App\Models\Tilawah;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\Facades\DataTables;
 
 class HafalanController extends Controller
 {
     public function index()
     {
-        $santri = auth()->user()->santri; // ambil santri yang login
+        $santri = auth()->user()->santri;
 
         if (!$santri) {
             abort(403, 'Profil santri tidak ditemukan. Hubungi admin.');
         }
 
-        /*
-         * Statistik, progress, dll
-         */
-        $statusCounts = Hafalan::where('santri_id', $santri->id)
-            ->selectRaw('status, COUNT(*) as total')
-            ->groupBy('status')
-            ->pluck('total', 'status');
+        // ==========================================
+        // 1. DATA HAFALAN
+        // ==========================================
+        $totalSetor = $this->countByStatus(Hafalan::class, $santri->id, ['lulus', 'ulang']);
+        $totalAlpha = $this->countByStatus(Hafalan::class, $santri->id, 'alpha');
+        $totalSakit = $this->countByStatus(Hafalan::class, $santri->id, 'sakit');
+        $totalIzin  = $this->countByStatus(Hafalan::class, $santri->id, 'izin');
 
-        $totalSetor = ($statusCounts['lulus'] ?? 0) + ($statusCounts['ulang'] ?? 0);
-        $totalAlpha = $statusCounts['alpha'] ?? 0;
-        $totalHadirTidakSetor = $statusCounts['hadir_tidak_setor'] ?? 0;
+        // Nama variabel utama yang dipakai Blade.
+        $totalHadirTidakSetor = $this->countByStatus(Hafalan::class, $santri->id, 'hadir_tidak_setor');
 
-        // --- TAMBAHAN BARU ---
-        $totalSakit = $statusCounts['sakit'] ?? 0;
-        $totalIzin = $statusCounts['izin'] ?? 0;
+        // Alias agar file PDF / view lama yang masih memakai totalHTS tetap aman.
+        $totalHTS = $totalHadirTidakSetor;
 
         $avgNilai = Hafalan::where('santri_id', $santri->id)
-            ->whereIn('status', ['lulus', 'ulang'])
-            ->selectRaw("
-            ROUND(
-                AVG(
-                    CASE nilai_label
-                        WHEN 'mumtaz' THEN 95
-                        WHEN 'jayyid_jiddan' THEN 85
-                        WHEN 'jayyid' THEN 75
-                        WHEN 'mardud' THEN 65
-                        ELSE NULL
-                    END
-                ), 1
-            ) as avg
-        ")->value('avg') ?? 0;
+            ->whereRaw($this->statusInSql(['lulus', 'ulang']), ['lulus', 'ulang'])
+            ->get()
+            ->avg(function ($item) {
+                return match (strtolower(trim($item->nilai_label ?? ''))) {
+                    'mumtaz' => 95,
+                    'jayyid_jiddan' => 85,
+                    'jayyid' => 75,
+                    'mardud' => 65,
+                    default => 0,
+                };
+            });
 
-        // Ranking tahap
+        $avgNilai = round($avgNilai ?? 0, 1);
+
+        // Progress Hafalan per Juz berdasarkan tahap tertinggi yang sudah LULUS.
         $tahapRank = [
             'harian' => 1,
             'tahap_1' => 2,
             'tahap_2' => 3,
             'tahap_3' => 4,
-            'ujian_akhir' => 5
+            'ujian_akhir' => 5,
         ];
 
         $tahapWeight = [
@@ -65,87 +65,175 @@ class HafalanController extends Controller
             'tahap_1' => 40,
             'tahap_2' => 60,
             'tahap_3' => 80,
-            'ujian_akhir' => 100
+            'ujian_akhir' => 100,
         ];
 
         $tahapPerJuz = Hafalan::join('hafalan_templates', 'hafalan_templates.id', '=', 'hafalans.hafalan_template_id')
             ->where('hafalans.santri_id', $santri->id)
-            ->where('hafalans.status', 'lulus')
+            ->whereRaw('LOWER(TRIM(hafalans.status)) = ?', ['lulus'])
             ->select('hafalan_templates.juz', 'hafalan_templates.tahap')
             ->get()
-            ->groupBy('juz')
+            ->groupBy(fn($row) => (int) $row->juz)
             ->map(function ($rows) use ($tahapRank) {
-                return $rows->sortByDesc(fn($r) => $tahapRank[$r->tahap] ?? 0)->first()->tahap ?? null;
+                $highest = $rows
+                    ->sortByDesc(fn($row) => $tahapRank[strtolower(trim($row->tahap ?? ''))] ?? 0)
+                    ->first();
+
+                $tahap = strtolower(trim($highest->tahap ?? ''));
+
+                return $tahap !== '' ? $tahap : null;
             });
 
         $progressPerJuz = collect(range(1, 30))->map(function ($juz) use ($tahapPerJuz, $tahapWeight) {
-            $tahap = $tahapPerJuz[$juz] ?? null;
+            $tahap = $tahapPerJuz->get($juz);
             $pct = $tahap ? ($tahapWeight[$tahap] ?? 0) : 0;
 
-            if ($pct >= 100) {
-                $status = 'Selesai';
-                $color = 'success';
-            } elseif ($pct >= 80) {
-                $status = 'Tahap 3';
-                $color = 'info';
-            } elseif ($pct >= 60) {
-                $status = 'Tahap 2';
-                $color = 'primary';
-            } elseif ($pct >= 40) {
-                $status = 'Tahap 1';
-                $color = 'warning';
-            } elseif ($pct > 0) {
-                $status = 'Harian';
-                $color = 'secondary';
-            } else {
-                $status = 'Belum mulai';
-                $color = 'light';
-            }
+            $config = match (true) {
+                $pct >= 100 => ['status' => 'Selesai', 'color' => 'success'],
+                $pct >= 80 => ['status' => 'Tahap 3', 'color' => 'info'],
+                $pct >= 60 => ['status' => 'Tahap 2', 'color' => 'primary'],
+                $pct >= 40 => ['status' => 'Tahap 1', 'color' => 'warning'],
+                $pct > 0 => ['status' => 'Harian', 'color' => 'secondary'],
+                default => ['status' => 'Belum mulai', 'color' => 'light'],
+            };
 
-            return [
+            return array_merge([
                 'juz' => $juz,
                 'pct' => $pct,
-                'status' => $status,
-                'color' => $color,
-                'tahap' => $tahap
-            ];
-        });
+                'tahap' => $tahap,
+            ], $config);
+        })->values();
 
         $overallPct = round($progressPerJuz->avg('pct') ?? 0);
+
+        // ==========================================
+        // 2. DATA TAHSIN
+        // ==========================================
+        $tahsinHadir = $this->countByStatus(Tahsin::class, $santri->id, 'hadir');
+        $tahsinIzin  = $this->countByStatus(Tahsin::class, $santri->id, 'izin');
+        $tahsinSakit = $this->countByStatus(Tahsin::class, $santri->id, 'sakit');
+        $tahsinAlpha = $this->countByStatus(Tahsin::class, $santri->id, 'alpha');
+
+        $lastTahsin = Tahsin::where('santri_id', $santri->id)
+            ->orderByDesc('tanggal')
+            ->first();
+
+        $bukuMap = [
+            'ummi_1' => 40,
+            'ummi_2' => 40,
+            'ummi_3' => 40,
+            'gharib_1' => 28,
+            'gharib_2' => 28,
+            'tajwid' => 50,
+        ];
+
+        $maxPages = Tahsin::where('santri_id', $santri->id)
+            ->whereRaw('LOWER(TRIM(status)) = ?', ['hadir'])
+            ->selectRaw('LOWER(TRIM(buku)) as buku_key, MAX(halaman) as max_halaman')
+            ->groupByRaw('LOWER(TRIM(buku))')
+            ->pluck('max_halaman', 'buku_key');
+
+        $progressPerBuku = collect($bukuMap)->map(function ($max, $key) use ($maxPages) {
+            $current = (int) ($maxPages[$key] ?? 0);
+            $pct = $max > 0 ? min(100, round(($current / $max) * 100)) : 0;
+
+            return [
+                'key' => $key,
+                'label' => strtoupper(str_replace('_', ' ', $key)),
+                'max' => $max,
+                'current' => $current,
+                'pct' => $pct,
+                'status' => $pct >= 100 ? 'Selesai' : ($pct > 0 ? 'Berjalan' : 'Belum'),
+                'color' => $pct >= 100 ? 'success' : 'primary',
+            ];
+        })->values();
+
+        $overallTahsinPct = round($progressPerBuku->avg('pct') ?? 0);
+
+        // ==========================================
+        // 3. DATA TILAWAH
+        // ==========================================
+        $tilawahHadir = $this->countByStatus(Tilawah::class, $santri->id, 'hadir');
+        $tilawahIzin  = $this->countByStatus(Tilawah::class, $santri->id, 'izin');
+        $tilawahSakit = $this->countByStatus(Tilawah::class, $santri->id, 'sakit');
+        $tilawahAlpha = $this->countByStatus(Tilawah::class, $santri->id, 'alpha');
+
+        $maxJuz = (int) (Tilawah::join('hafalan_templates', 'tilawahs.hafalan_template_id', '=', 'hafalan_templates.id')
+            ->where('tilawahs.santri_id', $santri->id)
+            ->max('hafalan_templates.juz') ?? 0);
+
+        $tilawahPct = min(100, round(($maxJuz / 30) * 100));
+
+        $lastTilawah = Tilawah::with('template')
+            ->where('santri_id', $santri->id)
+            ->orderByDesc('tanggal')
+            ->first();
 
         return view('santri.hafalan.index', compact(
             'santri',
             'totalSetor',
             'totalAlpha',
+            'totalSakit',
+            'totalIzin',
             'totalHadirTidakSetor',
-            'totalSakit', // --- TAMBAHAN BARU ---
-            'totalIzin',  // --- TAMBAHAN BARU ---
+            'totalHTS',
             'avgNilai',
             'progressPerJuz',
-            'overallPct'
+            'overallPct',
+            'tahsinHadir',
+            'tahsinIzin',
+            'tahsinSakit',
+            'tahsinAlpha',
+            'lastTahsin',
+            'progressPerBuku',
+            'overallTahsinPct',
+            'tilawahHadir',
+            'tilawahIzin',
+            'tilawahSakit',
+            'tilawahAlpha',
+            'lastTilawah',
+            'tilawahPct'
         ));
     }
 
-
+    /*
+     * ====================================================
+     * TIMELINE & DATATABLES RESPONSES
+     * ====================================================
+     */
     public function timeline(Request $request)
     {
-        if (!$request->ajax()) abort(404);
+        if (!$request->ajax()) {
+            abort(404);
+        }
 
         $santri = auth()->user()->santri;
 
         if (!$santri) {
-            return response()->json(['error' => 'Profil santri tidak ditemukan'], 403);
+            abort(403, 'Profil santri tidak ditemukan. Hubungi admin.');
         }
 
-        $q = Hafalan::query()
-            ->leftJoin('hafalan_templates', 'hafalans.hafalan_template_id', '=', 'hafalan_templates.id')
+        $query = Hafalan::query()
+            ->leftJoin('hafalan_templates', 'hafalan_templates.id', '=', 'hafalans.hafalan_template_id')
             ->where('hafalans.santri_id', $santri->id)
-            ->select('hafalans.*', 'hafalan_templates.juz as template_juz', 'hafalan_templates.label as template_label');
+            ->select(
+                'hafalans.*',
+                'hafalan_templates.juz as template_juz',
+                'hafalan_templates.label as template_label'
+            );
 
-        return DataTables::of($q)
+        if ($request->filled('start_date')) {
+            $query->whereDate('hafalans.tanggal_setoran', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('hafalans.tanggal_setoran', '<=', $request->end_date);
+        }
+
+        return DataTables::of($query)
             ->addIndexColumn()
             ->filterColumn('tanggal', function ($query, $keyword) {
-                $query->whereRaw("DATE_FORMAT(tanggal_setoran, '%d-%m-%Y') LIKE ?", ["%{$keyword}%"]);
+                $query->whereRaw("DATE_FORMAT(hafalans.tanggal_setoran, '%d-%m-%Y') LIKE ?", ["%{$keyword}%"]);
             })
             ->filterColumn('juz', function ($query, $keyword) {
                 $query->where('hafalan_templates.juz', 'like', "%{$keyword}%");
@@ -153,91 +241,180 @@ class HafalanController extends Controller
             ->filterColumn('surah_ayat', function ($query, $keyword) {
                 $query->where('hafalan_templates.label', 'like', "%{$keyword}%");
             })
-            ->filterColumn('nilai', function ($query, $keyword) {
-                $query->where('nilai_label', 'like', "%{$keyword}%");
+            ->addColumn('tanggal', function ($row) {
+                return $row->tanggal_setoran ? Carbon::parse($row->tanggal_setoran)->format('d-m-Y') : '-';
             })
-            ->filterColumn('status', function ($query, $keyword) {
-                $query->where('status', 'like', "%{$keyword}%");
-            })
-            ->addColumn('tanggal', fn($r) => $r->tanggal_setoran ? $r->tanggal_setoran->format('d-m-Y') : '-')
-            ->addColumn('juz', fn($r) => $r->template_juz ?? '-')
-            ->addColumn('surah_ayat', fn($r) => $r->template_label ?? '-')
-            ->addColumn('nilai', fn($r) => match ($r->nilai_label) {
-                'mumtaz' => 'ممتاز',
-                'jayyid_jiddan' => 'جيد جدًا',
-                'jayyid' => 'جيد',
-                'mardud' => 'مردود',
-                default => '-'
-            })
-            ->addColumn('status', function ($r) {
-                $badge = match ($r->status) {
-                    'lulus' => 'bg-success',
-                    'ulang' => 'bg-warning text-dark',
-                    'hadir_tidak_setor' => 'bg-info text-dark',
-                    'sakit' => 'bg-primary',      // --- TAMBAHAN BARU ---
-                    'izin' => 'bg-secondary',     // --- TAMBAHAN BARU ---
-                    'alpha' => 'bg-danger',
-                    default => 'bg-secondary',
-                };
-                $label = match ($r->status) {
-                    'lulus' => 'Lulus',
-                    'ulang' => 'Ulang',
-                    'hadir_tidak_setor' => 'Hadir Tidak Setor',
-                    'sakit' => 'Sakit',           // --- TAMBAHAN BARU ---
-                    'izin' => 'Izin',             // --- TAMBAHAN BARU ---
-                    'alpha' => 'Alpha',
-                    default => '-',
-                };
-                return '<span class="badge ' . $badge . '">' . $label . '</span>';
-            })
+            ->addColumn('juz', fn($row) => $row->template_juz ?? '-')
+            ->addColumn('surah_ayat', fn($row) => $row->template_label ?? '-')
+            ->addColumn('nilai', fn($row) => $this->nilaiArab($row->nilai_label ?? null))
+            ->addColumn('status', fn($row) => $this->statusBadge($row->status ?? null, [
+                'lulus' => 'bg-success',
+                'ulang' => 'bg-warning text-dark',
+                'hadir_tidak_setor' => 'bg-info text-dark',
+                'sakit' => 'bg-primary',
+                'izin' => 'bg-secondary',
+                'alpha' => 'bg-danger',
+            ]))
+            ->addColumn('catatan', fn($row) => $row->catatan ?? '-')
             ->rawColumns(['status'])
             ->make(true);
     }
 
+    public function tahsinTimeline(Request $request)
+    {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        $santri = auth()->user()->santri;
+
+        if (!$santri) {
+            abort(403, 'Profil santri tidak ditemukan. Hubungi admin.');
+        }
+
+        $query = Tahsin::where('santri_id', $santri->id);
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->addColumn('tanggal', fn($row) => $row->tanggal ? Carbon::parse($row->tanggal)->format('d-m-Y') : '-')
+            ->addColumn('buku_label', fn($row) => strtoupper(str_replace('_', ' ', $row->buku ?? '-')))
+            ->addColumn('nilai', fn($row) => $this->nilaiArab($row->nilai_label ?? $row->nilai ?? null))
+            ->addColumn('status', fn($row) => $this->statusBadge($row->status ?? null, [
+                'hadir' => 'bg-success',
+                'sakit' => 'bg-primary',
+                'izin' => 'bg-secondary',
+                'alpha' => 'bg-danger',
+            ]))
+            ->addColumn('catatan', fn($row) => $row->catatan ?? '-')
+            ->rawColumns(['status'])
+            ->make(true);
+    }
+
+    public function tilawahTimeline(Request $request)
+    {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        $santri = auth()->user()->santri;
+
+        if (!$santri) {
+            abort(403, 'Profil santri tidak ditemukan. Hubungi admin.');
+        }
+
+        $query = Tilawah::with('template')
+            ->where('santri_id', $santri->id);
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->addColumn('tanggal', fn($row) => $row->tanggal ? Carbon::parse($row->tanggal)->format('d-m-Y') : '-')
+            ->addColumn('target_bacaan', function ($row) {
+                return $row->template
+                    ? 'Juz ' . $row->template->juz . ' - ' . $row->template->label
+                    : '-';
+            })
+            ->addColumn('nilai', fn($row) => $this->nilaiArab($row->nilai_label ?? $row->nilai ?? null))
+            ->addColumn('status', fn($row) => $this->statusBadge($row->status ?? null, [
+                'hadir' => 'bg-success',
+                'sakit' => 'bg-primary',
+                'izin' => 'bg-secondary',
+                'alpha' => 'bg-danger',
+            ]))
+            ->addColumn('catatan', fn($row) => $row->catatan ?? '-')
+            ->rawColumns(['status'])
+            ->make(true);
+    }
+
+    /*
+     * ====================================================
+     * EXPORT PDF
+     * ====================================================
+     */
     public function exportPdf(Request $request)
     {
         $santri = auth()->user()->santri;
 
-        // Inisialisasi Query
+        if (!$santri) {
+            abort(403, 'Profil santri tidak ditemukan. Hubungi admin.');
+        }
+
         $query = Hafalan::with('template')
             ->where('santri_id', $santri->id)
             ->orderByDesc('tanggal_setoran');
 
-        // Cek Filter Tanggal
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('tanggal_setoran', [$request->start_date, $request->end_date]);
-            $periode = \Carbon\Carbon::parse($request->start_date)->format('d/m/Y') . ' s/d ' . \Carbon\Carbon::parse($request->end_date)->format('d/m/Y');
+            $periode = Carbon::parse($request->start_date)->format('d/m/Y') . ' s/d ' . Carbon::parse($request->end_date)->format('d/m/Y');
         } else {
-            $periode = "Semua Riwayat";
+            $periode = 'Semua Riwayat';
         }
 
         $timeline = $query->get();
 
-        // --- UPDATE STATISTIK UNTUK PDF ---
-        $statusCounts = $timeline->groupBy('status')->map->count();
-
-        $totalSetor = ($statusCounts['lulus'] ?? 0) + ($statusCounts['ulang'] ?? 0);
-        $totalAlpha = $statusCounts['alpha'] ?? 0;
-        $totalSakit = $statusCounts['sakit'] ?? 0; // Tambahkan ini
-        $totalIzin  = $statusCounts['izin'] ?? 0;  // Tambahkan ini
-        $totalHTS   = $statusCounts['hadir_tidak_setor'] ?? 0; // Tambahkan ini (Hadir Tidak Setor)
+        $statusCounts = $timeline
+            ->groupBy(fn($item) => strtolower(trim($item->status ?? '')))
+            ->map->count();
 
         $data = [
-            'santri'        => $santri,
-            'timeline'      => $timeline,
-            'totalSetor'    => $totalSetor,
-            'totalAlpha'    => $totalAlpha,
-            'totalSakit'    => $totalSakit,
-            'totalIzin'     => $totalIzin,
-            'totalHTS'      => $totalHTS,
-            'periode'       => $periode,
-            'tanggal_cetak' => now()->format('d F Y'),
+            'santri' => $santri,
+            'timeline' => $timeline,
+            'totalSetor' => ($statusCounts['lulus'] ?? 0) + ($statusCounts['ulang'] ?? 0),
+            'totalAlpha' => $statusCounts['alpha'] ?? 0,
+            'totalSakit' => $statusCounts['sakit'] ?? 0,
+            'totalIzin' => $statusCounts['izin'] ?? 0,
+            'totalHadirTidakSetor' => $statusCounts['hadir_tidak_setor'] ?? 0,
+            'totalHTS' => $statusCounts['hadir_tidak_setor'] ?? 0,
+            'periode' => $periode,
+            'tanggal_cetak' => now()->translatedFormat('d F Y'),
         ];
 
         $pdf = Pdf::loadView('santri.hafalan.pdf', $data);
         $pdf->setPaper('a4', 'portrait');
 
-        // Ganti bagian return di akhir fungsi exportPdf
         return $pdf->stream('Laporan_Hafalan_' . str_replace(' ', '_', $santri->nama) . '.pdf');
+    }
+
+    private function countByStatus(string $modelClass, int|string $santriId, string|array $statuses): int
+    {
+        $statuses = collect((array) $statuses)
+            ->map(fn($status) => strtolower(trim($status)))
+            ->filter()
+            ->values()
+            ->all();
+
+        if (empty($statuses)) {
+            return 0;
+        }
+
+        return $modelClass::where('santri_id', $santriId)
+            ->whereRaw($this->statusInSql($statuses), $statuses)
+            ->count();
+    }
+
+    private function statusInSql(array $statuses): string
+    {
+        $placeholders = implode(',', array_fill(0, count($statuses), '?'));
+
+        return "LOWER(TRIM(status)) IN ({$placeholders})";
+    }
+
+    private function nilaiArab(?string $nilai): string
+    {
+        return match (strtolower(trim($nilai ?? ''))) {
+            'mumtaz' => 'ممتاز',
+            'jayyid_jiddan' => 'جيد جدًا',
+            'jayyid' => 'جيد',
+            'mardud' => 'مردود',
+            default => $nilai ? strtoupper($nilai) : '-',
+        };
+    }
+
+    private function statusBadge(?string $status, array $badgeMap): string
+    {
+        $statusClean = strtolower(trim($status ?? ''));
+        $badge = $badgeMap[$statusClean] ?? 'bg-secondary';
+        $label = $statusClean !== '' ? ucwords(str_replace('_', ' ', $statusClean)) : '-';
+
+        return '<span class="badge ' . $badge . '">' . e($label) . '</span>';
     }
 }

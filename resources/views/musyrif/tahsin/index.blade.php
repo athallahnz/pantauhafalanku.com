@@ -1126,7 +1126,9 @@
             ],
 
             // Tajwid Ummi (Dari file Tajwid.csv)
-            'tajwid': [{
+            'tajwid': [
+                // Halaman 1 - 11 (Materi Dasar Tajwid)
+                {
                     halaman: 1,
                     materi: 'BAB I Hukum nun sukun/tanwin (Idzhar Halqi)'
                 },
@@ -1165,6 +1167,40 @@
                 {
                     halaman: 11,
                     materi: "BAB VIII Lam Ta'rif (Idzhar Qomariyah & Id-ghom Syamsiyah)"
+                },
+
+                // Halaman 12 - 19 (Pembaruan Materi Hukum Mad)
+                {
+                    halaman: 12,
+                    materi: "BAB IX Hukum Mad / Mad Thobi'i / Mad Far'i / Mad Wajib Muttashil"
+                },
+                {
+                    halaman: 13,
+                    materi: 'Mad Jaiz Munfashil'
+                },
+                {
+                    halaman: 14,
+                    materi: "Mad 'aridl Lissukun"
+                },
+                {
+                    halaman: 15,
+                    materi: "Mad 'iwadl / Mad Shilah"
+                },
+                {
+                    halaman: 16,
+                    materi: 'Mad Badal'
+                },
+                {
+                    halaman: 17,
+                    materi: 'Mad Tamkin / Mad Lin / Mad Lazim Mutsaqqol Kalimi / Mad Lazim Mukhoffaf Kalimi'
+                },
+                {
+                    halaman: 18,
+                    materi: 'Mad Lazim Mutsaqqol Harfi / Mad Lazim Mukhoffaf Harfi'
+                },
+                {
+                    halaman: 19,
+                    materi: 'Mad Farq'
                 }
             ]
         };
