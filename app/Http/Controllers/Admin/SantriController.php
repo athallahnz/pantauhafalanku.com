@@ -35,7 +35,11 @@ class SantriController extends Controller
             END
         ")->get();
 
-        $musyrifList = Musyrif::withCount('santri')
+        $musyrifList = Musyrif::query()
+            ->withCount([
+                'santris as santris_count' => fn($query) =>
+                $query->active(),
+            ])
             ->orderBy('nama')
             ->get();
 
@@ -57,6 +61,9 @@ class SantriController extends Controller
                 'santris.musyrif_id',
                 'santris.tanggal_lahir',
                 'santris.jenis_kelamin',
+                'santris.status',
+                'santris.graduated_semester_id',
+                'santris.graduated_at',
                 'kelas.nama_kelas as kelas_nama',
                 'musyrifs.nama as musyrif_nama',
                 'users.id as user_id',
@@ -64,6 +71,34 @@ class SantriController extends Controller
                 'users.nomor as user_nomor',
                 'users.email as user_email',
             ]);
+
+        $status = $request->input(
+            'status',
+            Santri::STATUS_AKTIF
+        );
+
+        if (
+            in_array(
+                $status,
+                [
+                    Santri::STATUS_AKTIF,
+                    Santri::STATUS_LULUS,
+                    Santri::STATUS_KELUAR,
+                    Santri::STATUS_NONAKTIF,
+                ],
+                true
+            )
+        ) {
+            $query->where(
+                'santris.status',
+                $status
+            );
+        } else {
+            $query->where(
+                'santris.status',
+                Santri::STATUS_AKTIF
+            );
+        }
 
         if ($request->filled('kelas_id')) {
             $query->where('santris.kelas_id', $request->kelas_id);
@@ -113,6 +148,13 @@ class SantriController extends Controller
                     data-user-email="' . ($row->user_email ?? '') . '"
                 ><i class="bi bi-eye" data-toggle="tooltip" data-placement="top" title="Lihat Detail"></i></button>';
 
+                $btnProgress = '
+                <a class="btn btn-sm btn-outline-success"
+                    href="' . route('admin.santri.master.progress.show', $row->id) . '"
+                    data-coreui-toggle="tooltip" title="Lihat Progress Hafalan, Tahsin, dan Tilawah">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </a>';
+
                 $btnUser = '
                 <button class="btn btn-sm btn-outline-primary btn-user"
                     data-id="' . $row->id . '"
@@ -141,7 +183,7 @@ class SantriController extends Controller
                     data-id="' . $row->id . '"
                 ><i class="bi bi-trash" data-toggle="tooltip" data-placement="top" title="Hapus"></i></button>';
 
-                return '<div class="d-flex flex-nowrap gap-1">' . $btnDetail . $btnUser . $btnEdit . $btnDelete . '</div>';
+                return '<div class="d-flex flex-nowrap gap-1">' . $btnDetail . $btnProgress . $btnUser . $btnEdit . $btnDelete . '</div>';
             })
             ->rawColumns(['aksi', 'akun'])
             ->make(true);
@@ -189,7 +231,12 @@ class SantriController extends Controller
             ], 422);
         }
 
-        $santri = Santri::create($validated);
+        $validated['status'] =
+            Santri::STATUS_AKTIF;
+
+        $santri = Santri::query()->create(
+            $validated
+        );
 
         return response()->json([
             'status' => 'success',
@@ -200,7 +247,16 @@ class SantriController extends Controller
 
     public function update(Request $request, $id)
     {
-        $santri = Santri::findOrFail($id);
+        $santri = Santri::query()
+            ->findOrFail($id);
+
+        if (!$santri->isActive()) {
+            return response()->json([
+                'status' => 'error',
+                'message' =>
+                'Hanya santri aktif yang dapat diedit dari Data Master Santri.',
+            ], 422);
+        }
 
         $validated = $request->validate([
             'kelas_id' => 'required|exists:kelas,id',
@@ -241,8 +297,19 @@ class SantriController extends Controller
 
     public function addUser(Request $request, $id)
     {
-        $santri = Santri::findOrFail($id);
-        $isUpdate = $santri->user_id ? true : false;
+        $santri = Santri::query()
+            ->findOrFail($id);
+
+        if (!$santri->isActive()) {
+            return response()->json([
+                'status' => 'error',
+                'message' =>
+                'Akun akses baru hanya dapat dikelola untuk santri aktif.',
+            ], 422);
+        }
+
+        $isUpdate =
+            $santri->user_id !== null;
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -279,7 +346,17 @@ class SantriController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        $santri = Santri::findOrFail($id);
+        $santri = Santri::query()
+            ->findOrFail($id);
+
+        if (!$santri->isActive()) {
+            return response()->json([
+                'status' => 'error',
+                'message' =>
+                'Santri arsip tidak boleh dihapus. Gunakan halaman Alumni & Nonaktif untuk melihat histori atau mengaktifkan kembali.',
+            ], 422);
+        }
+
         $santri->delete();
 
         if ($request->ajax()) {
@@ -289,7 +366,9 @@ class SantriController extends Controller
             ]);
         }
 
-        return redirect()->route('santri.master.index')->with('success', 'Santri berhasil dihapus.');
+        return redirect()
+            ->route('santri.master.index')
+            ->with('success', 'Santri berhasil dihapus.');
     }
 
     private function normHeader($v): string

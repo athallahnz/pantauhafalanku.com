@@ -35,11 +35,13 @@ class SantriController extends Controller
         $totalTargetGlobal = $targetPerJuz->sum();
 
         // 2. Query Santri: FIX N+1 dengan Eager Loading
-        $query = Santri::with(['kelas', 'hafalans' => function ($q) {
-            $q->whereIn('status', ['lulus', 'ulang'])
-                ->whereHas('template', fn($t) => $t->where('tahap', 'harian'))
-                ->with('template:id,juz');
-        }])
+        $query = Santri::query()
+            ->active()
+            ->with(['kelas', 'hafalans' => function ($q) {
+                $q->whereIn('status', ['lulus', 'ulang'])
+                    ->whereHas('template', fn($t) => $t->where('tahap', 'harian'))
+                    ->with('template:id,juz');
+            }])
             ->where('musyrif_id', $musyrif->id)
             ->select('santris.*');
 

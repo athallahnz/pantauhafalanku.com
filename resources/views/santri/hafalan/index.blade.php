@@ -4,470 +4,546 @@
 
 @section('content')
     <style>
-        /* ================= KONSISTENSI TEMA ISLAMIC PURPLE & GLASSMORPHISM ================= */
         :root {
-            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --student-bg: #f5f7fb;
+            --student-surface: #ffffff;
+            --student-surface-soft: #f8f9fc;
+            --student-border: rgba(31, 41, 55, 0.10);
+            --student-text: #1f2937;
+            --student-muted: #6b7280;
+            --student-purple: var(--islamic-purple-600, #6f42c1);
+            --student-purple-dark: var(--islamic-purple-700, #59359d);
+            --student-purple-soft: rgba(111, 66, 193, 0.10);
+            --student-green-soft: rgba(25, 135, 84, 0.11);
+            --student-shadow: 0 14px 34px rgba(31, 41, 55, 0.07);
         }
 
-        .text-adaptive-purple {
-            color: var(--islamic-purple-700);
+        [data-coreui-theme="dark"] {
+            --student-bg: #15151d;
+            --student-surface: #20212b;
+            --student-surface-soft: #282a35;
+            --student-border: rgba(255, 255, 255, 0.10);
+            --student-text: #f3f4f6;
+            --student-muted: #a9afbb;
+            --student-purple-soft: rgba(147, 108, 246, 0.16);
+            --student-green-soft: rgba(25, 135, 84, 0.17);
+            --student-shadow: 0 16px 36px rgba(0, 0, 0, 0.24);
         }
 
-        [data-coreui-theme="dark"] .text-adaptive-purple {
-            color: #fff !important;
+        .min-w-0 {
+            min-width: 0;
         }
 
-        /* KPI & Main Card Style (Glassmorphism) */
-        .kpi-card,
-        .card-main {
+        .text-white-75 {
+            color: rgba(255, 255, 255, .78);
+        }
+
+        .student-dashboard {
+            color: var(--student-text);
+        }
+
+        .student-card {
+            background: var(--student-surface);
+            border: 1px solid var(--student-border);
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.4) !important;
-            box-shadow: var(--card-shadow);
-            transition: var(--transition-smooth);
-            overflow: hidden;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            background: rgba(255, 255, 255, 0.7) !important;
+            box-shadow: var(--student-shadow);
         }
 
-        .kpi-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(111, 66, 193, 0.1);
-            border-color: rgba(111, 66, 193, 0.2) !important;
+        .student-card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--student-border);
+            background: transparent;
         }
 
-        /* KPI Elements */
-        .kpi-label {
-            font-size: 0.7rem;
+        .student-section-title {
+            margin: 0;
+            font-size: 0.86rem;
             font-weight: 800;
+            letter-spacing: 0.055em;
             text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: #9aa0a6;
-            margin-bottom: 4px;
+            color: var(--student-text);
         }
 
-        .kpi-value {
-            font-size: 2rem;
-            font-weight: 800;
-            line-height: 1;
-            margin-bottom: 4px;
+        .student-section-copy {
+            margin: 0.25rem 0 0;
+            color: var(--student-muted);
+            font-size: 0.78rem;
         }
 
-        .kpi-sub {
-            font-size: 0.75rem;
-            color: #9aa0a6;
-            margin-top: 4px;
-            line-height: 1.2;
-        }
-
-        .kpi-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            transition: var(--transition-smooth);
-        }
-
-        .kpi-card:hover .kpi-icon {
-            transform: scale(1.1) rotate(-5deg);
-        }
-
-        .kpi-progress {
-            height: 6px;
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 10px;
-            margin-top: 15px;
-        }
-
-        .kpi-progress-bar {
-            border-radius: 10px;
-            transition: width 1.5s cubic-bezier(0.1, 0.5, 0.5, 1);
-        }
-
-        /* Welcome Banner */
         .welcome-card {
-            background: linear-gradient(135deg, var(--islamic-purple-700), #8e44ad);
-            border-radius: 24px;
-            color: white;
-            border: none;
-            overflow: hidden;
             position: relative;
+            overflow: hidden;
+            border: 0;
+            border-radius: 24px;
+            color: #fff;
+            background:
+                radial-gradient(circle at 88% 16%, rgba(255, 255, 255, .18), transparent 18%),
+                linear-gradient(135deg, var(--student-purple-dark), #8e44ad);
+            box-shadow: 0 18px 42px rgba(89, 53, 157, 0.24);
         }
 
         .welcome-card::after {
             content: '';
             position: absolute;
-            top: -50px;
-            right: -50px;
-            width: 150px;
-            height: 150px;
-            background: rgba(255, 255, 255, 0.1);
+            right: -65px;
+            bottom: -80px;
+            width: 220px;
+            height: 220px;
             border-radius: 50%;
+            background: rgba(255, 255, 255, .08);
         }
 
-        /* Container Progress */
-        .enterprise-progress-container {
-            max-height: 400px;
-            overflow-y: auto;
-            padding-right: 8px;
+        .welcome-card .card-body {
+            position: relative;
+            z-index: 1;
         }
 
-        .enterprise-progress-container::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .enterprise-progress-container::-webkit-scrollbar-thumb {
-            background: #e0e0e0;
-            border-radius: 10px;
-        }
-
-        .enterprise-progress-row {
-            margin-bottom: 18px;
-        }
-
-        .enterprise-progress-header {
-            display: flex;
-            justify-content: space-between;
+        .welcome-chip {
+            display: inline-flex;
             align-items: center;
-            margin-bottom: 8px;
+            gap: 0.45rem;
+            padding: 0.55rem 0.9rem;
+            border: 1px solid rgba(255, 255, 255, .18);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .13);
+            font-size: 0.76rem;
         }
 
-        .enterprise-juz,
-        .enterprise-buku {
-            font-weight: 700;
-            font-size: 14px;
+        .modern-tabs-container {
+            padding: 0.4rem;
+            border: 1px solid var(--student-border);
+            border-radius: 17px;
+            background: var(--student-surface-soft);
         }
 
-        .enterprise-percent {
-            font-weight: 700;
-            font-size: 12px;
-            color: var(--islamic-purple-600);
+        .modern-tabs-container .nav-link {
+            min-height: 48px;
+            border: 0 !important;
+            border-radius: 12px !important;
+            color: var(--student-muted) !important;
+            font-weight: 750;
+            transition: background-color .2s ease, color .2s ease, box-shadow .2s ease;
+        }
+
+        .modern-tabs-container .nav-link.active {
+            color: var(--student-purple-dark) !important;
+            background: var(--student-purple-soft) !important;
+            box-shadow: 0 6px 16px rgba(111, 66, 193, 0.12);
+        }
+
+        .modern-tabs-container #tab-tilawah-btn.active {
+            color: #157347 !important;
+            background: var(--student-green-soft) !important;
+        }
+
+        [data-coreui-theme="dark"] .modern-tabs-container .nav-link.active {
+            color: #d8c6ff !important;
+        }
+
+        [data-coreui-theme="dark"] .modern-tabs-container #tab-tilawah-btn.active {
+            color: #8fe3b6 !important;
+        }
+
+        .kpi-card {
+            height: 100%;
+            padding: 1rem;
+            border: 1px solid var(--student-border);
+            border-radius: 17px;
+            background: var(--student-surface);
+            box-shadow: 0 8px 22px rgba(31, 41, 55, 0.05);
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--student-shadow);
+        }
+
+        .kpi-label {
+            margin-bottom: 0.3rem;
+            color: var(--student-muted);
+            font-size: 0.66rem;
+            font-weight: 800;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+        }
+
+        .kpi-value {
+            color: var(--student-text);
+            font-size: 1.8rem;
+            font-weight: 850;
+            line-height: 1;
+        }
+
+        .kpi-sub {
+            margin-top: 0.4rem;
+            color: var(--student-muted);
+            font-size: 0.72rem;
+        }
+
+        .kpi-icon {
+            width: 46px;
+            height: 46px;
+            flex: 0 0 46px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 13px;
+            font-size: 1.15rem;
+        }
+
+        .summary-card {
+            padding: 1.25rem;
+        }
+
+        .summary-value {
+            color: var(--student-purple);
+            font-size: 2rem;
+            font-weight: 850;
+            line-height: 1;
+        }
+
+        .summary-progress,
+        .enterprise-progress {
+            overflow: hidden;
+            border-radius: 999px;
+            background: var(--student-surface-soft);
+        }
+
+        .summary-progress {
+            height: 13px;
         }
 
         .enterprise-progress {
             height: 8px;
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 999px;
-            overflow: hidden;
         }
 
-        .enterprise-progress .progress-bar {
-            width: 0;
-            transition: width 1.2s cubic-bezier(.4, 0, .2, 1);
-            box-shadow: 0 0 10px rgba(111, 66, 193, 0.2);
+        .enterprise-progress-container {
+            max-height: 390px;
+            overflow-y: auto;
+            scrollbar-width: thin;
         }
 
-        .section-title {
-            font-size: 13px;
+        .enterprise-progress-row {
+            padding: 0.8rem 0;
+            border-bottom: 1px solid var(--student-border);
+        }
+
+        .enterprise-progress-row:first-child {
+            padding-top: 0;
+        }
+
+        .enterprise-progress-row:last-child {
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+
+        .enterprise-progress-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.55rem;
+        }
+
+        .enterprise-progress-name {
+            color: var(--student-text);
+            font-size: 0.82rem;
+            font-weight: 750;
+        }
+
+        .enterprise-progress-meta {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .enterprise-percent {
+            min-width: 42px;
+            color: var(--student-purple);
+            font-size: 0.76rem;
             font-weight: 800;
-            color: white;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
+            text-align: right;
         }
 
-        /* TAB NAVIGATION UX */
-        .modern-tabs-container {
-            background-color: rgba(0, 0, 0, 0.03);
-            border-radius: 16px;
-            padding: 6px;
-            border: 1px solid rgba(0, 0, 0, 0.05);
+        .chart-wrap {
+            position: relative;
+            min-height: 280px;
         }
 
-        [data-coreui-theme="dark"] .modern-tabs-container {
-            background-color: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.05);
+        .student-dashboard .table {
+            --cui-table-color: var(--student-text);
+            --cui-table-bg: transparent;
+            --cui-table-border-color: var(--student-border);
+            margin-bottom: 0;
         }
 
-        .modern-tabs-container .nav-link {
-            border: none !important;
-            border-radius: 12px !important;
-            color: #6c757d !important;
-            font-weight: 700;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            opacity: 0.6;
+        .student-dashboard table.dataTable th,
+        .student-dashboard table.dataTable td {
+            padding: 0.9rem 0.85rem !important;
+            vertical-align: middle;
+            white-space: nowrap;
         }
 
-        .modern-tabs-container .nav-link:hover {
-            opacity: 1;
-            background-color: rgba(0, 0, 0, 0.02);
-        }
-
-        [data-coreui-theme="dark"] .modern-tabs-container .nav-link:hover {
-            background-color: rgba(255, 255, 255, 0.02);
-        }
-
-        .modern-tabs-container .nav-link#tab-hafalan-btn.active,
-        .modern-tabs-container .nav-link#tab-tahsin-btn.active {
-            background-color: var(--islamic-purple-100, #f3e8ff);
-            color: var(--islamic-purple-700, #6f42c1) !important;
-            opacity: 1;
-            box-shadow: 0 4px 15px rgba(111, 66, 193, 0.15);
-        }
-
-        [data-coreui-theme="dark"] .modern-tabs-container .nav-link#tab-hafalan-btn.active,
-        [data-coreui-theme="dark"] .modern-tabs-container .nav-link#tab-tahsin-btn.active {
-            background-color: rgba(111, 66, 193, 0.2);
-            color: #d8b4fe !important;
-        }
-
-        .modern-tabs-container .nav-link#tab-tilawah-btn.active {
-            background-color: #d1e7dd;
-            color: #0f5132 !important;
-            opacity: 1;
-            box-shadow: 0 4px 15px rgba(25, 135, 84, 0.15);
-        }
-
-        [data-coreui-theme="dark"] .modern-tabs-container .nav-link#tab-tilawah-btn.active {
-            background-color: rgba(25, 135, 84, 0.2);
-            color: #86efac !important;
-        }
-
-        /* ADAPTIVE FILTER & DARK MODE FIX */
-        .adaptive-group {
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid rgba(0, 0, 0, 0.1) !important;
-            background: #f8f9fa !important;
-        }
-
-        .adaptive-label {
-            background: rgba(0, 0, 0, 0.03) !important;
-            border: none !important;
-            color: #495057 !important;
-            font-size: 11px;
-            font-weight: 700;
+        .student-dashboard table.dataTable thead th {
+            color: var(--student-muted);
+            background: var(--student-surface-soft);
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.055em;
             text-transform: uppercase;
         }
 
-        .adaptive-input {
-            background: transparent !important;
-            border: none !important;
-            color: #212529 !important;
-            font-size: 12px;
+        .student-dashboard .dataTables_wrapper .dataTables_filter input,
+        .student-dashboard .dataTables_wrapper .dataTables_length select {
+            color: var(--student-text);
+            border: 1px solid var(--student-border);
+            border-radius: 10px;
+            background: var(--student-surface-soft);
         }
 
-        [data-coreui-theme="dark"] .adaptive-group {
-            background: rgba(255, 255, 255, 0.05) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        .student-dashboard .dataTables_wrapper .dataTables_info,
+        .student-dashboard .dataTables_wrapper .dataTables_length,
+        .student-dashboard .dataTables_wrapper .dataTables_filter {
+            color: var(--student-muted) !important;
+            font-size: 0.78rem;
         }
 
-        [data-coreui-theme="dark"] .adaptive-label {
-            color: #ced4da !important;
+        .student-dashboard .page-link,
+        .student-dashboard .paginate_button {
+            color: var(--student-text) !important;
+            border-color: var(--student-border) !important;
+            background: var(--student-surface) !important;
         }
 
-        [data-coreui-theme="dark"] .adaptive-input {
+        .student-dashboard .page-item.active .page-link,
+        .student-dashboard .paginate_button.current {
             color: #fff !important;
+            border-color: var(--student-purple) !important;
+            background: var(--student-purple) !important;
         }
 
-        [data-coreui-theme="dark"] .adaptive-input::-webkit-calendar-picker-indicator {
-            filter: invert(1);
+        .empty-note {
+            padding: 1.5rem;
+            color: var(--student-muted);
+            text-align: center;
         }
 
-        [data-coreui-theme="dark"] .kpi-card,
-        [data-coreui-theme="dark"] .card-main {
-            background: rgba(42, 42, 53, 0.6) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        }
+        @media (max-width: 767.98px) {
+            .welcome-card {
+                border-radius: 18px;
+            }
 
-        [data-coreui-theme="dark"] .kpi-value,
-        [data-coreui-theme="dark"] .section-title {
-            color: #ffffff !important;
-        }
+            .modern-tabs-container {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
 
-        [data-coreui-theme="dark"] .kpi-label {
-            color: #a0a0a0;
-        }
+            .modern-tabs-container .nav-item {
+                min-width: 150px;
+            }
 
-        .table-padding-container {
-            padding: 1.5rem !important;
-        }
+            .student-card-header {
+                padding: 0.9rem 1rem;
+            }
 
-        table.dataTable th,
-        table.dataTable td {
-            white-space: nowrap !important;
-            padding: 1.1rem 1rem !important;
+            .summary-card {
+                padding: 1rem;
+            }
+
+            .summary-value {
+                font-size: 1.7rem;
+            }
+
+            .chart-wrap {
+                min-height: 240px;
+            }
+
+            .enterprise-progress-header {
+                flex-direction: column;
+                gap: 0.45rem;
+            }
+
+            .enterprise-progress-meta {
+                justify-content: flex-start;
+            }
+
+            .enterprise-percent {
+                text-align: left;
+            }
+
+            .dataTables_wrapper .row:first-child,
+            .dataTables_wrapper .row:last-child {
+                row-gap: 0.75rem;
+            }
         }
     </style>
 
-    <div class="card welcome-card shadow-lg border-0 mb-4">
-        <div class="card-body p-4 p-md-5">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h3 class="fw-bold mb-1">Assalamu'alaikum, {{ $santri->nama ?? 'Santri' }}! 👋</h3>
-                    <p class="mb-3 opacity-75">
-                        Kelas: {{ $santri->kelas?->nama_kelas ?? '-' }}
-                        @if ($santri->nis)
-                            <span class="mx-2">|</span> NIS: {{ $santri->nis }}
-                        @endif
-                    </p>
-                    <div class="bg-white bg-opacity-25 rounded-pill px-3 py-2 d-inline-block">
-                        <small class="fw-medium">💡 <strong>Motivasi:</strong> "Konsistensi adalah kunci kesuksesan. Terus
-                            semangat!"</small>
+    <div class="student-dashboard">
+        {{-- WELCOME --}}
+        <div class="card welcome-card mb-4">
+            <div class="card-body p-4 p-lg-5">
+                <div class="row align-items-center g-3">
+                    <div class="col">
+                        <div class="small text-white-50 fw-semibold mb-2">Dashboard Progress Santri</div>
+                        <h2 class="fw-bold mb-2">Assalamu'alaikum, {{ $santri->nama }} 👋</h2>
+                        <p class="mb-3 text-white-75">
+                            Kelas: <strong>{{ $santri->kelas?->nama_kelas ?? '-' }}</strong>
+                            @if ($santri->nis)
+                                <span class="mx-2">•</span>NIS: <strong>{{ $santri->nis }}</strong>
+                            @endif
+                            @if ($santri->musyrif)
+                                <span class="mx-2">•</span>Musyrif: <strong>{{ $santri->musyrif->nama }}</strong>
+                            @endif
+                        </p>
+                        <div class="welcome-chip">
+                            <i class="bi bi-lightbulb-fill text-warning"></i>
+                            Konsistensi adalah kunci kesuksesan. Terus semangat!
+                        </div>
                     </div>
-                </div>
-                <div class="col-auto d-none d-md-block text-end">
-                    <i class="bi bi-stars" style="font-size: 4rem; opacity: 0.3;"></i>
+                    <div class="col-auto d-none d-md-block">
+                        <i class="bi bi-stars" style="font-size:4.4rem; opacity:.28;"></i>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    {{-- NAV TABS --}}
-    <div class="px-3 px-md-0 mb-4">
-        <ul class="nav nav-pills nav-fill modern-tabs-container gap-2" role="tablist">
+        {{-- TABS --}}
+        <ul class="nav nav-pills nav-fill modern-tabs-container gap-2 mb-4" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active py-3 shadow-none" id="tab-hafalan-btn" data-coreui-toggle="tab"
-                    data-coreui-target="#tab-hafalan" type="button" role="tab">
+                <button class="nav-link active w-100" id="tab-hafalan-btn" data-coreui-toggle="tab"
+                    data-coreui-target="#tab-hafalan" type="button" role="tab" aria-selected="true">
                     <i class="bi bi-award-fill me-2"></i>Data Hafalan
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link py-3 shadow-none" id="tab-tahsin-btn" data-coreui-toggle="tab"
-                    data-coreui-target="#tab-tahsin" type="button" role="tab">
-                    <i class="bi bi-book me-2"></i>Data Tahsin
+                <button class="nav-link w-100" id="tab-tahsin-btn" data-coreui-toggle="tab" data-coreui-target="#tab-tahsin"
+                    type="button" role="tab" aria-selected="false">
+                    <i class="bi bi-book-half me-2"></i>Data Tahsin
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link py-3 shadow-none" id="tab-tilawah-btn" data-coreui-toggle="tab"
-                    data-coreui-target="#tab-tilawah" type="button" role="tab">
+                <button class="nav-link w-100" id="tab-tilawah-btn" data-coreui-toggle="tab"
+                    data-coreui-target="#tab-tilawah" type="button" role="tab" aria-selected="false">
                     <i class="bi bi-journal-bookmark-fill me-2"></i>Data Tilawah
                 </button>
             </li>
         </ul>
-    </div>
 
-    <div class="tab-content">
-        {{-- ======================== TAB HAFALAN ======================== --}}
-        <div class="tab-pane fade show active" id="tab-hafalan" role="tabpanel">
-            <div class="row g-3 mb-4">
+        <div class="tab-content">
+            {{-- ========================================================
+                TAB HAFALAN
+            ========================================================= --}}
+            <div class="tab-pane fade show active" id="tab-hafalan" role="tabpanel">
                 @php
-                    $kpiItems = [
+                    $hafalanKpi = [
                         [
                             'label' => 'Setor',
                             'value' => $totalSetor ?? 0,
-                            'sub' => 'Lulus / Ulang',
+                            'sub' => 'Lulus atau ulang',
                             'color' => 'success',
                             'icon' => 'journal-check',
-                            'max' => max(10, $totalSetor ?? 0),
                         ],
                         [
                             'label' => 'Hadir (TS)',
                             'value' => $totalHadirTidakSetor ?? 0,
-                            'sub' => 'Tidak Setor',
+                            'sub' => 'Hadir tidak setor',
                             'color' => 'warning',
-                            'icon' => 'exclamation-triangle',
-                            'max' => max(10, $totalHadirTidakSetor ?? 0),
+                            'icon' => 'person-exclamation',
                         ],
                         [
                             'label' => 'Sakit',
                             'value' => $totalSakit ?? 0,
-                            'sub' => 'Izin Sakit',
+                            'sub' => 'Izin sakit',
                             'color' => 'primary',
                             'icon' => 'heart-pulse',
-                            'max' => max(10, $totalSakit ?? 0),
                         ],
                         [
                             'label' => 'Izin',
                             'value' => $totalIzin ?? 0,
-                            'sub' => 'Izin Syar\'i',
+                            'sub' => 'Izin syar\'i',
                             'color' => 'secondary',
                             'icon' => 'envelope-paper',
-                            'max' => max(10, $totalIzin ?? 0),
                         ],
                         [
                             'label' => 'Alpha',
                             'value' => $totalAlpha ?? 0,
-                            'sub' => 'Tanpa Ket.',
+                            'sub' => 'Tanpa keterangan',
                             'color' => 'danger',
                             'icon' => 'x-octagon',
-                            'max' => max(10, $totalAlpha ?? 0),
                         ],
                         [
                             'label' => 'Rata Nilai',
                             'value' => $avgNilai ?? 0,
-                            'sub' => 'Indeks Prestasi',
-                            'color' => 'special',
+                            'sub' => 'Skala 0–100',
+                            'color' => 'info',
                             'icon' => 'graph-up-arrow',
-                            'max' => 100,
                         ],
                     ];
                 @endphp
 
-                @foreach ($kpiItems as $item)
-                    <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
-                        <div class="card kpi-card border-0 h-100 shadow-sm" {!! $item['color'] === 'special'
-                            ? 'style="background: linear-gradient(135deg, var(--islamic-purple-50) 0%, #ffffff 100%);"'
-                            : '' !!}>
-                            <div class="card-body p-3">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div>
+                <div class="row g-3 mb-4">
+                    @foreach ($hafalanKpi as $item)
+                        <div class="col-6 col-md-4 col-xl-2">
+                            <div class="kpi-card">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div class="min-w-0">
                                         <div class="kpi-label">{{ $item['label'] }}</div>
-                                        <div class="kpi-value text-{{ $item['color'] }}" {!! $item['color'] === 'special' ? 'style="color: var(--islamic-purple-600) !important;"' : '' !!}>
-                                            {{ $item['value'] }}</div>
+                                        <div class="kpi-value text-{{ $item['color'] }}">{{ $item['value'] }}</div>
+                                        <div class="kpi-sub">{{ $item['sub'] }}</div>
                                     </div>
-                                    <div class="kpi-icon shadow-sm rounded-3 p-2 {{ $item['color'] !== 'special' ? 'bg-' . $item['color'] . '-subtle text-' . $item['color'] : '' }}"
-                                        {!! $item['color'] === 'special'
-                                            ? 'style="background-color: var(--islamic-purple-100); color: var(--islamic-purple-600);"'
-                                            : '' !!}>
+                                    <div class="kpi-icon bg-{{ $item['color'] }}-subtle text-{{ $item['color'] }}">
                                         <i class="bi bi-{{ $item['icon'] }}"></i>
                                     </div>
                                 </div>
-                                <div class="kpi-progress mt-2">
-                                    <div class="progress-bar kpi-progress-bar {{ $item['color'] !== 'special' ? 'bg-' . $item['color'] : '' }}"
-                                        style="height: 6px; width: {{ min(100, ((float) $item['value'] / max(1, $item['max'])) * 100) }}%; {!! $item['color'] === 'special' ? 'background-color: var(--islamic-purple-500);' : '' !!}">
-                                    </div>
-                                </div>
-                                <div class="kpi-sub fst-italic mt-1" style="font-size: 11px;">{{ $item['sub'] }}</div>
                             </div>
                         </div>
-                    </div>
-                @endforeach
-            </div>
-
-            <div class="card card-main border-0 shadow-sm mb-4">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <h6 class="fw-bold mb-0 text-adaptive-purple">Overall Progress Hafalan</h6>
-                            <small class="text-muted">Capaian tahap tertinggi yang diselesaikan per juz.</small>
-                        </div>
-                        <div class="text-end">
-                            <span class="display-6 fw-bold text-primary">{{ $overallPct ?? 0 }}<small
-                                    style="font-size: 20px;">%</small></span>
-                        </div>
-                    </div>
-                    <div class="progress" style="height: 16px; border-radius: 50px; background: rgba(0,0,0,0.05);">
-                        <div class="progress-bar progress-bar-animated progress-bar-striped"
-                            style="width: {{ $overallPct ?? 0 }}%; background-color: var(--islamic-purple-600);"></div>
-                    </div>
+                    @endforeach
                 </div>
-            </div>
 
-            <div class="row g-4 mb-4">
-                <div class="col-lg-6">
-                    <div class="card card-main h-100 border-0">
-                        <div class="card-header bg-transparent border-bottom py-3 px-4">
-                            <span class="section-title text-adaptive-purple"><i class="bi bi-list-stars me-2"></i>Progress
-                                per Juz (Ringkas)</span>
+                <section class="student-card summary-card mb-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+                        <div>
+                            <h3 class="student-section-title">Overall Progress Hafalan</h3>
+                            <p class="student-section-copy">Rata-rata tahap tertinggi yang telah lulus pada seluruh 30 Juz.
+                            </p>
                         </div>
-                        <div class="card-body enterprise-progress-container p-4">
-                            @foreach ($progressPerJuz ?? [] as $p)
-                                @if ($p['pct'] > 0 || $p['tahap'])
-                                    <div class="enterprise-progress-row" data-coreui-toggle="tooltip"
-                                        title="Juz {{ $p['juz'] }} • Status: {{ $p['status'] }}">
+                        <div class="text-md-end">
+                            <div class="summary-value">{{ $overallPct ?? 0 }}%</div>
+                            <div class="small text-muted">{{ $juzSelesai ?? 0 }} Juz selesai ujian akhir</div>
+                        </div>
+                    </div>
+                    <div class="progress summary-progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated"
+                            style="width: {{ $overallPct ?? 0 }}%; background: var(--student-purple);"></div>
+                    </div>
+                </section>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <section class="student-card h-100">
+                            <header class="student-card-header">
+                                <h3 class="student-section-title"><i class="bi bi-list-stars me-2"></i>Progress per Juz</h3>
+                                <p class="student-section-copy">Semua Juz tetap ditampilkan, termasuk yang belum dimulai.
+                                </p>
+                            </header>
+                            <div class="p-4 enterprise-progress-container">
+                                @foreach ($progressPerJuz as $p)
+                                    <div class="enterprise-progress-row">
                                         <div class="enterprise-progress-header">
-                                            <div class="enterprise-juz text-adaptive-purple">Juz {{ $p['juz'] }}</div>
-                                            <div class="enterprise-meta">
+                                            <div class="enterprise-progress-name">Juz {{ $p['juz'] }}</div>
+                                            <div class="enterprise-progress-meta">
                                                 @if ($p['tahap'])
-                                                    <span class="badge bg-light text-dark border-0 shadow-sm"
-                                                        style="font-size: 9px;">{{ strtoupper(str_replace('_', ' ', $p['tahap'])) }}</span>
+                                                    <span class="badge bg-body-secondary text-body">
+                                                        {{ strtoupper(str_replace('_', ' ', $p['tahap'])) }}
+                                                    </span>
                                                 @endif
-                                                <span class="badge bg-{{ $p['color'] }} shadow-sm"
-                                                    style="font-size: 9px;">{{ $p['status'] }}</span>
+                                                <span
+                                                    class="badge bg-{{ $p['color'] }} {{ $p['color'] === 'light' ? 'text-dark' : '' }}">
+                                                    {{ $p['status'] }}
+                                                </span>
                                                 <span class="enterprise-percent">{{ $p['pct'] }}%</span>
                                             </div>
                                         </div>
@@ -476,361 +552,308 @@
                                                 data-width="{{ $p['pct'] }}"></div>
                                         </div>
                                     </div>
-                                @endif
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="card card-main h-100 border-0">
-                        <div class="card-header bg-transparent border-bottom py-3 px-4">
-                            <span class="section-title text-adaptive-purple"><i class="bi bi-activity me-2"></i>Analitik
-                                Capaian per Juz (%)</span>
-                        </div>
-                        <div class="card-body p-4">
-                            <div style="height: 250px; position: relative;">
-                                <canvas id="chartJuzPct"></canvas>
+                                @endforeach
                             </div>
-                        </div>
+                        </section>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <section class="student-card h-100">
+                            <header class="student-card-header">
+                                <h3 class="student-section-title"><i class="bi bi-activity me-2"></i>Analitik Capaian per
+                                    Juz</h3>
+                                <p class="student-section-copy">Visualisasi persentase tahapan Hafalan Juz 1 sampai 30.</p>
+                            </header>
+                            <div class="p-4">
+                                <div class="chart-wrap"><canvas id="chartJuzPct"></canvas></div>
+                            </div>
+                        </section>
                     </div>
                 </div>
+
+                <section class="student-card overflow-hidden mb-4">
+                    <header class="student-card-header">
+                        <h3 class="student-section-title">
+                            <i class="bi bi-clock-history me-2"></i>Timeline Setoran Hafalan
+                        </h3>
+                        <p class="student-section-copy">
+                            Riwayat Hafalan mengikuti data yang sama dengan KPI di atas.
+                        </p>
+                    </header>
+                    <div class="p-3 p-lg-4 table-responsive">
+                        <table id="timelineTable" class="table table-hover align-middle w-100">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Tanggal</th>
+                                    <th>Juz</th>
+                                    <th>Surah / Ayat</th>
+                                    <th>Status</th>
+                                    <th>Nilai</th>
+                                    <th>Catatan Musyrif</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </section>
             </div>
 
-            <div class="card card-main overflow-hidden border-0">
-                <div
-                    class="card-header bg-transparent py-3 px-4 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                    <span class="section-title text-adaptive-purple"><i class="bi bi-clock-history me-2"></i>Riwayat
-                        Timeline Setoran</span>
-                    <form id="formExportPdf" action="{{ route('santri.hafalan.export-pdf') }}" method="GET"
-                        target="_blank" class="d-flex flex-wrap gap-2 align-items-center">
-                        <div class="input-group input-group-sm w-auto adaptive-group">
-                            <span class="input-group-text adaptive-label">Dari</span>
-                            <input type="date" name="start_date" class="form-control adaptive-input shadow-none">
-                        </div>
-                        <div class="input-group input-group-sm w-auto adaptive-group">
-                            <span class="input-group-text adaptive-label">Sampai</span>
-                            <input type="date" name="end_date" class="form-control adaptive-input shadow-none">
-                        </div>
-                        <button type="button" id="btnCetakPdf"
-                            class="btn btn-sm btn-danger text-white rounded-pill px-3 shadow-sm fw-bold">
-                            <i class="bi bi-file-earmark-pdf me-1"></i> Cetak PDF
-                        </button>
-                    </form>
-                </div>
-                <div class="card-body p-0 table-responsive py-4 px-4">
-                    <table id="timelineTable" class="table table-hover align-middle w-100 mb-0">
-                        <thead class="bg-light bg-opacity-50 text-nowrap">
-                            <tr class="text-muted small fw-bold text-uppercase" style="letter-spacing: 1px;">
-                                <th class="ps-4">No</th>
-                                <th>Tanggal</th>
-                                <th>Juz</th>
-                                <th>Surah / Ayat</th>
-                                <th>Status</th>
-                                <th>Nilai</th>
-                                <th class="pe-4">Catatan Musyrif</th>
-                            </tr>
-                        </thead>
-                    </table>
-                </div>
-            </div>
-        </div>
+            {{-- ========================================================
+                TAB TAHSIN
+            ========================================================= --}}
+            <div class="tab-pane fade" id="tab-tahsin" role="tabpanel">
+                @php
+                    $tahsinKpi = [
+                        [
+                            'label' => 'Hadir',
+                            'value' => $tahsinHadir ?? 0,
+                            'color' => 'success',
+                            'icon' => 'person-check-fill',
+                        ],
+                        [
+                            'label' => 'Izin',
+                            'value' => $tahsinIzin ?? 0,
+                            'color' => 'secondary',
+                            'icon' => 'envelope-paper',
+                        ],
+                        [
+                            'label' => 'Sakit',
+                            'value' => $tahsinSakit ?? 0,
+                            'color' => 'primary',
+                            'icon' => 'heart-pulse',
+                        ],
+                        ['label' => 'Alpha', 'value' => $tahsinAlpha ?? 0, 'color' => 'danger', 'icon' => 'x-octagon'],
+                    ];
+                @endphp
 
-        {{-- ======================== TAB TAHSIN ======================== --}}
-        <div class="tab-pane fade" id="tab-tahsin" role="tabpanel">
-            <div class="row g-3 mb-4">
-                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
-                    <div class="card kpi-card h-100 border-0 shadow-sm">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="kpi-label">Hadir</div>
-                                    <div class="kpi-value text-success">{{ $tahsinHadir ?? 0 }}</div>
+                <div class="row g-3 mb-4">
+                    @foreach ($tahsinKpi as $item)
+                        <div class="col-6 col-md-3 col-xl-2">
+                            <div class="kpi-card">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div>
+                                        <div class="kpi-label">{{ $item['label'] }}</div>
+                                        <div class="kpi-value text-{{ $item['color'] }}">{{ $item['value'] }}</div>
+                                    </div>
+                                    <div class="kpi-icon bg-{{ $item['color'] }}-subtle text-{{ $item['color'] }}">
+                                        <i class="bi bi-{{ $item['icon'] }}"></i>
+                                    </div>
                                 </div>
-                                <div class="kpi-icon bg-success-subtle text-success shadow-sm rounded-3 p-2"><i
-                                        class="bi bi-person-check-fill"></i></div>
                             </div>
                         </div>
-                    </div>
-                </div>
-                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
-                    <div class="card kpi-card h-100 border-0 shadow-sm">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="kpi-label">Izin</div>
-                                    <div class="kpi-value text-secondary">{{ $tahsinIzin ?? 0 }}</div>
-                                </div>
-                                <div class="kpi-icon bg-secondary-subtle text-secondary shadow-sm rounded-3 p-2"><i
-                                        class="bi bi-envelope-paper"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
-                    <div class="card kpi-card h-100 border-0 shadow-sm">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="kpi-label">Sakit</div>
-                                    <div class="kpi-value text-primary">{{ $tahsinSakit ?? 0 }}</div>
-                                </div>
-                                <div class="kpi-icon bg-primary-subtle text-primary shadow-sm rounded-3 p-2"><i
-                                        class="bi bi-heart-pulse"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
-                    <div class="card kpi-card h-100 border-0 shadow-sm">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="kpi-label">Alpha</div>
-                                    <div class="kpi-value text-danger">{{ $tahsinAlpha ?? 0 }}</div>
-                                </div>
-                                <div class="kpi-icon bg-danger-subtle text-danger shadow-sm rounded-3 p-2"><i
-                                        class="bi bi-x-octagon"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-4 col-lg-8 col-md-8 col-sm-12">
-                    <div class="card kpi-card h-100 border-0 shadow-sm"
-                        style="background: linear-gradient(135deg, var(--islamic-purple-50) 0%, #ffffff 100%);">
-                        <div class="card-body p-3 d-flex flex-column justify-content-center">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
+                    @endforeach
+
+                    <div class="col-12 col-md-12 col-xl-4">
+                        <div class="kpi-card">
+                            <div class="d-flex justify-content-between align-items-center gap-3">
+                                <div class="min-w-0">
                                     <div class="kpi-label">Progres Tahsin Terakhir</div>
-                                    @if (!empty($lastTahsin))
-                                        <div class="kpi-value"
-                                            style="color: var(--islamic-purple-600); font-size: 1.6rem;">
-                                            {{ strtoupper(str_replace('_', ' ', $lastTahsin->buku ?? '')) }}</div>
-                                        <div class="kpi-sub fw-bold text-dark mt-1">Halaman
-                                            {{ $lastTahsin->halaman ?? '-' }}</div>
+                                    @if ($lastTahsin)
+                                        <div class="fw-bold fs-5 text-body">{{ $lastTahsin->buku_label }}</div>
+                                        <div class="kpi-sub">Halaman {{ $lastTahsin->halaman }} •
+                                            {{ $lastTahsin->tanggal?->translatedFormat('d M Y') }}</div>
                                     @else
-                                        <div class="kpi-value text-muted" style="font-size: 1.4rem;">Belum Ada</div>
+                                        <div class="fw-bold fs-5 text-muted">Belum Ada</div>
+                                        <div class="kpi-sub">Belum ada record hadir dengan buku dan halaman.</div>
                                     @endif
                                 </div>
-                                <div class="kpi-icon shadow-sm rounded-3 p-3"
-                                    style="background-color: var(--islamic-purple-100); color: var(--islamic-purple-600); width: 60px; height: 60px;">
-                                    <i class="bi bi-book-half fs-3"></i>
+                                <div class="kpi-icon bg-primary-subtle text-primary">
+                                    <i class="bi bi-book-half"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="card card-main mb-4 overflow-hidden border-0">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
+                <section class="student-card summary-card mb-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                         <div>
-                            <h6 class="fw-bold mb-0 text-adaptive-purple">Overall Tahsin Summary</h6>
-                            <small class="text-muted">Kalkulasi penyelesaian dari seluruh kurikulum buku Tahsin.</small>
+                            <h3 class="student-section-title">Overall Tahsin Summary</h3>
+                            <p class="student-section-copy">Rata-rata progres halaman pada seluruh kurikulum Tahsin.</p>
                         </div>
-                        <div class="text-end">
-                            <span class="display-6 fw-bold text-primary">{{ $overallTahsinPct ?? 0 }}<small
-                                    style="font-size: 20px;">%</small></span>
-                        </div>
+                        <div class="summary-value">{{ $overallTahsinPct ?? 0 }}%</div>
                     </div>
-                    <div class="progress" style="height: 16px; border-radius: 50px; background: rgba(0,0,0,0.05);">
-                        <div class="progress-bar progress-bar-animated progress-bar-striped"
-                            style="width: {{ $overallTahsinPct ?? 0 }}%; background-color: var(--islamic-purple-600);">
-                        </div>
+                    <div class="progress summary-progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated"
+                            style="width: {{ $overallTahsinPct ?? 0 }}%; background: var(--student-purple);"></div>
                     </div>
-                </div>
-            </div>
+                </section>
 
-            <div class="row g-4 mb-4">
-                <div class="col-lg-6">
-                    <div class="card card-main h-100 border-0">
-                        <div class="card-header bg-transparent py-3 px-4 border-bottom text-adaptive-purple">
-                            <span class="section-title text-adaptive-purple"><i class="bi bi-list-stars me-2"></i>Progress
-                                per Buku/Jilid</span>
-                        </div>
-                        <div class="card-body enterprise-progress-container p-4">
-                            @foreach ($progressPerBuku ?? [] as $p)
-                                <div class="enterprise-progress-row" data-coreui-toggle="tooltip"
-                                    title="Buku {{ $p['label'] }} • Halaman {{ $p['current'] }} dari {{ $p['max'] }}">
-                                    <div class="enterprise-progress-header">
-                                        <div class="enterprise-buku text-adaptive-purple">{{ $p['label'] }}</div>
-                                        <div class="enterprise-meta">
-                                            <span class="badge bg-light text-dark border-0 shadow-sm"
-                                                style="font-size: 9px;">HAL
-                                                {{ $p['current'] }}/{{ $p['max'] }}</span>
-                                            <span class="badge bg-{{ $p['color'] }} shadow-sm"
-                                                style="font-size: 9px;">{{ $p['status'] }}</span>
-                                            <span class="enterprise-percent">{{ $p['pct'] }}%</span>
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <section class="student-card h-100">
+                            <header class="student-card-header">
+                                <h3 class="student-section-title"><i class="bi bi-list-stars me-2"></i>Progress per
+                                    Buku/Jilid</h3>
+                                <p class="student-section-copy">Seluruh buku ditampilkan meskipun progresnya masih nol.</p>
+                            </header>
+                            <div class="p-4 enterprise-progress-container">
+                                @foreach ($progressPerBuku as $p)
+                                    <div class="enterprise-progress-row">
+                                        <div class="enterprise-progress-header">
+                                            <div class="enterprise-progress-name">{{ $p['label'] }}</div>
+                                            <div class="enterprise-progress-meta">
+                                                <span class="badge bg-body-secondary text-body">Hal
+                                                    {{ $p['current'] }}/{{ $p['max'] }}</span>
+                                                <span class="badge bg-{{ $p['color'] }}">{{ $p['status'] }}</span>
+                                                <span class="enterprise-percent">{{ $p['pct'] }}%</span>
+                                            </div>
+                                        </div>
+                                        <div class="progress enterprise-progress">
+                                            <div class="progress-bar bg-{{ $p['color'] }}"
+                                                data-width="{{ $p['pct'] }}"></div>
                                         </div>
                                     </div>
-                                    <div class="progress enterprise-progress">
-                                        <div class="progress-bar bg-{{ $p['color'] }}"
-                                            data-width="{{ $p['pct'] }}"></div>
+                                @endforeach
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <section class="student-card h-100">
+                            <header class="student-card-header">
+                                <h3 class="student-section-title"><i class="bi bi-activity me-2"></i>Analitik Capaian
+                                    Tahsin</h3>
+                                <p class="student-section-copy">Persentase halaman tertinggi yang sudah dicapai per buku.
+                                </p>
+                            </header>
+                            <div class="p-4">
+                                <div class="chart-wrap"><canvas id="chartBukuPct"></canvas></div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <section class="student-card overflow-hidden mb-4">
+                    <header class="student-card-header">
+                        <h3 class="student-section-title"><i class="bi bi-clock-history me-2"></i>Timeline Pertemuan
+                            Tahsin</h3>
+                    </header>
+                    <div class="p-3 p-lg-4 table-responsive">
+                        <table id="timelineTahsinTable" class="table table-hover align-middle w-100">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Tanggal</th>
+                                    <th>Buku/Jilid</th>
+                                    <th>Halaman</th>
+                                    <th>Status</th>
+                                    <th>Nilai</th>
+                                    <th>Catatan</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            {{-- ========================================================
+                TAB TILAWAH
+            ========================================================= --}}
+            <div class="tab-pane fade" id="tab-tilawah" role="tabpanel">
+                @php
+                    $tilawahKpi = [
+                        [
+                            'label' => 'Hadir',
+                            'value' => $tilawahHadir ?? 0,
+                            'color' => 'success',
+                            'icon' => 'person-check-fill',
+                        ],
+                        [
+                            'label' => 'Izin',
+                            'value' => $tilawahIzin ?? 0,
+                            'color' => 'secondary',
+                            'icon' => 'envelope-paper',
+                        ],
+                        [
+                            'label' => 'Sakit',
+                            'value' => $tilawahSakit ?? 0,
+                            'color' => 'primary',
+                            'icon' => 'heart-pulse',
+                        ],
+                        ['label' => 'Alpha', 'value' => $tilawahAlpha ?? 0, 'color' => 'danger', 'icon' => 'x-octagon'],
+                    ];
+                @endphp
+
+                <div class="row g-3 mb-4">
+                    @foreach ($tilawahKpi as $item)
+                        <div class="col-6 col-md-3 col-xl-2">
+                            <div class="kpi-card">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div>
+                                        <div class="kpi-label">{{ $item['label'] }}</div>
+                                        <div class="kpi-value text-{{ $item['color'] }}">{{ $item['value'] }}</div>
+                                    </div>
+                                    <div class="kpi-icon bg-{{ $item['color'] }}-subtle text-{{ $item['color'] }}">
+                                        <i class="bi bi-{{ $item['icon'] }}"></i>
                                     </div>
                                 </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="card card-main h-100 border-0">
-                        <div class="card-header bg-transparent py-3 px-4 border-bottom text-adaptive-purple">
-                            <span class="section-title text-adaptive-purple"><i class="bi bi-activity me-2"></i>Analitik
-                                Capaian Tahsin</span>
-                        </div>
-                        <div class="card-body p-4">
-                            <div style="height: 250px; position: relative;">
-                                <canvas id="chartBukuPct"></canvas>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
+                    @endforeach
 
-            <div class="card card-main overflow-hidden border-0">
-                <div class="card-header bg-transparent py-3 px-4 border-bottom">
-                    <span class="section-title text-adaptive-purple">Timeline Pertemuan Tahsin</span>
-                </div>
-                <div class="card-body table-padding-container table-responsive p-0 py-4 px-4">
-                    <table id="timelineTahsinTable" class="table table-hover align-middle w-100 mb-0">
-                        <thead class="bg-light bg-opacity-50">
-                            <tr class="text-muted small fw-bold text-uppercase" style="letter-spacing: 1px;">
-                                <th class="ps-4">No</th>
-                                <th>Tanggal</th>
-                                <th>Buku/Jilid</th>
-                                <th>Halaman</th>
-                                <th>Status</th>
-                                <th>Nilai</th>
-                                <th class="text-end pe-4">Catatan</th>
-                            </tr>
-                        </thead>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        {{-- ======================== TAB TILAWAH ======================== --}}
-        <div class="tab-pane fade" id="tab-tilawah" role="tabpanel">
-            <div class="row g-3 mb-4">
-                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
-                    <div class="card kpi-card h-100 border-0 shadow-sm">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="kpi-label">Hadir</div>
-                                    <div class="kpi-value text-success">{{ $tilawahHadir ?? 0 }}</div>
-                                </div>
-                                <div class="kpi-icon bg-success-subtle text-success shadow-sm rounded-3 p-2"><i
-                                        class="bi bi-person-check-fill"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
-                    <div class="card kpi-card h-100 border-0 shadow-sm">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="kpi-label">Izin</div>
-                                    <div class="kpi-value text-secondary">{{ $tilawahIzin ?? 0 }}</div>
-                                </div>
-                                <div class="kpi-icon bg-secondary-subtle text-secondary shadow-sm rounded-3 p-2"><i
-                                        class="bi bi-envelope-paper"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
-                    <div class="card kpi-card h-100 border-0 shadow-sm">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="kpi-label">Sakit</div>
-                                    <div class="kpi-value text-primary">{{ $tilawahSakit ?? 0 }}</div>
-                                </div>
-                                <div class="kpi-icon bg-primary-subtle text-primary shadow-sm rounded-3 p-2"><i
-                                        class="bi bi-heart-pulse"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
-                    <div class="card kpi-card h-100 border-0 shadow-sm">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="kpi-label">Alpha</div>
-                                    <div class="kpi-value text-danger">{{ $tilawahAlpha ?? 0 }}</div>
-                                </div>
-                                <div class="kpi-icon bg-danger-subtle text-danger shadow-sm rounded-3 p-2"><i
-                                        class="bi bi-x-octagon"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-4 col-lg-8 col-md-8 col-sm-12">
-                    <div class="card kpi-card h-100 border-0 shadow-sm"
-                        style="background: linear-gradient(135deg, #d1e7dd 0%, #ffffff 100%);">
-                        <div class="card-body p-3 d-flex flex-column justify-content-center">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
+                    <div class="col-12 col-md-12 col-xl-4">
+                        <div class="kpi-card">
+                            <div class="d-flex justify-content-between align-items-center gap-3">
+                                <div class="min-w-0">
                                     <div class="kpi-label text-success">Progres Tilawah Terakhir</div>
-                                    @if (!empty($lastTilawah) && !empty($lastTilawah->template))
-                                        <div class="kpi-value text-success" style="font-size: 1.6rem;">JUZ
-                                            {{ $lastTilawah->template->juz }}</div>
-                                        <div class="kpi-sub fw-bold text-dark mt-1">{{ $lastTilawah->template->label }}
+                                    @if ($lastTilawah && $lastTilawah->template)
+                                        <div class="fw-bold fs-5 text-success">Juz {{ $lastTilawah->template->juz }}</div>
+                                        <div class="kpi-sub text-truncate" title="{{ $lastTilawah->template->label }}">
+                                            {{ $lastTilawah->template->label }} •
+                                            {{ $lastTilawah->tanggal?->translatedFormat('d M Y') }}
                                         </div>
                                     @else
-                                        <div class="kpi-value text-muted" style="font-size: 1.4rem;">Belum Ada</div>
+                                        <div class="fw-bold fs-5 text-muted">Belum Ada</div>
+                                        <div class="kpi-sub">Belum ada record Tilawah berstatus hadir.</div>
                                     @endif
                                 </div>
-                                <div class="kpi-icon shadow-sm rounded-3 p-3 bg-success text-white"
-                                    style="width: 60px; height: 60px;"><i class="bi bi-book-half fs-3"></i></div>
+                                <div class="kpi-icon bg-success-subtle text-success">
+                                    <i class="bi bi-book-half"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="card card-main mb-4 overflow-hidden border-0">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
+                <section class="student-card summary-card mb-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                         <div>
-                            <h6 class="fw-bold mb-0 text-success">Khatam Al-Quran (30 Juz)</h6>
-                            <small class="text-muted">Kalkulasi persentase tilawah hingga khatam 30 Juz.</small>
+                            <h3 class="student-section-title text-success">Khatam Al-Qur'an (30 Juz)</h3>
+                            <p class="student-section-copy">Dihitung dari Juz tertinggi pada Tilawah berstatus hadir.</p>
                         </div>
-                        <div class="text-end">
-                            <span class="display-6 fw-bold text-success">{{ $tilawahPct ?? 0 }}<small
-                                    style="font-size: 20px;">%</small></span>
+                        <div class="text-md-end">
+                            <div class="summary-value text-success">{{ $tilawahPct ?? 0 }}%</div>
+                            <div class="small text-muted">Posisi tertinggi: Juz {{ $maxJuzTilawah ?? 0 ?: 0 }}</div>
                         </div>
                     </div>
-                    <div class="progress" style="height: 16px; border-radius: 50px; background: rgba(0,0,0,0.05);">
-                        <div class="progress-bar progress-bar-animated progress-bar-striped bg-success"
+                    <div class="progress summary-progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
                             style="width: {{ $tilawahPct ?? 0 }}%;"></div>
                     </div>
-                </div>
-            </div>
+                </section>
 
-            <div class="card card-main overflow-hidden border-0">
-                <div
-                    class="card-header bg-transparent py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
-                    <span class="section-title text-success"><i
-                            class="bi bi-journal-bookmark-fill text-success me-2"></i>Timeline Pertemuan Tilawah</span>
-                </div>
-                <div class="card-body table-padding-container table-responsive p-0 py-4 px-4">
-                    <table id="timelineTilawahTable" class="table table-hover align-middle w-100 mb-0">
-                        <thead class="bg-success bg-opacity-10">
-                            <tr class="text-success small fw-bold text-uppercase" style="letter-spacing: 1px;">
-                                <th class="ps-4">No</th>
-                                <th>Tanggal</th>
-                                <th>Juz & Target</th>
-                                <th>Status</th>
-                                <th>Nilai</th>
-                                <th class="text-end pe-4">Catatan / Detail Ayat</th>
-                            </tr>
-                        </thead>
-                    </table>
-                </div>
+                <section class="student-card overflow-hidden mb-4">
+                    <header class="student-card-header">
+                        <h3 class="student-section-title text-success"><i class="bi bi-clock-history me-2"></i>Timeline
+                            Pertemuan Tilawah</h3>
+                        <p class="student-section-copy">Tilawah tidak memiliki kolom nilai pada database, sehingga tabel
+                            hanya menampilkan data yang tersedia.</p>
+                    </header>
+                    <div class="p-3 p-lg-4 table-responsive">
+                        <table id="timelineTilawahTable" class="table table-hover align-middle w-100">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Tanggal</th>
+                                    <th>Juz & Target</th>
+                                    <th>Status</th>
+                                    <th>Catatan / Detail Ayat</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -841,63 +864,86 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const hasJquery = typeof window.jQuery !== 'undefined';
-            const hasDataTable = hasJquery && typeof $.fn.DataTable !== 'undefined';
+            const hasDataTable = hasJquery && $.fn && typeof $.fn.DataTable !== 'undefined';
             const hasChart = typeof window.Chart !== 'undefined';
 
-            const chartJuzLabels = @json(collect($progressPerJuz ?? [])->pluck('juz')->map(fn($j) => 'Juz ' . $j)->values()->all());
-            const chartJuzData = @json(collect($progressPerJuz ?? [])->pluck('pct')->map(fn($v) => (float) $v)->values()->all());
-            const chartBukuLabels = @json(collect($progressPerBuku ?? [])->pluck('label')->values()->all());
-            const chartBukuData = @json(collect($progressPerBuku ?? [])->pluck('pct')->map(fn($v) => (float) $v)->values()->all());
+            const chartJuzLabels = @json($progressPerJuz->pluck('juz')->map(fn($juz) => 'Juz ' . $juz)->values());
+            const chartJuzData = @json($progressPerJuz->pluck('pct')->map(fn($value) => (float) $value)->values());
+            const chartBukuLabels = @json($progressPerBuku->pluck('label')->values());
+            const chartBukuData = @json($progressPerBuku->pluck('pct')->map(fn($value) => (float) $value)->values());
 
-            let juzChartInstance = null;
-            let tahsinChartInstance = null;
+            let chartJuz = null;
+            let chartBuku = null;
+            let tables = null;
 
-            function initTooltips() {
-                const tooltipEls = document.querySelectorAll(
-                    '[data-coreui-toggle="tooltip"], [data-bs-toggle="tooltip"]');
-
-                tooltipEls.forEach(function(el) {
-                    if (window.coreui && typeof window.coreui.Tooltip === 'function') {
-                        new window.coreui.Tooltip(el);
-                    } else if (window.bootstrap && typeof window.bootstrap.Tooltip === 'function') {
-                        new window.bootstrap.Tooltip(el);
-                    }
-                });
+            function isDarkTheme() {
+                return document.documentElement.getAttribute('data-coreui-theme') === 'dark';
             }
 
-            function animateProgressBars() {
-                const allBars = document.querySelectorAll('.progress-bar[data-width]');
+            function chartTheme() {
+                const dark = isDarkTheme();
 
-                allBars.forEach(function(bar, index) {
-                    const width = Number(bar.dataset.width || 0);
-                    const safeWidth = Math.max(0, Math.min(100, width));
-
-                    bar.style.width = '0%';
-
-                    setTimeout(function() {
-                        bar.style.transition = 'width 1.2s cubic-bezier(0.1, 0.5, 0.5, 1)';
-                        bar.style.width = safeWidth + '%';
-                    }, 150 + (index * 50));
-                });
+                return {
+                    text: dark ? '#cfd3dc' : '#6b7280',
+                    grid: dark ? 'rgba(255,255,255,.08)' : 'rgba(31,41,55,.08)',
+                    tooltipBg: dark ? '#11131a' : '#ffffff',
+                    tooltipText: dark ? '#f3f4f6' : '#1f2937'
+                };
             }
 
-            function chartOptions(maxValue = 100) {
+            function chartOptions() {
+                const theme = chartTheme();
+
                 return {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
                     plugins: {
                         legend: {
                             display: false
+                        },
+                        tooltip: {
+                            backgroundColor: theme.tooltipBg,
+                            titleColor: theme.tooltipText,
+                            bodyColor: theme.tooltipText,
+                            borderColor: theme.grid,
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.parsed.y}%`;
+                                }
+                            }
                         }
                     },
                     scales: {
+                        x: {
+                            ticks: {
+                                color: theme.text,
+                                maxRotation: 60,
+                                minRotation: 0
+                            },
+                            grid: {
+                                display: false
+                            },
+                            border: {
+                                color: theme.grid
+                            }
+                        },
                         y: {
                             beginAtZero: true,
-                            max: maxValue,
+                            max: 100,
                             ticks: {
-                                callback: function(value) {
-                                    return value + '%';
-                                }
+                                color: theme.text,
+                                callback: value => value + '%'
+                            },
+                            grid: {
+                                color: theme.grid
+                            },
+                            border: {
+                                color: theme.grid
                             }
                         }
                     }
@@ -905,251 +951,212 @@
             }
 
             function renderJuzChart() {
-                const ctxJuz = document.getElementById('chartJuzPct');
+                const canvas = document.getElementById('chartJuzPct');
+                if (!hasChart || !canvas || chartJuz) return;
 
-                if (!hasChart || !ctxJuz || juzChartInstance) {
-                    return;
-                }
-
-                juzChartInstance = new Chart(ctxJuz, {
+                chartJuz = new Chart(canvas, {
                     type: 'line',
                     data: {
                         labels: chartJuzLabels,
                         datasets: [{
-                            label: 'Progress (%)',
                             data: chartJuzData,
-                            fill: true,
-                            backgroundColor: 'rgba(111, 66, 193, 0.05)',
                             borderColor: '#6f42c1',
-                            tension: 0.4,
+                            backgroundColor: 'rgba(111,66,193,.10)',
+                            fill: true,
+                            tension: .35,
                             borderWidth: 3,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#fff',
-                            pointBorderColor: '#6f42c1'
+                            pointRadius: 3,
+                            pointHoverRadius: 5
                         }]
                     },
-                    options: chartOptions(100)
+                    options: chartOptions()
                 });
             }
 
-            function renderTahsinChart() {
-                const ctxBuku = document.getElementById('chartBukuPct');
+            function renderBukuChart() {
+                const canvas = document.getElementById('chartBukuPct');
+                if (!hasChart || !canvas || chartBuku) return;
 
-                if (!hasChart || !ctxBuku || tahsinChartInstance) {
-                    return;
-                }
-
-                tahsinChartInstance = new Chart(ctxBuku, {
-                    type: 'line',
+                chartBuku = new Chart(canvas, {
+                    type: 'bar',
                     data: {
                         labels: chartBukuLabels,
                         datasets: [{
-                            label: 'Capaian (%)',
                             data: chartBukuData,
-                            fill: true,
-                            backgroundColor: 'rgba(111, 66, 193, 0.08)',
-                            borderColor: '#6f42c1',
-                            tension: 0.4,
-                            borderWidth: 3,
-                            pointRadius: 5,
-                            pointBackgroundColor: '#ffffff',
-                            pointBorderColor: '#6f42c1'
+                            backgroundColor: 'rgba(111,66,193,.76)',
+                            borderRadius: 7,
+                            maxBarThickness: 48
                         }]
                     },
-                    options: chartOptions(100)
+                    options: chartOptions()
                 });
+            }
+
+            function updateChartTheme() {
+                [chartJuz, chartBuku].forEach(function(chart) {
+                    if (!chart) return;
+                    chart.options = chartOptions();
+                    chart.update();
+                });
+            }
+
+            function animateProgressBars() {
+                document.querySelectorAll('.progress-bar[data-width]').forEach(function(bar, index) {
+                    const width = Math.min(100, Math.max(0, Number(bar.dataset.width || 0)));
+                    bar.style.width = '0%';
+                    setTimeout(() => bar.style.width = width + '%', 120 + index * 25);
+                });
+            }
+
+            function dataTableLanguage(placeholder, emptyText) {
+                return {
+                    search: '',
+                    searchPlaceholder: placeholder,
+                    lengthMenu: 'Tampilkan _MENU_',
+                    info: 'Menampilkan _START_–_END_ dari _TOTAL_ data',
+                    infoEmpty: 'Belum ada data',
+                    zeroRecords: emptyText,
+                    processing: 'Memuat data...',
+                    paginate: {
+                        previous: '<i class="bi bi-chevron-left"></i>',
+                        next: '<i class="bi bi-chevron-right"></i>'
+                    }
+                };
+            }
+
+            function commonTableOptions() {
+                return {
+                    processing: true,
+                    serverSide: true,
+                    responsive: Boolean($.fn.dataTable && $.fn.dataTable.Responsive),
+                    autoWidth: false,
+                    pageLength: 10
+                };
             }
 
             function initDataTables() {
                 if (!hasDataTable) {
+                    console.error('jQuery DataTables belum termuat di layouts.app.');
                     return null;
                 }
 
                 const tableHafalan = $('#timelineTable').DataTable({
-                    processing: true,
-                    serverSide: true,
-                    responsive: true,
-                    pageLength: 10,
+                    ...commonTableOptions(),
                     ajax: {
-                        url: "{{ route('santri.hafalan.timeline') }}",
-                        data: function(d) {
-                            d.start_date = $('input[name="start_date"]').val();
-                            d.end_date = $('input[name="end_date"]').val();
-                        }
+                        url: "{{ route('santri.hafalan.timeline') }}"
                     },
                     columns: [{
                             data: 'DT_RowIndex',
-                            name: 'DT_RowIndex',
                             orderable: false,
-                            searchable: false,
-                            className: 'ps-4'
+                            searchable: false
                         },
                         {
                             data: 'tanggal',
-                            name: 'hafalans.tanggal_setoran',
-                            searchable: true
+                            name: 'hafalans.tanggal_setoran'
                         },
                         {
                             data: 'juz',
-                            name: 'hafalan_templates.juz',
-                            orderable: true,
-                            searchable: true
+                            name: 'ht.juz'
                         },
                         {
                             data: 'surah_ayat',
-                            name: 'hafalan_templates.label',
-                            orderable: true,
-                            searchable: true
+                            name: 'ht.label'
                         },
                         {
                             data: 'status',
-                            name: 'hafalans.status',
-                            orderable: true,
-                            searchable: true
+                            name: 'hafalans.status'
                         },
                         {
                             data: 'nilai',
-                            name: 'hafalans.nilai_label',
-                            orderable: true,
-                            searchable: true
+                            name: 'hafalans.nilai_label'
                         },
                         {
                             data: 'catatan',
                             name: 'hafalans.catatan',
-                            orderable: true,
-                            searchable: true,
-                            className: 'pe-4 text-wrap',
-                            defaultContent: '-'
+                            defaultContent: '-',
+                            className: 'text-wrap'
                         }
                     ],
                     order: [
                         [1, 'desc']
                     ],
-                    language: {
-                        searchPlaceholder: 'Cari riwayat hafalan...',
-                        zeroRecords: 'Belum ada riwayat hafalan.'
-                    }
+                    language: dataTableLanguage('Cari riwayat hafalan...', 'Belum ada riwayat Hafalan.')
                 });
 
                 const tableTahsin = $('#timelineTahsinTable').DataTable({
-                    processing: true,
-                    serverSide: true,
-                    responsive: true,
-                    pageLength: 10,
+                    ...commonTableOptions(),
                     ajax: "{{ route('santri.tahsin.timeline') }}",
                     columns: [{
                             data: 'DT_RowIndex',
-                            name: 'DT_RowIndex',
                             orderable: false,
-                            searchable: false,
-                            className: 'ps-4'
-                        },
-                        {
-                            data: 'tanggal',
-                            name: 'tanggal',
                             searchable: false
                         },
                         {
+                            data: 'tanggal',
+                            name: 'tanggal'
+                        },
+                        {
                             data: 'buku_label',
-                            name: 'buku',
-                            orderable: false,
-                            searchable: true
+                            name: 'buku'
                         },
                         {
                             data: 'halaman',
                             name: 'halaman',
-                            orderable: false,
-                            searchable: false,
                             defaultContent: '-'
                         },
                         {
                             data: 'status',
-                            name: 'status',
-                            orderable: false,
-                            searchable: false
+                            name: 'status'
                         },
                         {
                             data: 'nilai',
-                            name: 'nilai_label',
-                            orderable: true,
-                            searchable: true
+                            name: 'nilai_label'
                         },
                         {
                             data: 'catatan',
                             name: 'catatan',
-                            orderable: false,
-                            searchable: true,
-                            className: 'text-end pe-4 text-wrap',
-                            width: '30%',
-                            defaultContent: '-'
+                            defaultContent: '-',
+                            className: 'text-wrap'
                         }
                     ],
                     order: [
                         [1, 'desc']
                     ],
-                    language: {
-                        searchPlaceholder: 'Cari riwayat tahsin...',
-                        zeroRecords: 'Belum ada riwayat tahsin.'
-                    }
+                    language: dataTableLanguage('Cari riwayat tahsin...', 'Belum ada riwayat Tahsin.')
                 });
 
                 const tableTilawah = $('#timelineTilawahTable').DataTable({
-                    processing: true,
-                    serverSide: true,
-                    responsive: true,
-                    pageLength: 10,
+                    ...commonTableOptions(),
                     ajax: "{{ route('santri.tilawah.timeline') }}",
                     columns: [{
                             data: 'DT_RowIndex',
-                            name: 'DT_RowIndex',
                             orderable: false,
-                            searchable: false,
-                            className: 'ps-4'
-                        },
-                        {
-                            data: 'tanggal',
-                            name: 'tanggal',
                             searchable: false
                         },
                         {
+                            data: 'tanggal',
+                            name: 'tilawahs.tanggal'
+                        },
+                        {
                             data: 'target_bacaan',
-                            name: 'hafalan_template_id',
                             orderable: false,
                             searchable: false
                         },
                         {
                             data: 'status',
-                            name: 'status',
-                            orderable: false,
-                            searchable: false
-                        },
-                        {
-                            data: 'nilai',
-                            name: 'nilai_label',
-                            orderable: true,
-                            searchable: true
+                            name: 'tilawahs.status'
                         },
                         {
                             data: 'catatan',
-                            name: 'catatan',
-                            orderable: false,
-                            searchable: true,
-                            className: 'text-end pe-4 text-wrap',
-                            width: '30%',
-                            defaultContent: '-'
+                            name: 'tilawahs.catatan',
+                            defaultContent: '-',
+                            className: 'text-wrap'
                         }
                     ],
                     order: [
                         [1, 'desc']
                     ],
-                    language: {
-                        searchPlaceholder: 'Cari riwayat tilawah...',
-                        zeroRecords: 'Belum ada riwayat tilawah.'
-                    }
-                });
-
-                $('input[name="start_date"], input[name="end_date"]').on('change', function() {
-                    tableHafalan.draw();
+                    language: dataTableLanguage('Cari riwayat tilawah...', 'Belum ada riwayat Tilawah.')
                 });
 
                 return {
@@ -1160,140 +1167,55 @@
             }
 
             function adjustVisibleDataTables() {
-                if (!window.jQuery || !$.fn.DataTable || !$.fn.dataTable) {
-                    return;
-                }
+                if (!hasDataTable) return;
 
-                try {
-                    const tablesApi = $.fn.dataTable.tables({
-                        visible: true,
-                        api: true
-                    });
+                setTimeout(function() {
+                    try {
+                        const api = $.fn.dataTable.tables({
+                            visible: true,
+                            api: true
+                        });
+                        api.columns.adjust();
 
-                    if (!tablesApi) {
-                        return;
-                    }
-
-                    // Selalu aman untuk adjust columns
-                    if (tablesApi.columns && typeof tablesApi.columns === 'function') {
-                        tablesApi.columns.adjust();
-                    }
-
-                    // Jalankan responsive.recalc() hanya kalau extension Responsive tersedia
-                    if (
-                        $.fn.dataTable.Responsive &&
-                        tablesApi.responsive &&
-                        typeof tablesApi.responsive.recalc === 'function'
-                    ) {
-                        tablesApi.responsive.recalc();
-                    }
-                } catch (error) {
-                    console.warn('DataTables adjust skipped:', error);
-                }
-            }
-
-            function activateTabManually(button, targetSelector) {
-                if (!targetSelector) {
-                    return;
-                }
-
-                document.querySelectorAll('button[data-coreui-toggle="tab"]').forEach(function(btn) {
-                    btn.classList.remove('active');
-                    btn.setAttribute('aria-selected', 'false');
-                });
-
-                document.querySelectorAll('.tab-pane').forEach(function(pane) {
-                    pane.classList.remove('show', 'active');
-                });
-
-                button.classList.add('active');
-                button.setAttribute('aria-selected', 'true');
-
-                const targetPane = document.querySelector(targetSelector);
-                if (targetPane) {
-                    targetPane.classList.add('show', 'active');
-                }
-            }
-
-            function bindTabEvents() {
-                const tabButtons = document.querySelectorAll('button[data-coreui-toggle="tab"]');
-                const hasCoreUiTab = !!(window.coreui && typeof window.coreui.Tab === 'function');
-                const hasBootstrapTab = !!(window.bootstrap && typeof window.bootstrap.Tab === 'function');
-
-                tabButtons.forEach(function(button) {
-                    button.addEventListener('shown.coreui.tab', function(event) {
-                        const target = event.target.getAttribute('data-coreui-target');
-                        setTimeout(function() {
-                            adjustVisibleDataTables();
-
-                            if (target === '#tab-tahsin') {
-                                renderTahsinChart();
-                            }
-                        }, 150);
-                    });
-
-                    button.addEventListener('shown.bs.tab', function(event) {
-                        const target = event.target.getAttribute('data-coreui-target') || event
-                            .target.getAttribute('data-bs-target');
-
-                        setTimeout(function() {
-                            adjustVisibleDataTables();
-
-                            if (target === '#tab-tahsin') {
-                                renderTahsinChart();
-                            }
-                        }, 150);
-                    });
-
-                    // Fallback apabila library tab CoreUI/Bootstrap tidak tersedia.
-                    button.addEventListener('click', function(event) {
-                        const target = button.getAttribute('data-coreui-target') || button
-                            .getAttribute('data-bs-target');
-
-                        if (!hasCoreUiTab && !hasBootstrapTab) {
-                            event.preventDefault();
-                            activateTabManually(button, target);
+                        if ($.fn.dataTable.Responsive && api.responsive && typeof api.responsive.recalc ===
+                            'function') {
+                            api.responsive.recalc();
                         }
+                    } catch (error) {
+                        console.warn('Penyesuaian DataTables dilewati:', error);
+                    }
+                }, 120);
+            }
 
-                        setTimeout(function() {
-                            adjustVisibleDataTables();
+            function bindTabs() {
+                document.querySelectorAll('[data-coreui-toggle="tab"]').forEach(function(button) {
+                    const handler = function() {
+                        const target = button.getAttribute('data-coreui-target');
+                        adjustVisibleDataTables();
 
-                            if (target === '#tab-tahsin') {
-                                renderTahsinChart();
-                            }
-                        }, 250);
+                        if (target === '#tab-tahsin') {
+                            renderBukuChart();
+                        }
+                    };
+
+                    button.addEventListener('shown.coreui.tab', handler);
+                    button.addEventListener('shown.bs.tab', handler);
+                    button.addEventListener('click', function() {
+                        setTimeout(handler, 180);
                     });
                 });
             }
 
-            function bindExportPdf() {
-                if (!hasJquery) {
-                    return;
-                }
-
-                $('#btnCetakPdf').on('click', function() {
-                    const $form = $('#formExportPdf');
-                    const $btn = $(this);
-                    const originalHtml = $btn.html();
-
-                    $form.submit();
-
-                    $btn.prop('disabled', true).html(
-                        '<span class="spinner-border spinner-border-sm me-1"></span> Memproses...'
-                    );
-
-                    setTimeout(function() {
-                        $btn.prop('disabled', false).html(originalHtml);
-                    }, 3500);
-                });
-            }
-
-            initTooltips();
-            animateProgressBars();
             renderJuzChart();
-            initDataTables();
-            bindTabEvents();
-            bindExportPdf();
+            animateProgressBars();
+            tables = initDataTables();
+            bindTabs();
+
+            const observer = new MutationObserver(updateChartTheme);
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['data-coreui-theme']
+            });
         });
     </script>
 @endpush

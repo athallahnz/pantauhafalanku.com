@@ -221,9 +221,9 @@
             <div class="hero-subtitle">
                 Dashboard performa akademik & monitoring hafalan santri
             </div>
-
+            
             <div class="period">
-                Periode: {{ \Carbon\Carbon::createFromFormat('Y-m', $periode)->translatedFormat('F Y') }}
+                Periode: {{ $periode }}
             </div>
         </div>
 
@@ -375,7 +375,7 @@
                             </td>
 
                             <td>
-                                {{ $row->kelas->nama_kelas ?? '-' }}
+                                {{ $row->kelas?->nama_kelas ?? '-' }}
                             </td>
 
                             <td class="text-center">
@@ -421,11 +421,11 @@
                             </td>
 
                             <td>
-                                {{ $row->kelas->nama_kelas ?? '-' }}
+                                {{ $row->kelas?->nama_kelas ?? '-' }}
                             </td>
 
                             <td>
-                                {{ $row->musyrif->nama ?? '-' }}
+                                {{ $row->musyrif?->nama ?? '-' }}
                             </td>
 
                             <td class="text-center">

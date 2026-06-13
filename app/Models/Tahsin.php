@@ -17,6 +17,7 @@ class Tahsin extends Model
         'status',
         'buku',
         'halaman',
+        'semester_id',
         'nilai_label',
         'catatan',
     ];
@@ -34,6 +35,11 @@ class Tahsin extends Model
     public function musyrif()
     {
         return $this->belongsTo(Musyrif::class);
+    }
+
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class);
     }
 
     // ===================== ACCESSORS =====================

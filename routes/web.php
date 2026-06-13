@@ -11,8 +11,11 @@ use App\Http\Controllers\Admin\ActivityLogController as AdminActivityLogControll
 use App\Http\Controllers\Admin\InstitutionSettingController;
 use App\Http\Controllers\Admin\LaporanController as AdminLaporanController;
 use App\Http\Controllers\Admin\SantriController as AdminSantriController;
+use App\Http\Controllers\Admin\SantriProgressController as AdminSantriProgressController;
 use App\Http\Controllers\Admin\MusyrifController as AdminMusyrifController;
 use App\Http\Controllers\Admin\MigrasiSantriController as AdminMigrasiSantriController;
+use App\Http\Controllers\Admin\SantriMigrationBatchAuditController as AdminSantriMigrationBatchAuditController;
+use App\Http\Controllers\Admin\SantriArchiveController as AdminSantriArchiveController;
 
 use App\Http\Controllers\Musyrif\DashboardController as MusyrifDashboardController;
 use App\Http\Controllers\Musyrif\HafalanController as MusyrifHafalanController;
@@ -25,6 +28,8 @@ use App\Http\Controllers\Santri\DashboardController as SantriDashboardController
 use App\Http\Controllers\Santri\HafalanController as SantriHafalanController;
 
 use App\Http\Controllers\KelasController;
+use App\Http\Controllers\TahunAjaranController;
+use App\Http\Controllers\SemesterController;
 use App\Http\Controllers\ProfileSettingController;
 
 /*
@@ -150,6 +155,166 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|pimpinan
     Route::post('/santri/migrasi/auto/execute', [AdminMigrasiSantriController::class, 'executeAutoMapping'])
         ->name('santri.migrasi.auto.execute');
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Riwayat & Audit Batch Migrasi Santri
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('santri/migrasi/riwayat')
+        ->name('santri.migrasi.audit.')
+        ->controller(AdminSantriMigrationBatchAuditController::class)
+        ->group(function () {
+            Route::get('/', 'index')
+                ->name('index');
+
+            Route::get('/data', 'data')
+                ->name('data');
+
+            Route::get('/statistics', 'statistics')
+                ->name('statistics');
+
+            Route::get('/export', 'export')
+                ->name('export');
+
+            Route::get('/{batch}/items', 'itemsData')
+                ->where('batch', '[0-9a-fA-F-]{36}')
+                ->name('items');
+
+            Route::patch('/{batch}/cancel', 'cancel')
+                ->where('batch', '[0-9a-fA-F-]{36}')
+                ->name('cancel');
+
+            Route::get('/{batch}', 'show')
+                ->where('batch', '[0-9a-fA-F-]{36}')
+                ->name('show');
+
+            Route::get('/{batch}/rollback-check', 'rollbackCheck')
+                ->where('batch', '[0-9a-fA-F-]{36}')
+                ->name('rollback-check');
+
+            Route::patch('/{batch}/rollback', 'rollback')
+                ->where('batch', '[0-9a-fA-F-]{36}')
+                ->name('rollback');
+        });
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Alumni & Santri Nonaktif
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('santri/arsip')
+        ->name('santri.archive.')
+        ->controller(AdminSantriArchiveController::class)
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/data', 'data')->name('data');
+            Route::get('/statistics', 'statistics')->name('statistics');
+            Route::get('/export', 'export')->name('export');
+
+            Route::patch('/{santri}/deactivate', 'deactivate')
+                ->whereNumber('santri')
+                ->name('deactivate');
+
+            Route::patch('/{santri}/status', 'updateStatus')
+                ->whereNumber('santri')
+                ->name('update-status');
+
+            Route::patch('/{santri}/reactivate', 'reactivate')
+                ->whereNumber('santri')
+                ->name('reactivate');
+
+            Route::get('/{santri}', 'show')
+                ->whereNumber('santri')
+                ->name('show');
+        });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Manajemen Semester dan Lifecycle
+    |--------------------------------------------------------------------------
+    |
+    | URL dasar:
+    | /admin/semester
+    |
+    | Semester baru selalu dibuat sebagai draft.
+    | Aktivasi dilakukan setelah migrasi kelas selesai.
+    |
+    */
+
+    Route::prefix('semester')
+        ->name('semester.')
+        ->controller(SemesterController::class)
+        ->group(function () {
+
+            /*
+        |--------------------------------------------------------------------------
+        | DataTables
+        |--------------------------------------------------------------------------
+        */
+
+            Route::get('/datatable', 'getData')
+                ->name('datatable');
+
+            /*
+        |--------------------------------------------------------------------------
+        | Tambah Semester Draft
+        |--------------------------------------------------------------------------
+        */
+
+            Route::post('/', 'store')
+                ->name('store');
+
+            /*
+        |--------------------------------------------------------------------------
+        | Lifecycle Semester
+        |--------------------------------------------------------------------------
+        |
+        | Route spesifik harus berada sebelum route /{id}.
+        |
+        */
+
+            Route::patch('/{semester}/activate', 'activate')
+                ->whereNumber('semester')
+                ->name('activate');
+
+            Route::patch('/{semester}/lock-input', 'lockInput')
+                ->whereNumber('semester')
+                ->name('lock-input');
+
+            Route::patch('/{semester}/unlock-input', 'unlockInput')
+                ->whereNumber('semester')
+                ->name('unlock-input');
+
+            /*
+        |--------------------------------------------------------------------------
+        | Edit dan Hapus Semester Draft
+        |--------------------------------------------------------------------------
+        */
+
+            Route::put('/{id}', 'update')
+                ->whereNumber('id')
+                ->name('update');
+
+            Route::delete('/{id}', 'destroy')
+                ->whereNumber('id')
+                ->name('destroy');
+        });
+
+    Route::get(
+        '/santri/migrasi/batches',
+        [AdminMigrasiSantriController::class, 'batches']
+    )->name('santri.migrasi.batch.index');
+
+    Route::get(
+        '/santri/migrasi/batches/{batch}',
+        [AdminMigrasiSantriController::class, 'showBatch']
+    )
+        ->where('batch', '[0-9a-fA-F-]{36}')
+        ->name('santri.migrasi.batch.show');
+
+
     // Kelola Musyrif
     Route::get('musyrif', [AdminMusyrifController::class, 'index'])->name('musyrif.index');
     Route::get('musyrif/data', [AdminMusyrifController::class, 'data'])->name('musyrif.data');
@@ -158,7 +323,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|pimpinan
     Route::put('musyrif/{id}', [AdminMusyrifController::class, 'update'])->name('musyrif.update');
     Route::delete('musyrif/{id}', [AdminMusyrifController::class, 'destroy'])->name('musyrif.destroy');
     Route::post('musyrif/import', [AdminMusyrifController::class, 'importExcel'])->name('musyrif.import');
-    Route::get('musyrif/get-by-kelas/{kelas_id}', [AdminMusyrifController::class, 'getByKelas'])->name('musyrif.by_kelas');
+    Route::get(
+        'musyrif/get-by-kelas/{kelas_id}',
+        [AdminMusyrifController::class, 'getByKelas']
+    )
+        ->whereNumber('kelas_id')
+        ->name('musyrif.by_kelas');
 
     // ==========================================
     // ROUTE BARU UNTUK IMPORT EXCEL & PREVIEW
@@ -201,15 +371,96 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|pimpinan
     Route::get('laporan-hafalan/chart-musyrif', [AdminLaporanController::class, 'getChartMusyrif'])->name('laporan.chart-musyrif');
     Route::get('laporan-hafalan/chart-juz-lulus', [AdminLaporanController::class, 'getChartJuzLulus'])->name('laporan.chart.juz-lulus');
 
-    // Export Excel
-    Route::get('laporan-hafalan/export/santri/excel', [AdminLaporanController::class, 'exportSantriExcel'])->name('laporan.export-santri-excel');
-    Route::get('laporan-hafalan/export/kelas/excel', [AdminLaporanController::class, 'exportKelasExcel'])->name('laporan.export-kelas-excel');
-    Route::get('laporan-hafalan/export/musyrif/excel', [AdminLaporanController::class, 'exportMusyrifExcel'])->name('laporan.export-musyrif-excel');
+    /*
+        |--------------------------------------------------------------------------
+        | Export Excel
+        |--------------------------------------------------------------------------
+        */
 
-    // Export PDF
-    Route::get('laporan-hafalan/export/santri/pdf', [AdminLaporanController::class, 'exportSantriPdf'])->name('laporan.export-santri-pdf');
-    Route::get('laporan-hafalan/export/kelas/pdf', [AdminLaporanController::class, 'exportKelasPdf'])->name('laporan.export-kelas-pdf');
-    Route::get('laporan-hafalan/export/musyrif/pdf', [AdminLaporanController::class, 'exportMusyrifPdf'])->name('laporan.export-musyrif-pdf');
+    Route::get(
+        '/laporan-hafalan/export/santri/excel',
+        [AdminLaporanController::class, 'exportSantriExcel']
+    )->name('laporan.export-santri-excel');
+
+    Route::get(
+        '/laporan-hafalan/export/kelas/excel',
+        [AdminLaporanController::class, 'exportKelasExcel']
+    )->name('laporan.export-kelas-excel');
+
+    Route::get(
+        '/laporan-hafalan/export/musyrif/excel',
+        [AdminLaporanController::class, 'exportMusyrifExcel']
+    )->name('laporan.export-musyrif-excel');
+
+    /*
+        |--------------------------------------------------------------------------
+        | Export PDF — Tahap Persiapan
+        |--------------------------------------------------------------------------
+        | Endpoint ini membuat PDF, menyimpan file sementara, kemudian
+        | mengembalikan JSON yang berisi signed download URL.
+        |--------------------------------------------------------------------------
+        */
+
+    Route::get(
+        '/laporan-hafalan/export/santri/pdf',
+        [AdminLaporanController::class, 'exportSantriPdf']
+    )->name('laporan.export-santri-pdf');
+
+    Route::get(
+        '/laporan-hafalan/export/kelas/pdf',
+        [AdminLaporanController::class, 'exportKelasPdf']
+    )->name('laporan.export-kelas-pdf');
+
+    Route::get(
+        '/laporan-hafalan/export/musyrif/pdf',
+        [AdminLaporanController::class, 'exportMusyrifPdf']
+    )->name('laporan.export-musyrif-pdf');
+
+    /*
+        |--------------------------------------------------------------------------
+        | Export PDF — Download File Sementara
+        |--------------------------------------------------------------------------
+        | Route ini dipanggil melalui signed URL yang dibuat controller.
+        |--------------------------------------------------------------------------
+        */
+
+    Route::get(
+        '/laporan-hafalan/export/pdf/download/{file}',
+        [AdminLaporanController::class, 'downloadPreparedPdf']
+    )
+        ->where('file', '[0-9a-fA-F-]{36}\.pdf')
+        ->name('laporan.download-prepared-pdf');
+
+    /*
+        |--------------------------------------------------------------------------
+        | Detail Progress Santri
+        |--------------------------------------------------------------------------
+        | URL:
+        | /admin/santri-master/{santri}/progress
+        |--------------------------------------------------------------------------
+        */
+
+    Route::prefix('santri-master')
+        ->name('santri.master.progress.')
+        ->controller(AdminSantriProgressController::class)
+        ->group(function () {
+
+            // Halaman utama progress Hafalan, Tahsin, dan Tilawah
+            Route::get('/{santri}/progress', 'show')
+                ->name('show');
+
+            // DataTables timeline Hafalan
+            Route::get('/{santri}/progress/hafalan/timeline', 'hafalanTimeline')
+                ->name('hafalan.timeline');
+
+            // DataTables timeline Tahsin
+            Route::get('/{santri}/progress/tahsin/timeline', 'tahsinTimeline')
+                ->name('tahsin.timeline');
+
+            // DataTables timeline Tilawah
+            Route::get('/{santri}/progress/tilawah/timeline', 'tilawahTimeline')
+                ->name('tilawah.timeline');
+        });
 });
 
 
@@ -291,6 +542,7 @@ Route::prefix('musyrif')
                 Route::delete('/{tilawah}', [MusyrifTilawahController::class, 'destroy'])->whereNumber('tilawah')->name('destroy');
             });
     });
+
 /*
 |--------------------------------------------------------------------------
 | KELAS (MASTER)
@@ -298,25 +550,121 @@ Route::prefix('musyrif')
 | Hanya SuperAdmin + Admin
 */
 
+// ==================== KELAS ====================
 Route::prefix('kelas')
     ->name('kelas.')
-    ->middleware(['auth', 'role:superadmin|admin']) // pakai koma, sesuai RoleMiddleware kamu
+    ->middleware(['auth', 'role:superadmin|admin'])
     ->group(function () {
-
-        Route::get('/', [KelasController::class, 'index'])->name('index');
+        // Halaman utama pengaturan akademik
+        Route::get('/', [KelasController::class, 'index'])
+            ->name('index');
 
         // DataTables source
-        Route::get('/datatable', [KelasController::class, 'getData'])->name('datatable');
+        Route::get('/datatable', [KelasController::class, 'getData'])
+            ->name('datatable');
 
         // CRUD via AJAX/modal
-        Route::post('/', [KelasController::class, 'store'])->name('store');
-        Route::put('/{id}', [KelasController::class, 'update'])->name('update');
-        Route::delete('/{id}', [KelasController::class, 'destroy'])->name('destroy');
+        Route::post('/', [KelasController::class, 'store'])
+            ->name('store');
 
-        // create/edit view terpisah sebenarnya sudah tidak diperlukan,
-        // tapi kalau mau tetap disimpan boleh di-comment atau dihapus:
-        // Route::get('/create', [KelasController::class, 'create'])->name('create');
-        // Route::get('/{id}/edit', [KelasController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [KelasController::class, 'update'])
+            ->whereNumber('id')
+            ->name('update');
+
+        Route::delete('/{id}', [KelasController::class, 'destroy'])
+            ->whereNumber('id')
+            ->name('destroy');
+    });
+
+
+// ==================== TAHUN AJARAN ====================
+Route::prefix('tahun-ajaran')
+    ->name('tahun-ajaran.')
+    ->middleware(['auth', 'role:superadmin|admin'])
+    ->group(function () {
+        // DataTables source
+        Route::get('/datatable', [TahunAjaranController::class, 'getData'])
+            ->name('datatable');
+
+        // Dropdown pilihan tahun ajaran
+        Route::get('/options', [TahunAjaranController::class, 'getOptions'])
+            ->name('options');
+
+        // CRUD via AJAX/modal
+        Route::post('/', [TahunAjaranController::class, 'store'])
+            ->name('store');
+
+        Route::put('/{id}', [TahunAjaranController::class, 'update'])
+            ->whereNumber('id')
+            ->name('update');
+
+        Route::delete('/{id}', [TahunAjaranController::class, 'destroy'])
+            ->whereNumber('id')
+            ->name('destroy');
+    });
+
+
+// ==================== SEMESTER ====================
+Route::prefix('semester')
+    ->name('semester.')
+    ->middleware(['auth', 'role:superadmin|admin'])
+    ->group(function () {
+        // DataTables source
+        Route::get('/datatable', [SemesterController::class, 'getData'])
+            ->name('datatable');
+
+        // CRUD via AJAX/modal
+        Route::post('/', [SemesterController::class, 'store'])
+            ->name('store');
+
+        Route::put('/{id}', [SemesterController::class, 'update'])
+            ->whereNumber('id')
+            ->name('update');
+
+        Route::delete('/{id}', [SemesterController::class, 'destroy'])
+            ->whereNumber('id')
+            ->name('destroy');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| TAHUN AJARAN (MASTER)
+|--------------------------------------------------------------------------
+| Hanya SuperAdmin + Admin
+*/
+Route::prefix('tahun-ajaran')
+    ->name('tahun-ajaran.')
+    ->middleware(['auth', 'role:superadmin|admin'])
+    ->group(function () {
+        // DataTables source
+        Route::get('/datatable', [TahunAjaranController::class, 'getData'])->name('datatable');
+
+        // Sumber data untuk Dropdown `<select>` di modal Semester
+        Route::get('/options', [TahunAjaranController::class, 'getOptions'])->name('options');
+
+        // CRUD via AJAX/modal
+        Route::post('/', [TahunAjaranController::class, 'store'])->name('store');
+        Route::put('/{id}', [TahunAjaranController::class, 'update'])->name('update');
+        Route::delete('/{id}', [TahunAjaranController::class, 'destroy'])->name('destroy');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| SEMESTER (MASTER)
+|--------------------------------------------------------------------------
+| Hanya SuperAdmin + Admin
+*/
+Route::prefix('semester')
+    ->name('semester.')
+    ->middleware(['auth', 'role:superadmin|admin'])
+    ->group(function () {
+        // DataTables source
+        Route::get('/datatable', [SemesterController::class, 'getData'])->name('datatable');
+
+        // CRUD via AJAX/modal
+        Route::post('/', [SemesterController::class, 'store'])->name('store');
+        Route::put('/{id}', [SemesterController::class, 'update'])->name('update');
+        Route::delete('/{id}', [SemesterController::class, 'destroy'])->name('destroy');
     });
 
 
@@ -366,26 +714,47 @@ Route::prefix('santri-master')
         Route::post('/', [AdminSantriController::class, 'store'])->name('store');
     });
 
-
 /*
+|--------------------------------------------------------------------------
 | SANTRI
 |--------------------------------------------------------------------------
 */
 
 Route::prefix('santri')
     ->name('santri.')
-    ->middleware(['auth', 'role:santri', 'approved'])
+    ->middleware([
+        'auth',
+        'role:santri',
+        'approved',
+    ])
     ->group(function () {
-        Route::get('/dashboard', [SantriDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/dashboard/ringkasan-data', [SantriDashboardController::class, 'ringkasanData'])->name('dashboard.ringkasan-data');
-        Route::get('/dashboard/timeline-data', [SantriDashboardController::class, 'timelineData'])->name('dashboard.timeline-data');
 
-        // Menyatukan seluruh progress di halaman Hafalan
-        Route::get('/hafalan', [SantriHafalanController::class, 'index'])->name('hafalan.index');
-        Route::get('/hafalan/export-pdf', [SantriHafalanController::class, 'exportPdf'])->name('hafalan.export-pdf');
+        Route::get(
+            '/dashboard',
+            [SantriHafalanController::class, 'index']
+        )->name('dashboard');
 
-        // Endpoint DataTables
-        Route::get('/hafalan/timeline', [SantriHafalanController::class, 'timeline'])->name('hafalan.timeline');
-        Route::get('/tahsin/timeline', [SantriHafalanController::class, 'tahsinTimeline'])->name('tahsin.timeline');
-        Route::get('/tilawah/timeline', [SantriHafalanController::class, 'tilawahTimeline'])->name('tilawah.timeline');
+        Route::get(
+            '/hafalan/export-pdf',
+            [SantriHafalanController::class, 'exportPdf']
+        )->name('hafalan.export-pdf');
+
+        Route::get(
+            '/hafalan/timeline',
+            [SantriHafalanController::class, 'timeline']
+        )->name('hafalan.timeline');
+
+        Route::get(
+            '/tahsin/timeline',
+            [SantriHafalanController::class, 'tahsinTimeline']
+        )->name('tahsin.timeline');
+
+        Route::get(
+            '/tilawah/timeline',
+            [SantriHafalanController::class, 'tilawahTimeline']
+        )->name('tilawah.timeline');
+
+        Route::get('/hafalan', function () {
+            return redirect()->route('santri.dashboard');
+        })->name('hafalan.index');
     });

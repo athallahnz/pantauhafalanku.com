@@ -1,257 +1,336 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 
 <head>
-    <title>Laporan Hafalan - {{ $santri->nama }}</title>
+    <meta charset="UTF-8">
+    <title>Laporan Hafalan - {{ $santri->nama ?? 'Santri' }}</title>
+
     <style>
-        body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            color: #333;
-            line-height: 1.4;
-            margin: 0;
-            padding: 0;
+        @page {
+            margin: 26px 30px 34px;
         }
 
-        /* Kop Surat Style */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: DejaVu Sans, Helvetica, Arial, sans-serif;
+            color: #2d2d33;
+            font-size: 10px;
+            line-height: 1.45;
+        }
+
         .header {
-            text-align: center;
-            margin-bottom: 20px;
+            width: 100%;
             border-bottom: 2px solid #6f42c1;
-            padding-bottom: 10px;
+            padding-bottom: 11px;
+            margin-bottom: 16px;
+            text-align: center;
         }
 
         .logo {
-            height: 70px;
-            margin-bottom: 10px;
+            height: 62px;
+            width: auto;
+            margin-bottom: 6px;
         }
 
-        .title {
-            font-size: 18px;
-            font-weight: bold;
+        .report-title {
+            margin: 0 0 3px;
             color: #6f42c1;
+            font-size: 17px;
+            font-weight: bold;
             text-transform: uppercase;
-            margin-bottom: 5px;
         }
 
-        /* Info & Ringkasan Table */
-        .summary-container {
+        .institution-name {
+            margin: 0 0 2px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .institution-address {
+            margin: 0;
+            color: #60606a;
+            font-size: 8.5px;
+        }
+
+        .info-table,
+        .summary-table,
+        .main-table,
+        .signature-table {
             width: 100%;
-            margin-bottom: 20px;
+            border-collapse: collapse;
         }
 
         .info-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
+            margin-bottom: 10px;
         }
 
         .info-table td {
-            padding: 4px 0;
+            padding: 3px 2px;
+            vertical-align: top;
+            font-size: 9.5px;
+        }
+
+        .info-label {
+            width: 16%;
+            font-weight: bold;
+            color: #474752;
+        }
+
+        .info-value {
+            width: 34%;
+        }
+
+        .summary-box {
+            margin-bottom: 15px;
+            padding: 9px 10px;
+            border: 1px solid #e6d6f5;
+            background: #faf6ff;
+        }
+
+        .summary-title {
+            margin-bottom: 7px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #e6d6f5;
+            color: #6f42c1;
+            font-size: 10.5px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .summary-table td {
+            width: 20%;
+            padding: 5px 4px;
+            text-align: center;
             vertical-align: top;
         }
 
-        /* Styling Ringkasan Box */
-        .stats-box {
-            background-color: #f8f0ff;
-            border: 1px solid #e9d8fd;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
+        .summary-number {
+            display: block;
+            margin-bottom: 2px;
+            font-size: 15px;
+            font-weight: bold;
         }
 
-        .stats-item {
-            display: inline-block;
-            width: 32%;
-            font-size: 11px;
-            margin-bottom: 5px;
+        .summary-label {
+            display: block;
+            color: #6a6a73;
+            font-size: 8px;
         }
 
-        /* Main Table Style */
         .main-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
+            table-layout: fixed;
+        }
+
+        .main-table thead {
+            display: table-header-group;
+        }
+
+        .main-table tr {
+            page-break-inside: avoid;
         }
 
         .main-table th {
-            background-color: #6f42c1;
-            color: white;
-            font-size: 10px;
+            padding: 7px 4px;
+            border: 1px solid #5b329e;
+            background: #6f42c1;
+            color: #fff;
+            font-size: 8px;
+            font-weight: bold;
             text-transform: uppercase;
-            padding: 8px;
-            border: 1px solid #5a32a3;
-        }
-
-        .main-table td {
-            padding: 6px;
-            border: 1px solid #dee2e6;
-            font-size: 10px;
             text-align: center;
         }
 
-        /* Status Colors */
-        .text-success {
+        .main-table td {
+            padding: 5px 4px;
+            border: 1px solid #dedee5;
+            font-size: 8.5px;
+            text-align: center;
+            vertical-align: top;
+            word-wrap: break-word;
+        }
+
+        .main-table tbody tr:nth-child(even) td {
+            background: #fafafa;
+        }
+
+        .text-left {
+            text-align: left !important;
+        }
+
+        .status-lulus {
             color: #198754;
             font-weight: bold;
         }
 
-        .text-danger {
-            color: #dc3545;
+        .status-ulang {
+            color: #9a6700;
             font-weight: bold;
         }
 
-        .text-primary {
+        .status-hadir_tidak_setor {
+            color: #087990;
+            font-weight: bold;
+        }
+
+        .status-sakit {
             color: #0d6efd;
             font-weight: bold;
         }
 
-        .text-warning {
-            color: #856404;
-            font-weight: bold;
-        }
-
-        .text-secondary {
+        .status-izin {
             color: #6c757d;
             font-weight: bold;
         }
 
-        .footer {
-            margin-top: 40px;
-            width: 100%;
+        .status-alpha {
+            color: #dc3545;
+            font-weight: bold;
         }
 
-        .signature {
-            float: right;
-            width: 200px;
+        .empty-row {
+            padding: 18px !important;
+            color: #777780;
+            text-align: center !important;
+        }
+
+        .footer {
+            margin-top: 24px;
+            page-break-inside: avoid;
+        }
+
+        .signature-table td {
+            width: 50%;
+            vertical-align: top;
+            font-size: 9px;
+        }
+
+        .signature-box {
+            width: 220px;
+            margin-left: auto;
             text-align: center;
-            font-size: 12px;
+        }
+
+        .signature-space {
+            height: 54px;
+        }
+
+        .signature-name {
+            display: inline-block;
+            min-width: 180px;
+            padding-top: 3px;
+            border-top: 1px solid #44444c;
+            font-weight: bold;
+        }
+
+        .print-note {
+            color: #777780;
+            font-size: 8px;
         }
     </style>
 </head>
 
 <body>
-    <div class="header">
-        @php
-            // Logic logo aman untuk PDF
-            $path = public_path('assets/logos-primary.png');
-            if (file_exists($path)) {
-                $type = pathinfo($path, PATHINFO_EXTENSION);
-                $data = file_get_contents($path);
-                $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
-            } else {
-                $base64 = '';
-            }
-        @endphp
-
-        @if ($base64)
-            <img src="{{ $base64 }}" class="logo">
+    <header class="header">
+        @if (!empty($logoDataUri))
+            <img src="{{ $logoDataUri }}" class="logo" alt="Logo lembaga">
         @endif
 
-        <div class="title">Laporan Capaian Hafalan Al-Qur'an</div>
-        <div style="font-size: 13px; font-weight: bold;">PONDOK PESANTREN DARUT TAQWA PONOROGO</div>
-        <div style="font-size: 10px; color: #555;">Desan, Pintu, Jenangan, Ponorogo Regency, East Java 63492 • Telp: 0877-5877-1598 •
-            ppdaruttaqwa.com</div>
-    </div>
+        <div class="report-title">Laporan Capaian Hafalan Al-Qur'an</div>
+        <div class="institution-name">PONDOK PESANTREN DARUT TAQWA PONOROGO</div>
+        <div class="institution-address">
+            Desan, Pintu, Jenangan, Ponorogo Regency, East Java 63492
+            &bull; Telp. 0877-5877-1598
+            &bull; ppdaruttaqwa.com
+        </div>
+    </header>
 
-    <div class="summary-container">
-        <table class="info-table">
+    <table class="info-table">
+        <tr>
+            <td class="info-label">Nama Santri</td>
+            <td class="info-value">: {{ $santri->nama ?? '-' }}</td>
+            <td class="info-label">Periode</td>
+            <td class="info-value">: {{ $periode ?? 'Semua Riwayat' }}</td>
+        </tr>
+        <tr>
+            <td class="info-label">NIS / Kelas</td>
+            <td class="info-value">: {{ $santri->nis ?? '-' }} / {{ $santri->kelas?->nama_kelas ?? '-' }}</td>
+            <td class="info-label">Tanggal Cetak</td>
+            <td class="info-value">: {{ $tanggal_cetak ?? '-' }}</td>
+        </tr>
+    </table>
+
+    <section class="summary-box">
+        <div class="summary-title">Ringkasan Kehadiran &amp; Setoran</div>
+        <table class="summary-table">
             <tr>
-                <td width="15%"><strong>Nama Santri</strong></td>
-                <td width="35%">: {{ $santri->nama }}</td>
-                <td width="15%"><strong>Periode</strong></td>
-                <td width="35%">: {{ $periode }}</td>
-            </tr>
-            <tr>
-                <td><strong>NIS / Kelas</strong></td>
-                <td>: {{ $santri->nis ?? '-' }} / {{ $santri->kelas?->nama_kelas ?? '-' }}</td>
-                <td><strong>Tgl Cetak</strong></td>
-                <td>: {{ $tanggal_cetak }}</td>
+                <td><span class="summary-number">{{ $totalSetor ?? 0 }}</span><span class="summary-label">Setor
+                        Lulus/Ulang</span></td>
+                <td><span class="summary-number">{{ $totalHadirTidakSetor ?? ($totalHTS ?? 0) }}</span><span
+                        class="summary-label">Hadir Tidak Setor</span></td>
+                <td><span class="summary-number">{{ $totalSakit ?? 0 }}</span><span class="summary-label">Sakit</span>
+                </td>
+                <td><span class="summary-number">{{ $totalIzin ?? 0 }}</span><span class="summary-label">Izin</span>
+                </td>
+                <td><span class="summary-number">{{ $totalAlpha ?? 0 }}</span><span class="summary-label">Alpha</span>
+                </td>
             </tr>
         </table>
-
-        {{-- Ringkasan Statistik Baru --}}
-        <div class="stats-box">
-            <div
-                style="font-weight: bold; font-size: 12px; color: #6f42c1; margin-bottom: 8px; border-bottom: 1px solid #e9d8fd; padding-bottom: 3px;">
-                Ringkasan Kehadiran & Setoran
-            </div>
-            <div class="stats-item">Total Setor (Lulus/Ulang): <strong>{{ $totalSetor }}</strong></div>
-            <div class="stats-item">Hadir Tidak Setor: <strong>{{ $totalHTS }}</strong></div>
-            <div class="stats-item">Izin Sakit: <strong>{{ $totalSakit }}</strong></div>
-            <div class="stats-item">Izin Syar'i: <strong>{{ $totalIzin }}</strong></div>
-            <div class="stats-item">Alpha: <strong style="color:red">{{ $totalAlpha }}</strong></div>
-        </div>
-    </div>
+    </section>
 
     <table class="main-table">
         <thead>
             <tr>
-                <th width="5%">No</th>
-                <th width="12%">Tanggal</th>
-                <th width="8%">Juz</th>
-                <th width="20%">Surah / Ayat</th>
-                <th width="15%">Status</th>
-                <th width="12%">Nilai</th>
-                <th>Catatan Musyrif</th>
+                <th style="width: 5%;">No</th>
+                <th style="width: 12%;">Tanggal</th>
+                <th style="width: 7%;">Juz</th>
+                <th style="width: 23%;">Surah / Ayat</th>
+                <th style="width: 14%;">Status</th>
+                <th style="width: 13%;">Nilai</th>
+                <th style="width: 26%;">Catatan Musyrif</th>
             </tr>
         </thead>
         <tbody>
-            @forelse ($timeline as $index => $r)
+            @forelse ($timeline as $record)
                 <tr>
-                    <td>{{ $index + 1 }}</td>
-                    <td>{{ $r->tanggal_setoran ? $r->tanggal_setoran->format('d/m/Y') : '-' }}</td>
-                    <td>{{ $r->template?->juz ?? '-' }}</td>
-                    <td>{{ $r->template?->label ?? '-' }}</td>
-                    <td>
-                        @php
-                            $statusClass = match ($r->status) {
-                                'lulus' => 'text-success',
-                                'ulang' => 'text-warning',
-                                'sakit' => 'text-primary',
-                                'izin' => 'text-secondary',
-                                'alpha' => 'text-danger',
-                                default => '',
-                            };
-                        @endphp
-                        <span class="{{ $statusClass }}">
-                            {{ ucfirst(str_replace('_', ' ', $r->status)) }}
-                        </span>
-                    </td>
-                    <td>
-                        @if ($r->status == 'lulus' || $r->status == 'ulang')
-                            {{ match ($r->nilai_label) {
-                                'mumtaz' => 'Mumtaz',
-                                'jayyid_jiddan' => 'Jayyid Jiddan',
-                                'jayyid' => 'Jayyid',
-                                'mardud' => 'Mardud',
-                                default => '-',
-                            } }}
-                        @else
-                            -
-                        @endif
-                    </td>
-                    <td style="text-align: left; font-style: italic; color: #555;">
-                        {{ $r->catatan ?? '-' }}
-                    </td>
+                    <td>{{ $record['no'] }}</td>
+                    <td>{{ $record['tanggal'] }}</td>
+                    <td>{{ $record['juz'] }}</td>
+                    <td class="text-left">{{ $record['materi'] }}</td>
+                    <td class="status-{{ $record['status_key'] }}">{{ $record['status_label'] }}</td>
+                    <td>{{ $record['nilai_label'] }}</td>
+                    <td class="text-left">{{ $record['catatan'] }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7">Tidak ada data riwayat pada periode ini.</td>
+                    <td colspan="7" class="empty-row">Tidak ada data riwayat Hafalan pada periode yang dipilih.</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
 
-    <div class="footer">
-        <div class="signature">
-            <p>Dicetak pada: {{ now()->format('d/m/Y H:i') }}</p>
-            <span>Musyrif Pembimbing,</span>
-            <br><br><br><br>
-            <strong>_______________________</strong><br>
-            <span> {{ $santri->musyrif->nama ?? '-' }}</span>
-        </div>
-        <div style="clear: both;"></div>
-    </div>
+    <footer class="footer">
+        <table class="signature-table">
+            <tr>
+                <td>
+                    <div class="print-note">Dokumen ini dibuat otomatis oleh sistem pada {{ $tanggal_cetak ?? '-' }}.
+                    </div>
+                </td>
+                <td>
+                    <div class="signature-box">
+                        <div>Ponorogo, {{ now()->translatedFormat('d F Y') }}</div>
+                        <div>Musyrif Pembimbing,</div>
+                        <div class="signature-space"></div>
+                        <div class="signature-name">{{ $santri->musyrif?->nama ?? '_______________________' }}</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </footer>
 </body>
 
 </html>

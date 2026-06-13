@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Musyrif;
 
 use App\Http\Controllers\Controller;
+use App\Support\Academic\ResolvesActiveSemester;
 use App\Models\Santri;
 use App\Models\Musyrif;
 use App\Models\Tilawah;
@@ -15,6 +16,8 @@ use Yajra\DataTables\Facades\DataTables;
 
 class TilawahController extends Controller
 {
+    use ResolvesActiveSemester;
+
     /**
      * Mengambil data santri beserta rekomendasi template tilawah selanjutnya
      */
@@ -23,7 +26,13 @@ class TilawahController extends Controller
         $musyrif = Musyrif::where('user_id', Auth::id())->firstOrFail();
 
         // Ambil semua santri binaan
-        $santris = Santri::where('musyrif_id', $musyrif->id)->get(['id', 'nama']);
+        $santris = Santri::query()
+            ->active()
+            ->where('musyrif_id', $musyrif->id)
+            ->get([
+                'id',
+                'nama',
+            ]);
 
         // Ambil semua template khusus tahap 'harian' untuk pilihan select
         // Diurutkan berdasarkan juz dan urutan agar logis/sekuensial
@@ -78,53 +87,93 @@ class TilawahController extends Controller
      */
     public function storeMasal(Request $request): JsonResponse
     {
+        $activeSemester = $this->assertAcademicInputOpen();
+        $semesterId = (int) $activeSemester->id;
+
         $validated = $request->validate([
-            'template_id' => 'required|exists:hafalan_templates,id',
-            'detail_ayat' => 'required|string|max:150', // Hasil ketik manual
-            'catatan'     => 'nullable|string',
+            'template_id' => [
+                'required',
+                'integer',
+                'exists:hafalan_templates,id',
+            ],
+            'detail_ayat' => [
+                'required',
+                'string',
+                'max:150',
+            ],
+            'catatan' => [
+                'nullable',
+                'string',
+            ],
         ]);
 
         try {
-            $musyrif = Musyrif::where('user_id', Auth::id())->firstOrFail();
-            $tanggal = now()->toDateString();
+            $musyrif = Musyrif::query()
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
 
-            // Ambil semua ID santri binaan
-            $santriIds = Santri::where('musyrif_id', $musyrif->id)->pluck('id');
+            $tanggal = now('Asia/Jakarta')->toDateString();
+
+            $santriIds = Santri::query()
+                ->active()
+                ->where('musyrif_id', $musyrif->id)
+                ->pluck('id');
 
             if ($santriIds->isEmpty()) {
                 return response()->json([
                     'ok' => false,
-                    'message' => 'Gagal! Anda belum memiliki santri binaan.'
+                    'message' => 'Gagal! Anda belum memiliki santri binaan.',
                 ], 422);
             }
 
-            // Gabungkan catatan dengan detail ayat yang diketik manual
-            $catatanFinal = "Ayat: " . $validated['detail_ayat'];
+            $catatanFinal =
+                'Ayat: ' . trim($validated['detail_ayat']);
+
             if (!empty($validated['catatan'])) {
-                $catatanFinal .= " | Catatan: " . $validated['catatan'];
+                $catatanFinal .=
+                    ' | Catatan: ' . trim($validated['catatan']);
             }
 
-            foreach ($santriIds as $id) {
-                Tilawah::updateOrCreate(
-                    [
-                        'santri_id' => $id,
-                        'tanggal'   => $tanggal,
-                    ],
-                    [
-                        'musyrif_id'          => $musyrif->id,
-                        'hafalan_template_id' => $validated['template_id'],
-                        'status'              => 'hadir',
-                        'catatan'             => $catatanFinal, // Simpan ayat ketikan manual disini
-                    ]
-                );
-            }
+            DB::transaction(function () use (
+                $santriIds,
+                $tanggal,
+                $semesterId,
+                $musyrif,
+                $validated,
+                $catatanFinal
+            ): void {
+                foreach ($santriIds as $santriId) {
+                    Tilawah::query()->updateOrCreate(
+                        [
+                            'santri_id' => $santriId,
+                            'semester_id' => $semesterId,
+                            'tanggal' => $tanggal,
+                        ],
+                        [
+                            'musyrif_id' => $musyrif->id,
+                            'hafalan_template_id' =>
+                            $validated['template_id'],
+                            'status' => 'hadir',
+                            'catatan' => $catatanFinal,
+                        ]
+                    );
+                }
+            });
 
             return response()->json([
                 'ok' => true,
-                'message' => 'Berhasil! Target Tilawah diterapkan ke ' . $santriIds->count() . ' santri.'
+                'message' =>
+                'Berhasil! Target Tilawah diterapkan ke '
+                    . $santriIds->count()
+                    . ' santri.',
             ]);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Terjadi kesalahan sistem saat menyimpan data.'], 500);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'ok' => false,
+                'message' => 'Terjadi kesalahan sistem saat menyimpan data Tilawah.',
+            ], 500);
         }
     }
 
@@ -207,15 +256,45 @@ class TilawahController extends Controller
             ->make(true);
     }
 
-    public function update(Request $request, Tilawah $tilawah)
-    {
+    public function update(
+        Request $request,
+        Tilawah $tilawah
+    ) {
+        $musyrif = Musyrif::query()
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        if ((int) $tilawah->musyrif_id !== (int) $musyrif->id) {
+            return response()->json([
+                'message' => 'Unauthorized! Data ini bukan milik Anda.',
+            ], 403);
+        }
+
+        $activeSemester =
+            $this->assertRecordEditableInActiveSemester(
+                $tilawah->semester_id
+            );
+
         $validated = $request->validate([
-            'status'  => 'required|in:hadir,izin,sakit,alpha',
-            'catatan' => 'nullable|string',
+            'status' => [
+                'required',
+                'in:hadir,izin,sakit,alpha',
+            ],
+            'catatan' => [
+                'nullable',
+                'string',
+            ],
         ]);
 
+        $validated['semester_id'] =
+            (int) $activeSemester->id;
+
         $tilawah->update($validated);
-        return response()->json(['ok' => true, 'message' => 'Status tilawah individu berhasil diperbarui.']);
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Status Tilawah individu berhasil diperbarui.',
+        ]);
     }
 
     /**
@@ -223,21 +302,28 @@ class TilawahController extends Controller
      */
     public function destroy(Tilawah $tilawah)
     {
-        // Cari data musyrif berdasarkan user yang sedang login
-        $musyrif = Musyrif::where('user_id', Auth::id())->first();
+        $musyrif = Musyrif::query()
+            ->where('user_id', Auth::id())
+            ->first();
 
-        // PERBAIKAN: Gunakan (int) agar tipe datanya persis sama (Strict Comparison)
-        if (!$musyrif || (int) $tilawah->musyrif_id !== (int) $musyrif->id) {
+        if (
+            !$musyrif
+            || (int) $tilawah->musyrif_id !== (int) $musyrif->id
+        ) {
             return response()->json([
-                'message' => 'Unauthorized! Data ini bukan milik Anda.'
+                'message' => 'Unauthorized! Data ini bukan milik Anda.',
             ], 403);
         }
+
+        $this->assertRecordEditableInActiveSemester(
+            $tilawah->semester_id
+        );
 
         $tilawah->delete();
 
         return response()->json([
             'ok' => true,
-            'message' => 'Data tilawah berhasil dihapus.'
+            'message' => 'Data Tilawah berhasil dihapus.',
         ]);
     }
 }

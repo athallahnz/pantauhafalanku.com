@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Musyrif;
 
 use App\Http\Controllers\Controller;
+use App\Support\Academic\ResolvesActiveSemester;
 use App\Models\Hafalan;
 use App\Models\Santri;
 use App\Models\Musyrif;
@@ -10,12 +11,14 @@ use App\Models\HafalanTemplate;
 use App\Models\PelanggaranPoint;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreHafalanRequest;
-use App\Http\Requests\UpdateHafalanRequest;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class HafalanController extends Controller
 {
+    use ResolvesActiveSemester;
+
     private function syncPoinAlpha(Hafalan $hafalan, int $musyrifId): void
     {
         $tanggal = $hafalan->tanggal_setoran;
@@ -57,7 +60,9 @@ class HafalanController extends Controller
         }
 
         // List santri binaan (untuk dropdown di modal)
-        $santriBinaan = Santri::with('kelas')
+        $santriBinaan = Santri::query()
+            ->active()
+            ->with('kelas')
             ->where('musyrif_id', $musyrif->id)
             ->orderBy('nama')
             ->get();
@@ -232,117 +237,261 @@ class HafalanController extends Controller
 
     public function store(StoreHafalanRequest $request)
     {
+        $activeSemester = $this->assertAcademicInputOpen();
+        $semesterId = (int) $activeSemester->id;
+
         $user = auth()->user();
-        $musyrif = $user->musyrif ?? Musyrif::where('user_id', $user->id)->first();
+
+        $musyrif = $user->musyrif
+            ?? Musyrif::where('user_id', $user->id)->first();
 
         if (!$musyrif) {
-            return response()->json(['message' => 'Profil Musyrif tidak ditemukan.'], 422);
+            return response()->json([
+                'message' => 'Profil Musyrif tidak ditemukan.',
+            ], 422);
         }
 
-        $v = $request->validated();
-        $today = now()->toDateString();
+        $validated = $request->validated();
+        $today = now('Asia/Jakarta')->toDateString();
 
-        // ============================================================
-        // PENGECEKAN DATA DOUBLE
-        // ============================================================
-        // Cek apakah santri ini sudah menyetor materi yang sama hari ini
-        $isDuplicate = Hafalan::where('santri_id', $v['santri_id'])
-            ->where('hafalan_template_id', $v['hafalan_template_id'] ?? null)
-            ->where('tanggal_setoran', $today)
+        /*
+        |--------------------------------------------------------------------------
+        | Validasi santri binaan
+        |--------------------------------------------------------------------------
+        */
+        $isSantriBinaan = Santri::query()
+            ->active()
+            ->whereKey($validated['santri_id'])
+            ->where('musyrif_id', $musyrif->id)
             ->exists();
 
-        // Di dalam method store dan update
-        if ($isDuplicate && in_array($v['status'], ['lulus', 'ulang'], true)) {
+        if (!$isSantriBinaan) {
             return response()->json([
-                // Kita kirimkan di kedua tempat agar aman
+                'message' => 'Santri yang dipilih bukan santri binaan Anda.',
+            ], 403);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pengecekan duplikat per semester
+        |--------------------------------------------------------------------------
+        |
+        | semester_id wajib masuk query agar data pada semester baru tidak
+        | dianggap sama atau memperbarui data semester lama.
+        |
+        */
+        $isDuplicate = Hafalan::query()
+            ->where('semester_id', $semesterId)
+            ->where('santri_id', $validated['santri_id'])
+            ->where(
+                'hafalan_template_id',
+                $validated['hafalan_template_id'] ?? null
+            )
+            ->whereDate('tanggal_setoran', $today)
+            ->exists();
+
+        if (
+            $isDuplicate
+            && in_array(
+                $validated['status'],
+                ['lulus', 'ulang'],
+                true
+            )
+        ) {
+            return response()->json([
                 'message' => 'Data hafalan ini sudah pernah diinput hari ini untuk santri tersebut.',
                 'errors' => [
-                    'hafalan' => ['Data hafalan ini sudah pernah diinput hari ini untuk santri tersebut.']
-                ]
+                    'hafalan' => [
+                        'Data hafalan ini sudah pernah diinput hari ini untuk santri tersebut.',
+                    ],
+                ],
             ], 422);
         }
-        // ============================================================
 
         $payload = [
-            'santri_id' => $v['santri_id'],
+            'santri_id' => $validated['santri_id'],
             'musyrif_id' => $musyrif->id,
+            'semester_id' => $semesterId,
             'tanggal_setoran' => $today,
-            'status' => $v['status'],
-            'catatan' => $v['catatan'] ?? null,
+            'status' => $validated['status'],
+            'catatan' => $validated['catatan'] ?? null,
             'hafalan_template_id' => null,
             'nilai_label' => null,
         ];
 
-        if (in_array($v['status'], ['lulus', 'ulang'], true)) {
-            $payload['hafalan_template_id'] = $v['hafalan_template_id'];
-            $payload['nilai_label'] = $v['nilai_label'];
+        if (
+            in_array(
+                $validated['status'],
+                ['lulus', 'ulang'],
+                true
+            )
+        ) {
+            $payload['hafalan_template_id'] =
+                $validated['hafalan_template_id'];
+
+            $payload['nilai_label'] =
+                $validated['nilai_label'];
         }
 
-        $hafalan = Hafalan::create($payload);
+        $hafalan = Hafalan::query()->create($payload);
 
-        $this->syncPoinAlpha($hafalan, $musyrif->id);
+        $this->syncPoinAlpha(
+            $hafalan,
+            (int) $musyrif->id
+        );
 
-        return response()->json(['message' => 'Input hafalan berhasil disimpan.']);
+        return response()->json([
+            'message' => 'Input hafalan berhasil disimpan.',
+        ]);
     }
 
-    public function update(StoreHafalanRequest $request, Hafalan $hafalan)
-    {
+    public function update(
+        StoreHafalanRequest $request,
+        Hafalan $hafalan
+    ) {
         $user = auth()->user();
-        $musyrif = $user->musyrif ?? Musyrif::where('user_id', $user->id)->firstOrFail();
+
+        $musyrif = $user->musyrif
+            ?? Musyrif::where('user_id', $user->id)->firstOrFail();
 
         if ((int) $hafalan->musyrif_id !== (int) $musyrif->id) {
-            abort(403);
+            abort(403, 'Data hafalan ini bukan milik Anda.');
         }
 
-        $v = $request->validated();
+        $activeSemester =
+            $this->assertRecordEditableInActiveSemester(
+                $hafalan->semester_id
+            );
 
-        // ============================================================
-        // PENGECEKAN DATA DOUBLE (Kecuali data ini sendiri)
-        // ============================================================
-        $isDuplicate = Hafalan::where('santri_id', $v['santri_id'])
-            ->where('hafalan_template_id', $v['hafalan_template_id'] ?? null)
-            ->where('tanggal_setoran', $hafalan->tanggal_setoran)
-            ->where('id', '!=', $hafalan->id) // Abaikan record yang sedang diupdate
+        $semesterId = (int) $activeSemester->id;
+        $validated = $request->validated();
+
+        $isSantriBinaan = Santri::query()
+            ->active()
+            ->whereKey($validated['santri_id'])
+            ->where('musyrif_id', $musyrif->id)
             ->exists();
 
-        if ($isDuplicate && in_array($v['status'], ['lulus', 'ulang'], true)) {
+        if (!$isSantriBinaan) {
             return response()->json([
-                'message' => 'Gagal update! Data hafalan serupa sudah ada di sistem.'
+                'message' => 'Santri yang dipilih bukan santri binaan Anda.',
+            ], 403);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pengecekan duplikat per semester
+        |--------------------------------------------------------------------------
+        */
+        $isDuplicate = Hafalan::query()
+            ->where('semester_id', $semesterId)
+            ->where('santri_id', $validated['santri_id'])
+            ->where(
+                'hafalan_template_id',
+                $validated['hafalan_template_id'] ?? null
+            )
+            ->whereDate(
+                'tanggal_setoran',
+                $hafalan->tanggal_setoran
+            )
+            ->whereKeyNot($hafalan->id)
+            ->exists();
+
+        if (
+            $isDuplicate
+            && in_array(
+                $validated['status'],
+                ['lulus', 'ulang'],
+                true
+            )
+        ) {
+            return response()->json([
+                'message' => 'Gagal memperbarui data. Data hafalan serupa sudah ada pada semester ini.',
             ], 422);
         }
-        // ============================================================
 
-        // ... sisa kode payload dan update sama seperti sebelumnya ...
         $payload = [
-            'santri_id' => $v['santri_id'],
-            'status' => $v['status'],
-            'catatan' => $v['catatan'] ?? null,
+            'santri_id' => $validated['santri_id'],
+            'semester_id' => $semesterId,
+            'status' => $validated['status'],
+            'catatan' => $validated['catatan'] ?? null,
             'hafalan_template_id' => null,
             'nilai_label' => null,
         ];
 
-        if (in_array($v['status'], ['lulus', 'ulang'], true)) {
-            $payload['hafalan_template_id'] = $v['hafalan_template_id'];
-            $payload['nilai_label'] = $v['nilai_label'];
+        if (
+            in_array(
+                $validated['status'],
+                ['lulus', 'ulang'],
+                true
+            )
+        ) {
+            $payload['hafalan_template_id'] =
+                $validated['hafalan_template_id'];
+
+            $payload['nilai_label'] =
+                $validated['nilai_label'];
         }
 
         $hafalan->update($payload);
         $hafalan->refresh();
-        $this->syncPoinAlpha($hafalan, $musyrif->id);
 
-        return response()->json(['message' => 'Input hafalan berhasil diperbarui.']);
+        $this->syncPoinAlpha(
+            $hafalan,
+            (int) $musyrif->id
+        );
+
+        return response()->json([
+            'message' => 'Input hafalan berhasil diperbarui.',
+        ]);
     }
 
     public function show($id)
     {
-        $hafalan = Hafalan::with('santri.kelas')->findOrFail($id);
+        $user = auth()->user();
+
+        $musyrif = $user->musyrif
+            ?? Musyrif::where('user_id', $user->id)->firstOrFail();
+
+        $hafalan = Hafalan::query()
+            ->with('santri.kelas')
+            ->findOrFail($id);
+
+        if ((int) $hafalan->musyrif_id !== (int) $musyrif->id) {
+            abort(403, 'Data hafalan ini bukan milik Anda.');
+        }
+
         return response()->json($hafalan);
     }
 
     public function destroy($id)
     {
-        Hafalan::findOrFail($id)->delete();
+        $user = auth()->user();
 
-        return response()->json(['message' => 'Setoran berhasil dihapus']);
+        $musyrif = $user->musyrif
+            ?? Musyrif::where('user_id', $user->id)->firstOrFail();
+
+        $hafalan = Hafalan::query()->findOrFail($id);
+
+        if ((int) $hafalan->musyrif_id !== (int) $musyrif->id) {
+            abort(403, 'Data hafalan ini bukan milik Anda.');
+        }
+
+        $this->assertRecordEditableInActiveSemester(
+            $hafalan->semester_id
+        );
+
+        /*
+         * Pastikan poin alpha yang terkait tidak tertinggal.
+         */
+        PelanggaranPoint::query()
+            ->where('hafalan_id', $hafalan->id)
+            ->delete();
+
+        $hafalan->delete();
+
+        return response()->json([
+            'message' => 'Setoran berhasil dihapus.',
+        ]);
     }
 }

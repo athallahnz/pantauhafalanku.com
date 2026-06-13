@@ -213,7 +213,7 @@
             </div>
 
             <div class="period">
-                Periode: {{ \Carbon\Carbon::createFromFormat('Y-m', $periode)->translatedFormat('F Y') }}
+                Periode: {{ $periode }}
             </div>
         </div>
 
@@ -286,8 +286,11 @@
                     Performa Akademik
 
                     <div class="bar-wrap">
-                        <div class="bar" style="width: {{ min($summary['avg_nilai'], 100) }}%;">
-                        </div>
+                        @php
+                            $avgNilai = min(100, max(0, (float) ($summary['avg_nilai'] ?? 0)));
+                        @endphp
+
+                        <div class="bar" style="width: {{ $avgNilai }}%;"></div>
                     </div>
                 </div>
 
@@ -347,7 +350,7 @@
                             </td>
 
                             <td class="text-center">
-                                {{ number_format($row->rata_nilai, 2) }}
+                                {{ number_format((float) ($row->rata_nilai ?? 0), 2) }}
                             </td>
 
                             <td class="text-center">

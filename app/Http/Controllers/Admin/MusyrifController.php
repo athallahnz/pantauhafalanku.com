@@ -17,6 +17,7 @@ use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\HeadingRowImport;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\JsonResponse;
 
 class MusyrifController extends Controller
 {
@@ -53,12 +54,46 @@ class MusyrifController extends Controller
         return view('admin.musyrif.index', compact('musyrifUserCandidates', 'listKelas'));
     }
 
-    public function getByKelas($kelas_id)
-    {
-        $musyrif = Musyrif::where('kelas_id', $kelas_id)->first();
+    public function getByKelas(
+        int $kelas_id
+    ): JsonResponse {
+        $kelas = Kelas::query()
+            ->select([
+                'id',
+                'nama_kelas',
+            ])
+            ->find($kelas_id);
+
+        if (!$kelas) {
+            return response()->json([
+                'status' => 'error',
+                'message' =>
+                'Kelas yang dipilih tidak ditemukan.',
+                'data' => [],
+            ], 404);
+        }
+
+        $musyrifs = Musyrif::query()
+            ->where(
+                'kelas_id',
+                $kelas->id
+            )
+            ->orderBy('nama')
+            ->get([
+                'id',
+                'nama',
+                'kode',
+                'kelas_id',
+            ]);
+
         return response()->json([
-            'id' => $musyrif ? $musyrif->id : '',
-            'nama' => $musyrif ? $musyrif->nama : 'Belum ada Musyrif'
+            'status' => $musyrifs->isEmpty()
+                ? 'empty'
+                : 'success',
+            'message' => $musyrifs->isEmpty()
+                ? "Belum ada musyrif yang bertugas di {$kelas->nama_kelas}."
+                : 'Daftar musyrif berhasil dimuat.',
+            'data' => $musyrifs->values(),
         ]);
     }
 

@@ -19,6 +19,7 @@ class Hafalan extends Model
         'nilai_label',
         'status',
         'catatan',
+        'semester_id',
 
         // ---- LEGACY (opsional sementara) ----
         // jika Anda masih belum drop kolom lama, biarkan ini agar update lama tidak error
@@ -49,6 +50,11 @@ class Hafalan extends Model
     public function template()
     {
         return $this->belongsTo(HafalanTemplate::class, 'hafalan_template_id');
+    }
+
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class);
     }
 
     // ===================== ACCESSORS =====================

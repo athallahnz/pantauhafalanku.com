@@ -71,6 +71,172 @@
             /* Memberi jarak manis antara teks "Tampil" dan "data" */
             display: inline-block !important;
         }
+
+        /* ================= FLOATING PAGE GUIDE ================= */
+        .page-guide-fab {
+            position: fixed;
+            right: max(30px, env(safe-area-inset-right));
+            bottom: max(60px, env(safe-area-inset-bottom));
+            z-index: 1035;
+            width: 56px;
+            height: 56px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 50%;
+            color: #ffffff;
+            background:
+                linear-gradient(135deg,
+                    var(--islamic-purple-600, #6f42c1),
+                    var(--islamic-purple-700, #59359d));
+            box-shadow: 0 12px 30px rgba(89, 53, 157, 0.34);
+            transition:
+                transform 0.2s ease,
+                box-shadow 0.2s ease,
+                filter 0.2s ease;
+        }
+
+        .page-guide-fab:hover,
+        .page-guide-fab:focus-visible {
+            color: #ffffff;
+            transform: translateY(-3px) scale(1.03);
+            filter: brightness(1.06);
+            box-shadow: 0 16px 36px rgba(89, 53, 157, 0.42);
+        }
+
+        .page-guide-fab:focus-visible {
+            outline: 3px solid rgba(111, 66, 193, 0.24);
+            outline-offset: 4px;
+        }
+
+        .page-guide-fab i {
+            font-size: 1.45rem;
+        }
+
+        .page-guide-fab::after {
+            content: '';
+            position: absolute;
+            inset: -5px;
+            border: 2px solid rgba(111, 66, 193, 0.22);
+            border-radius: inherit;
+            animation: pageGuidePulse 2.4s ease-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pageGuidePulse {
+            0% {
+                transform: scale(0.88);
+                opacity: 0;
+            }
+
+            30% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.28);
+                opacity: 0;
+            }
+        }
+
+        .page-guide-hero {
+            position: relative;
+            overflow: hidden;
+            color: #ffffff;
+            background:
+                radial-gradient(circle at 92% 10%, rgba(255, 255, 255, 0.18), transparent 24%),
+                linear-gradient(135deg,
+                    var(--islamic-purple-700, #59359d),
+                    var(--islamic-purple-600, #6f42c1));
+        }
+
+        .page-guide-hero::after {
+            content: '';
+            position: absolute;
+            right: -40px;
+            bottom: -70px;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .page-guide-hero>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .guide-step {
+            height: 100%;
+            padding: 1rem;
+            border: 1px solid var(--cui-border-color);
+            border-radius: 14px;
+            background: var(--cui-body-bg);
+        }
+
+        .guide-step-icon {
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            color: var(--islamic-purple-700, #59359d);
+            background: rgba(111, 66, 193, 0.12);
+            font-size: 1.1rem;
+        }
+
+        .guide-action-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.8rem 0;
+            border-bottom: 1px dashed var(--cui-border-color);
+        }
+
+        .guide-action-row:last-child {
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+
+        .guide-action-icon {
+            width: 34px;
+            height: 34px;
+            flex: 0 0 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
+
+        [data-coreui-theme="dark"] .guide-step {
+            background: var(--cui-tertiary-bg);
+        }
+
+        [data-coreui-theme="dark"] .guide-step-icon {
+            color: #d8c6ff;
+            background: rgba(147, 108, 246, 0.18);
+        }
+
+        @media (max-width: 575.98px) {
+            .page-guide-fab {
+                right: max(14px, env(safe-area-inset-right));
+                bottom: max(14px, env(safe-area-inset-bottom));
+                width: 52px;
+                height: 52px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .page-guide-fab,
+            .page-guide-fab::after {
+                animation: none;
+                transition: none;
+            }
+        }
     </style>
 
     {{-- HEADER PAGE --}}
@@ -132,6 +298,14 @@
 @endsection
 
 @push('modals')
+
+    {{-- FLOATING BUTTON: PANDUAN HALAMAN --}}
+    <button type="button" class="page-guide-fab" id="btnPageGuide" aria-label="Buka panduan halaman Data Master Santri"
+        title="Panduan halaman">
+        <i class="bi bi-info-lg" aria-hidden="true"></i>
+    </button>
+
+
     {{-- ===================== MODAL CREATE & EDIT ===================== --}}
     <div class="modal fade" id="modalSantri" tabindex="-1" data-coreui-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
@@ -437,6 +611,240 @@
             </div>
         </div>
     </div>
+
+    {{-- ===================== MODAL PANDUAN HALAMAN ===================== --}}
+    <div class="modal fade" id="modalPageGuide" tabindex="-1" aria-labelledby="modalPageGuideLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-header page-guide-hero border-0 px-4 py-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-white bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                            style="width: 52px; height: 52px;">
+                            <i class="bi bi-compass-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="small text-white-50 fw-semibold mb-1">Petunjuk Penggunaan</div>
+                            <h5 class="modal-title fw-bold mb-1" id="modalPageGuideLabel">
+                                Panduan Halaman Data Master Santri
+                            </h5>
+                            <p class="small text-white-75 mb-0">
+                                Gunakan halaman ini untuk mengelola identitas, kelas, musyrif, akun, dan progress santri.
+                            </p>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal"
+                        aria-label="Tutup"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <div class="alert alert-info border-0 rounded-4 d-flex align-items-start gap-3 mb-4">
+                        <i class="bi bi-lightbulb-fill fs-5 mt-1"></i>
+                        <div>
+                            <div class="fw-bold mb-1">Alur yang disarankan</div>
+                            <div class="small">
+                                Tambahkan atau import santri, tentukan kelas dan musyrif, buat akun akses,
+                                lalu pantau progress Hafalan, Tahsin, dan Tilawah melalui tombol aksi.
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-adaptive-purple mb-3">
+                        <i class="bi bi-grid-1x2-fill me-2"></i>Fitur Utama
+                    </h6>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="guide-step">
+                                <div class="d-flex align-items-start gap-3">
+                                    <span class="guide-step-icon">
+                                        <i class="bi bi-funnel-fill"></i>
+                                    </span>
+                                    <div>
+                                        <div class="fw-bold mb-1">Filter berdasarkan kelas</div>
+                                        <p class="text-muted small mb-0">
+                                            Pilih tab kelas di atas tabel untuk menampilkan santri dari kelas tertentu.
+                                            Gunakan tab <b>Semua Kelas</b> untuk mengembalikan seluruh data.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="guide-step">
+                                <div class="d-flex align-items-start gap-3">
+                                    <span class="guide-step-icon">
+                                        <i class="bi bi-search"></i>
+                                    </span>
+                                    <div>
+                                        <div class="fw-bold mb-1">Pencarian dan tabel</div>
+                                        <p class="text-muted small mb-0">
+                                            Gunakan kolom pencarian DataTables untuk mencari nama santri.
+                                            Jumlah data per halaman dapat diubah melalui pilihan <b>Tampil</b>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="guide-step">
+                                <div class="d-flex align-items-start gap-3">
+                                    <span class="guide-step-icon">
+                                        <i class="bi bi-person-plus-fill"></i>
+                                    </span>
+                                    <div>
+                                        <div class="fw-bold mb-1">Tambah santri</div>
+                                        <p class="text-muted small mb-0">
+                                            Klik <b>Tambah Santri</b>, isi identitas dasar, pilih kelas, kemudian
+                                            tentukan musyrif yang bertugas pada kelas tersebut.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="guide-step">
+                                <div class="d-flex align-items-start gap-3">
+                                    <span class="guide-step-icon">
+                                        <i class="bi bi-file-earmark-excel-fill"></i>
+                                    </span>
+                                    <div>
+                                        <div class="fw-bold mb-1">Import Excel</div>
+                                        <p class="text-muted small mb-0">
+                                            Upload file, pilih sheet yang valid, petakan setiap sheet ke kelas,
+                                            lakukan preview, lalu jalankan proses import.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="guide-step">
+                                <div class="d-flex align-items-start gap-3">
+                                    <span class="guide-step-icon">
+                                        <i class="bi bi-arrow-up-circle-fill"></i>
+                                    </span>
+                                    <div>
+                                        <div class="fw-bold mb-1">Migrasi kelas</div>
+                                        <p class="text-muted small mb-0">
+                                            Gunakan menu <b>Migrasi Kelas</b> untuk memindahkan atau menaikkan kelas
+                                            santri secara terkontrol pada pergantian tahun ajaran.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="guide-step">
+                                <div class="d-flex align-items-start gap-3">
+                                    <span class="guide-step-icon">
+                                        <i class="bi bi-shield-lock-fill"></i>
+                                    </span>
+                                    <div>
+                                        <div class="fw-bold mb-1">Akun akses santri</div>
+                                        <p class="text-muted small mb-0">
+                                            Buat atau perbarui akun agar santri dapat masuk menggunakan NIS,
+                                            nomor WhatsApp, atau email sesuai data yang tersedia.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-adaptive-purple mb-2">
+                        <i class="bi bi-mouse2-fill me-2"></i>Arti Tombol pada Kolom Aksi
+                    </h6>
+
+                    <div class="border rounded-4 px-3 pb-3">
+                        <div class="guide-action-row">
+                            <span class="guide-action-icon bg-info-subtle text-info">
+                                <i class="bi bi-eye-fill"></i>
+                            </span>
+                            <div>
+                                <div class="fw-bold small">Detail profil</div>
+                                <div class="text-muted small">
+                                    Menampilkan identitas, kelas, musyrif pembimbing, serta akun akses santri.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="guide-action-row">
+                            <span class="guide-action-icon bg-success-subtle text-success">
+                                <i class="bi bi-graph-up-arrow"></i>
+                            </span>
+                            <div>
+                                <div class="fw-bold small">Progress santri</div>
+                                <div class="text-muted small">
+                                    Membuka halaman lengkap progress Hafalan, Tahsin, dan Tilawah santri.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="guide-action-row">
+                            <span class="guide-action-icon bg-primary-subtle text-primary">
+                                <i class="bi bi-person-plus-fill"></i>
+                            </span>
+                            <div>
+                                <div class="fw-bold small">Kelola akun</div>
+                                <div class="text-muted small">
+                                    Membuat akun baru atau memperbarui nomor, email, nama, dan password.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="guide-action-row">
+                            <span class="guide-action-icon bg-warning-subtle text-warning">
+                                <i class="bi bi-pencil-square"></i>
+                            </span>
+                            <div>
+                                <div class="fw-bold small">Edit data</div>
+                                <div class="text-muted small">
+                                    Mengubah identitas, kelas, serta musyrif pembimbing santri.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="guide-action-row">
+                            <span class="guide-action-icon bg-danger-subtle text-danger">
+                                <i class="bi bi-trash-fill"></i>
+                            </span>
+                            <div>
+                                <div class="fw-bold small">Hapus santri</div>
+                                <div class="text-muted small">
+                                    Menghapus data santri. Gunakan dengan hati-hati karena tindakan dapat
+                                    memengaruhi riwayat data yang terhubung.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning border-0 rounded-4 small mt-4 mb-0">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Pastikan kelas dan musyrif sudah benar sebelum menyimpan. Periksa kembali hasil preview
+                        sebelum menjalankan import Excel atau migrasi kelas.
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-coreui-dismiss="modal">
+                        Tutup
+                    </button>
+                    <button type="button" class="btn text-white rounded-pill px-4"
+                        style="background: var(--islamic-purple-600);" data-coreui-dismiss="modal">
+                        <i class="bi bi-check-circle-fill me-1"></i> Saya Mengerti
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endpush
 
 @push('scripts')
@@ -449,6 +857,11 @@
             const modalImport = new coreui.Modal(document.getElementById('modalImportSantri'));
             const modalDetail = new coreui.Modal(document.getElementById('modalDetailSantri'));
             const modalUser = new coreui.Modal(document.getElementById('modalUserSantri'));
+            const modalPageGuide = new coreui.Modal(document.getElementById('modalPageGuide'));
+
+            $('#btnPageGuide').on('click', function() {
+                modalPageGuide.show();
+            });
 
             let selectedKelas = '';
 

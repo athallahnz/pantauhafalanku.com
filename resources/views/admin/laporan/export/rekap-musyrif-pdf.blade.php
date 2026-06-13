@@ -220,9 +220,9 @@
             <div class="hero-subtitle">
                 Dashboard performa pembinaan & monitoring halaqah santri
             </div>
-
+            
             <div class="period">
-                Periode: {{ \Carbon\Carbon::createFromFormat('Y-m', $periode)->translatedFormat('F Y') }}
+                Periode: {{ $periode }}
             </div>
         </div>
 

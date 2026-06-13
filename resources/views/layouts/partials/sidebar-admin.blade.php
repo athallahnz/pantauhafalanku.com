@@ -24,20 +24,20 @@
 
 <li class="nav-item mb-1">
     <a class="nav-link {{ request()->routeIs('kelas.*') ? 'active' : '' }}" href="{{ route('kelas.index') }}">
-        <i class="nav-icon bi bi-easel2-fill"></i> <span>Kelas</span>
+        <i class="nav-icon bi bi-easel2-fill"></i> <span>Data Akademik</span>
     </a>
 </li>
 
 {{-- MENU MUSYRIF DROPDOWN (COLLAPSE) --}}
 <li class="nav-group {{ request()->routeIs('admin.musyrif.*', 'admin.attendances.*') ? 'show' : '' }} mb-1">
     <a class="nav-link nav-group-toggle" href="#">
-        <i class="nav-icon bi bi-person-plus-fill"></i> <span>Musyrif</span>
+        <i class="nav-icon bi bi-person-plus-fill"></i> <span>Data Musyrif</span>
     </a>
     <ul class="nav-group-items">
         <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('admin.musyrif.index') ? 'active' : '' }}"
                 href="{{ route('admin.musyrif.index') }}">
-                <i class="nav-icon bi bi-circle-fill" style="font-size: 0.4rem;"></i> Data Musyrif
+                <i class="nav-icon bi bi-circle-fill" style="font-size: 0.4rem;"></i> Data Master
             </a>
         </li>
         <li class="nav-item">
@@ -50,9 +50,10 @@
 </li>
 
 {{-- MENU SANTRI DROPDOWN (COLLAPSE) --}}
-<li class="nav-group {{ request()->routeIs('santri.master.*') ? 'show' : '' }} mb-1">
+<li
+    class="nav-group {{ request()->routeIs('santri.master.*', 'admin.santri.migrasi.*', 'admin.santri.archive.*') ? 'show' : '' }} mb-1">
     <a class="nav-link nav-group-toggle" href="#">
-        <i class="nav-icon bi bi-people-fill"></i> <span>Santri</span>
+        <i class="nav-icon bi bi-people-fill"></i> <span> Data Santri</span>
     </a>
     <ul class="nav-group-items">
         {{-- Data Master Santri --}}
@@ -60,6 +61,24 @@
             <a class="nav-link {{ request()->routeIs('santri.master.index') ? 'active' : '' }}"
                 href="{{ route('santri.master.index') }}">
                 <i class="nav-icon bi bi-circle-fill" style="font-size: 0.4rem;"></i> Data Master
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('admin.santri.migrasi.page') ? 'active' : '' }}"
+                href="{{ route('admin.santri.migrasi.page') }}">
+                <i class="nav-icon bi bi-circle-fill" style="font-size: 0.4rem;"></i> Migrasi Semester
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('admin.santri.migrasi.audit.*') ? 'active' : '' }}"
+                href="{{ route('admin.santri.migrasi.audit.index') }}">
+                <i class="nav-icon bi bi-circle-fill" style="font-size: 0.4rem;"></i> Riwayat Migrasi
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('admin.santri.archive.*') ? 'active' : '' }}"
+                href="{{ route('admin.santri.archive.index') }}">
+                <i class="nav-icon bi bi-circle-fill" style="font-size: 0.4rem;"></i> Alumni & Nonaktif
             </a>
         </li>
         {{-- Laporan Analisis Pelanggaran (Alpha) --}}

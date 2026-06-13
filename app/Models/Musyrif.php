@@ -38,10 +38,6 @@ class Musyrif extends Model
     {
         return $this->hasMany(Santri::class, 'musyrif_id');
     }
-    public function santri()
-    {
-        return $this->hasMany(Santri::class, 'musyrif_id');
-    }
 
     public function hafalans()
     {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Musyrif;
 
 use App\Http\Controllers\Controller;
+use App\Support\Academic\ResolvesActiveSemester;
 use App\Models\Tahsin;
 use App\Models\Santri;
 use App\Models\Musyrif;
@@ -15,6 +16,8 @@ use Yajra\DataTables\DataTables;
 
 class TahsinController extends Controller
 {
+    use ResolvesActiveSemester;
+
     // Mapping Target Syarat Tilawah (Minimal mencapai Juz berapa untuk bisa masuk buku ini)
     private const TARGET_TILAWAH = [
         'ummi_1'   => 1, // Harus sudah mulai Tilawah Juz 1
@@ -32,7 +35,9 @@ class TahsinController extends Controller
     {
         $musyrif = Musyrif::where('user_id', Auth::id())->firstOrFail();
 
-        $santriBinaan = Santri::where('musyrif_id', $musyrif->id)
+        $santriBinaan = Santri::query()
+            ->active()
+            ->where('musyrif_id', $musyrif->id)
             ->with('kelas')
             ->get();
 
@@ -197,7 +202,10 @@ class TahsinController extends Controller
         if (!$buku) return response()->json(['eligible' => 0, 'total' => 0]);
 
         $musyrif = Musyrif::where('user_id', Auth::id())->firstOrFail();
-        $santris = Santri::where('musyrif_id', $musyrif->id)->pluck('id');
+        $santris = Santri::query()
+            ->active()
+            ->where('musyrif_id', $musyrif->id)
+            ->pluck('id');
         $total = $santris->count();
 
         // Ambil syarat dari konstanta TARGET_TILAWAH
@@ -231,110 +239,262 @@ class TahsinController extends Controller
      */
     public function store(Request $request)
     {
+        $activeSemester = $this->assertAcademicInputOpen();
+        $semesterId = (int) $activeSemester->id;
+
         $validated = $request->validate([
-            'buku'        => ['required', Rule::in(['ummi_1', 'ummi_2', 'ummi_3', 'gharib_1', 'gharib_2', 'tajwid'])],
-            'halaman'     => 'required|array|min:1',
-            'halaman.*'   => 'required|integer',
-            'nilai_label' => 'nullable|in:mumtaz,jayyid_jiddan,jayyid,mardud',
-            'catatan'     => 'nullable|string',
+            'buku' => [
+                'required',
+                Rule::in([
+                    'ummi_1',
+                    'ummi_2',
+                    'ummi_3',
+                    'gharib_1',
+                    'gharib_2',
+                    'tajwid',
+                ]),
+            ],
+            'halaman' => ['required', 'array', 'min:1'],
+            'halaman.*' => ['required', 'integer', 'min:1'],
+            'nilai_label' => [
+                'nullable',
+                Rule::in([
+                    'mumtaz',
+                    'jayyid_jiddan',
+                    'jayyid',
+                    'mardud',
+                ]),
+            ],
+            'catatan' => ['nullable', 'string'],
         ]);
 
         try {
-            $musyrif = Musyrif::where('user_id', auth()->id())->firstOrFail();
-            $tanggal = now()->toDateString();
-            $santris = Santri::where('musyrif_id', $musyrif->id)->get(['id', 'nama']);
+            $musyrif = Musyrif::query()
+                ->where('user_id', auth()->id())
+                ->firstOrFail();
+
+            $tanggal = now('Asia/Jakarta')->toDateString();
+
+            $santris = Santri::query()
+                ->active()
+                ->where('musyrif_id', $musyrif->id)
+                ->get(['id', 'nama']);
+
+            if ($santris->isEmpty()) {
+                return response()->json([
+                    'ok' => false,
+                    'icon' => 'error',
+                    'message' => 'Gagal! Anda belum memiliki santri binaan.',
+                ], 422);
+            }
 
             $bukuTujuan = $validated['buku'];
             $syaratJuz = self::TARGET_TILAWAH[$bukuTujuan] ?? 1;
 
+            /*
+             * Progress Tilawah bersifat kumulatif sehingga tidak dibatasi
+             * semester. Syarat buku Tahsin tetap mengikuti capaian tertinggi.
+             */
             $tilawahProgress = DB::table('tilawahs')
-                ->join('hafalan_templates', 'tilawahs.hafalan_template_id', '=', 'hafalan_templates.id')
-                ->whereIn('santri_id', $santris->pluck('id'))
+                ->join(
+                    'hafalan_templates',
+                    'tilawahs.hafalan_template_id',
+                    '=',
+                    'hafalan_templates.id'
+                )
+                ->whereIn(
+                    'tilawahs.santri_id',
+                    $santris->pluck('id')
+                )
                 ->where('tilawahs.status', 'hadir')
-                ->select('santri_id', DB::raw('MAX(hafalan_templates.juz) as max_juz'))
-                ->groupBy('santri_id')
-                ->pluck('max_juz', 'santri_id');
+                ->select(
+                    'tilawahs.santri_id',
+                    DB::raw(
+                        'MAX(hafalan_templates.juz) as max_juz'
+                    )
+                )
+                ->groupBy('tilawahs.santri_id')
+                ->pluck('max_juz', 'tilawahs.santri_id');
 
             $insertedCount = 0;
             $skippedNames = [];
 
-            foreach ($santris as $santri) {
-                $juzDicapai = $tilawahProgress[$santri->id] ?? 0;
+            DB::transaction(function () use (
+                $santris,
+                $validated,
+                $bukuTujuan,
+                $syaratJuz,
+                $tilawahProgress,
+                $tanggal,
+                $semesterId,
+                $musyrif,
+                &$insertedCount,
+                &$skippedNames
+            ): void {
+                foreach ($santris as $santri) {
+                    $juzDicapai =
+                        (int) ($tilawahProgress[$santri->id] ?? 0);
 
-                if ($juzDicapai < $syaratJuz) {
-                    $skippedNames[] = $santri->nama;
-                    continue;
+                    if ($juzDicapai < $syaratJuz) {
+                        $skippedNames[] = $santri->nama;
+                        continue;
+                    }
+
+                    foreach ($validated['halaman'] as $halaman) {
+                        Tahsin::query()->updateOrCreate(
+                            [
+                                'santri_id' => $santri->id,
+                                'semester_id' => $semesterId,
+                                'tanggal' => $tanggal,
+                                'buku' => $bukuTujuan,
+                                'halaman' => (int) $halaman,
+                            ],
+                            [
+                                'musyrif_id' => $musyrif->id,
+                                'status' => 'hadir',
+                                'nilai_label' =>
+                                $validated['nilai_label'] ?? null,
+                                'catatan' =>
+                                $validated['catatan'] ?? null,
+                            ]
+                        );
+                    }
+
+                    $insertedCount++;
                 }
+            });
 
-                foreach ($validated['halaman'] as $hal) {
-                    Tahsin::updateOrCreate(
-                        ['santri_id' => $santri->id, 'tanggal' => $tanggal, 'buku' => $bukuTujuan, 'halaman' => $hal],
-                        ['musyrif_id' => $musyrif->id, 'status' => 'hadir', 'nilai_label' => $validated['nilai_label'] ?? null, 'catatan' => $validated['catatan']]
-                    );
-                }
-                $insertedCount++;
-            }
-
-            // LOGIKA NOTIFIKASI BARU
             if ($insertedCount === 0) {
                 return response()->json([
                     'ok' => false,
                     'icon' => 'error',
-                    'message' => "Gagal! Semua santri belum mencapai target Tilawah Juz {$syaratJuz}."
+                    'message' => "Gagal! Semua santri belum mencapai target Tilawah Juz {$syaratJuz}.",
                 ], 422);
             }
 
-            if (count($skippedNames) > 0) {
+            if ($skippedNames !== []) {
                 return response()->json([
                     'ok' => true,
-                    'icon' => 'warning', // Gunakan warning untuk skipped
-                    'message' => "Berhasil untuk {$insertedCount} santri. Namun, " . count($skippedNames) . " santri dilewati (Tilawah belum mencapai Juz {$syaratJuz})."
+                    'icon' => 'warning',
+                    'message' =>
+                    "Berhasil untuk {$insertedCount} santri. Namun, "
+                        . count($skippedNames)
+                        . " santri dilewati karena Tilawah belum mencapai Juz {$syaratJuz}.",
+                    'skipped_santri' => $skippedNames,
                 ]);
             }
 
-            return response()->json(['ok' => true, 'icon' => 'success', 'message' => "Berhasil! Materi diterapkan ke semua santri."]);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+            return response()->json([
+                'ok' => true,
+                'icon' => 'success',
+                'message' => 'Berhasil! Materi diterapkan ke semua santri.',
+            ]);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'ok' => false,
+                'message' => 'Terjadi kesalahan sistem saat menyimpan data Tahsin.',
+            ], 500);
         }
     }
 
-    public function update(Request $request, Tahsin $tahsin)
-    {
+    public function update(
+        Request $request,
+        Tahsin $tahsin
+    ) {
+        $musyrif = Musyrif::query()
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        if ((int) $tahsin->musyrif_id !== (int) $musyrif->id) {
+            return response()->json([
+                'message' => 'Unauthorized! Data ini bukan milik Anda.',
+            ], 403);
+        }
+
+        $activeSemester =
+            $this->assertRecordEditableInActiveSemester(
+                $tahsin->semester_id
+            );
+
         $validated = $request->validate([
-            'status'      => 'required|in:hadir,izin,sakit,alpha',
-            'nilai_label' => 'nullable|in:mumtaz,jayyid_jiddan,jayyid,mardud', // VALIDASI NILAI BARU
-            'catatan'     => 'nullable|string',
+            'status' => [
+                'required',
+                Rule::in([
+                    'hadir',
+                    'izin',
+                    'sakit',
+                    'alpha',
+                ]),
+            ],
+            'nilai_label' => [
+                'nullable',
+                Rule::in([
+                    'mumtaz',
+                    'jayyid_jiddan',
+                    'jayyid',
+                    'mardud',
+                ]),
+            ],
+            'catatan' => ['nullable', 'string'],
         ]);
 
+        /*
+         * Record legacy dengan semester_id null akan dimasukkan ke semester
+         * aktif. Record semester lama sudah ditolak oleh trait.
+         */
+        $validated['semester_id'] =
+            (int) $activeSemester->id;
+
         $tahsin->update($validated);
-        return response()->json(['ok' => true, 'message' => 'Status individu berhasil diperbarui.']);
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Status individu berhasil diperbarui.',
+        ]);
     }
 
     public function destroy(Tahsin $tahsin)
     {
-        // 1. Dapatkan user ID yang sedang login
         $userId = Auth::id();
 
-        // 2. Cari Musyrif berdasarkan user_id
-        $musyrif = Musyrif::where('user_id', $userId)->first();
+        $musyrif = Musyrif::query()
+            ->where('user_id', $userId)
+            ->first();
 
-        // 3. Debugging: Cek apakah musyrif ketemu dan apakah ID-nya cocok
         if (!$musyrif) {
-            return response()->json(['message' => 'Unauthorized! Data Musyrif tidak ditemukan untuk user ini.'], 403);
-        }
-
-        if ((int)$tahsin->musyrif_id !== (int)$musyrif->id) {
-            // Log ini akan sangat membantu di file laravel.log
-            \Log::warning("Percobaan hapus ilegal. User: $userId, Tahsin ID: {$tahsin->id}, Musyrif Target: {$tahsin->musyrif_id}, Musyrif Login: {$musyrif->id}");
-
             return response()->json([
-                'message' => 'Unauthorized! Data ini bukan milik Anda.',
-                'debug' => 'Musyrif ID mismatch'
+                'message' => 'Unauthorized! Data Musyrif tidak ditemukan untuk user ini.',
             ], 403);
         }
 
+        if ((int) $tahsin->musyrif_id !== (int) $musyrif->id) {
+            \Log::warning(
+                'Percobaan hapus Tahsin yang bukan milik musyrif.',
+                [
+                    'user_id' => $userId,
+                    'tahsin_id' => $tahsin->id,
+                    'target_musyrif_id' => $tahsin->musyrif_id,
+                    'login_musyrif_id' => $musyrif->id,
+                ]
+            );
+
+            return response()->json([
+                'message' => 'Unauthorized! Data ini bukan milik Anda.',
+            ], 403);
+        }
+
+        $this->assertRecordEditableInActiveSemester(
+            $tahsin->semester_id
+        );
+
         $tahsin->delete();
-        return response()->json(['ok' => true, 'message' => 'Data tahsin berhasil dihapus.']);
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Data Tahsin berhasil dihapus.',
+        ]);
     }
 
     public function detail(Santri $santri)

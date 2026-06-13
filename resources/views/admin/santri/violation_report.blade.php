@@ -150,24 +150,37 @@
         {{-- Filter Section --}}
         <div class="card report-card mb-4 border-0">
             <div class="card-body p-3">
-                <form id="filterForm" class="row g-3 align-items-end">
+                <form id="filterForm" method="GET" action="{{ route('santri.master.violation.report') }}"
+                    class="row g-3 align-items-end">
                     <div class="col-6 col-md-3">
-                        <label class="form-label small fw-bold text-muted">Dari</label>
+                        <label for="start_date" class="form-label small fw-bold text-muted">
+                            Dari
+                        </label>
+
                         <input type="date" name="start_date" id="start_date"
                             class="form-control rounded-pill border-0 bg-body-tertiary px-3"
-                            value="{{ $startDate->format('Y-m-d') }}">
+                            value="{{ request('start_date', $startDate->format('Y-m-d')) }}" required>
                     </div>
+
                     <div class="col-6 col-md-3">
-                        <label class="form-label small fw-bold text-muted">Sampai</label>
+                        <label for="end_date" class="form-label small fw-bold text-muted">
+                            Sampai
+                        </label>
+
                         <input type="date" name="end_date" id="end_date"
                             class="form-control rounded-pill border-0 bg-body-tertiary px-3"
-                            value="{{ $endDate->format('Y-m-d') }}">
+                            value="{{ request('end_date', $endDate->format('Y-m-d')) }}" required>
                     </div>
+
                     <div class="col-12 col-md-6 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary rounded-pill px-4 flex-grow-1">Terapkan
-                            Filter</button>
-                        <a href="{{ route('santri.master.violation.report') }}"
-                            class="btn btn-secondary rounded-pill px-4">Reset</a>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 flex-grow-1">
+                            <i class="bi bi-funnel me-1"></i>
+                            Terapkan Filter
+                        </button>
+
+                        <a href="{{ route('santri.master.violation.report') }}" class="btn btn-secondary rounded-pill px-4">
+                            Reset
+                        </a>
                     </div>
                 </form>
             </div>
@@ -255,8 +268,8 @@
                         <p class="text-white small mb-0">Rekapitulasi ketidakhadiran santri periode ini</p>
                     </div>
                     {{-- Tombol X: Pastikan data-coreui-dismiss benar --}}
-                    <button type="button" class="btn-close shadow-none" data-coreui-dismiss="modal" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                    <button type="button" class="btn-close shadow-none" data-coreui-dismiss="modal"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
                 <div class="modal-body p-0">
@@ -355,11 +368,6 @@
                     lengthMenu: "_MENU_",
                 },
                 dom: '<"d-flex justify-content-between align-items-center mb-3"lf>rt<"d-flex justify-content-between align-items-center mt-3"ip>'
-            });
-
-            $('#filterForm').on('submit', function(e) {
-                e.preventDefault();
-                table.draw();
             });
 
             // === 2. Chart.js with Theme Colors ===

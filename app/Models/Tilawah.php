@@ -17,6 +17,7 @@ class Tilawah extends Model
         'tanggal',
         'hafalan_template_id',
         'status',
+        'semester_id',
         'catatan'
     ];
 
@@ -37,5 +38,10 @@ class Tilawah extends Model
     public function template(): BelongsTo
     {
         return $this->belongsTo(HafalanTemplate::class, 'hafalan_template_id');
+    }
+
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class);
     }
 }
