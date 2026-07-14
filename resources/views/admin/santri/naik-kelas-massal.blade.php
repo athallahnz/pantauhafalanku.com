@@ -171,6 +171,16 @@
             background: var(--cui-body-bg);
         }
 
+        .assignment-mode-summary {
+            border: 1px solid rgba(25, 135, 84, .22);
+            border-radius: .85rem;
+            background: rgba(25, 135, 84, .07);
+        }
+
+        .auto-individual-assignment {
+            border-top: 1px solid var(--cui-border-color);
+        }
+
         /* ================= FLOATING PAGE GUIDE ================= */
         .page-guide-fab {
             position: fixed;
@@ -588,19 +598,23 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">
-                        Terapkan Musyrif ke Semua
-                        <span class="text-muted">(Opsional)</span>
+                        Strategi Musyrif Manual
                     </label>
 
-                    <select class="form-select shadow-xs" id="toMusyrifId" disabled>
-                        <option value="">
-                            Pilih kelas tujuan terlebih dahulu...
+                    <select class="form-select shadow-xs" id="manualMusyrifStrategy"
+                        {{ !$semesterAktif ? 'disabled' : '' }}>
+
+                        <option value="keep" selected>
+                            Musyrif Tetap Sama
+                        </option>
+
+                        <option value="individual">
+                            Atur / Ganti per Santri
                         </option>
                     </select>
 
-                    <div class="form-text" id="toMusyrifHelp">
-                        Preview dapat dilakukan lebih dahulu. Setelah hasil tampil, pilihan ini dapat diterapkan ke seluruh
-                        santri dan tetap bisa diubah per baris.
+                    <div class="form-text" id="manualMusyrifStrategyHelp">
+                        Default mempertahankan musyrif lama walaupun santri berpindah kelas.
                     </div>
                 </div>
 
@@ -707,8 +721,8 @@
 
                     <div class="small text-body-secondary">
                         Seluruh posisi kelas asal dikunci dan disnapshot dalam satu
-                        transaksi sebelum perubahan dilakukan. Assignment musyrif
-                        tetap ditentukan per santri untuk setiap kelas tujuan.
+                        transaksi sebelum perubahan dilakukan. Musyrif lama dipertahankan secara default. Mapping individual
+                        hanya diperlukan jika pembimbing berubah.
                     </div>
                 </div>
             </div>
@@ -720,10 +734,9 @@
 
                     <div>
                         <strong>Preview Berhasil.</strong>
-                        Tentukan musyrif tujuan setiap santri. Gunakan
-                        <strong>Terapkan ke Semua</strong> atau mapping berdasarkan
-                        musyrif lama untuk mempercepat, lalu lakukan override pada
-                        baris tertentu bila diperlukan.
+                        Secara default seluruh santri mempertahankan musyrif lama.
+                        Pilih <strong>Atur / Ganti per Santri</strong> hanya jika ada
+                        perubahan pembimbing pada semester tujuan.
                     </div>
                 </div>
 
@@ -731,11 +744,11 @@
                     <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
                         <div>
                             <div class="fw-bold mb-1">
-                                Mapping Berdasarkan Musyrif Lama
+                                Strategi Assignment Musyrif
                             </div>
 
-                            <div class="small text-body-secondary">
-                                Pilih musyrif tujuan untuk setiap kelompok musyrif lama.
+                            <div class="small text-body-secondary" id="manualAssignmentNotice">
+                                Musyrif lama akan dipertahankan untuk seluruh santri.
                             </div>
 
                             <div class="small text-primary fw-semibold mt-1" id="manualBatchInfo">
@@ -749,31 +762,48 @@
                             </span>
                         </div>
                     </div>
-
-                    <div class="row g-2 mt-2" id="oldMusyrifMappingBox"></div>
                 </div>
 
-                <div class="table-responsive border rounded-4 overflow-hidden mt-3">
-                    <table class="table table-striped table-hover align-middle mb-0">
-                        <thead class="table-light text-uppercase small fw-bold">
-                            <tr>
-                                <th class="ps-4" style="width:60px;">#</th>
-                                <th>Santri</th>
-                                <th>Musyrif Lama</th>
-                                <th class="pe-4" style="min-width:270px;">
-                                    Musyrif Tujuan
-                                </th>
-                            </tr>
-                        </thead>
+                <div class="auto-mapping-safe p-3" id="manualKeepSummary">
+                    <div class="d-flex align-items-start gap-3">
+                        <i class="bi bi-person-check-fill text-success fs-4"></i>
 
-                        <tbody id="previewRows"></tbody>
-                    </table>
+                        <div>
+                            <div class="fw-bold">
+                                Musyrif Tetap Sama
+                            </div>
+
+                            <div class="small text-body-secondary">
+                                Preview individual disembunyikan karena tidak ada
+                                perubahan assignment musyrif.
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="small text-body-secondary mt-3">
-                    <i class="bi bi-shield-check me-1"></i>
-                    Backend memvalidasi setiap assignment dan memastikan musyrif
-                    bertugas pada kelas tujuan.
+                <div class="d-none" id="manualIndividualAssignmentBox">
+                    <div class="table-responsive border rounded-4 overflow-hidden mt-3">
+                        <table class="table table-striped table-hover align-middle mb-0">
+                            <thead class="table-light text-uppercase small fw-bold">
+                                <tr>
+                                    <th class="ps-4" style="width:60px;">#</th>
+                                    <th>Santri</th>
+                                    <th>Musyrif Lama</th>
+                                    <th class="pe-4" style="min-width:300px;">
+                                        Musyrif Semester Tujuan
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="previewRows"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="small text-body-secondary mt-3">
+                        <i class="bi bi-people me-1"></i>
+                        Dropdown menampilkan seluruh data Master Musyrif dan tidak
+                        dibatasi oleh kelas_id musyrif.
+                    </div>
                 </div>
             </div>
 
@@ -784,9 +814,8 @@
 
                     <div>
                         <strong>Snapshot Auto-Mapping Siap.</strong>
-                        Seluruh santri telah dikelompokkan berdasarkan kelas asal
-                        sebelum perubahan. Lengkapi assignment musyrif pada setiap
-                        kelompok kelas tujuan, kemudian jalankan Eksekusi Auto.
+                        Seluruh santri telah dikelompokkan berdasarkan kelas asal. Setiap kelompok default mempertahankan
+                        musyrif lama; buka mapping individual hanya untuk kelompok yang berubah.
                     </div>
                 </div>
 
@@ -952,11 +981,9 @@
                                 </div>
 
                                 <div class="small text-body-secondary">
-                                    Musyrif harus berasal dari kelas tujuan. Assignment
-                                    dapat diterapkan ke seluruh santri, berdasarkan
-                                    kelompok musyrif lama, atau diubah per baris.
-                                    Tombol Eksekusi tetap disabled selama assignment
-                                    belum lengkap.
+                                    Pilih Musyrif Tetap Sama untuk mempertahankan pembimbing lama. Jika pembimbing berubah,
+                                    pilih Atur per Santri lalu gunakan dropdown seluruh Master Musyrif. Tombol Eksekusi
+                                    tetap disabled selama assignment wajib belum lengkap.
                                 </div>
                             </div>
 
@@ -1008,7 +1035,7 @@
                                 <li>
                                     <i class="bi bi-check-circle-fill"></i>
                                     <span>
-                                        Seluruh musyrif tujuan bertugas pada kelas tujuan.
+                                        Perubahan musyrif sudah diverifikasi satu per satu.
                                     </span>
                                 </li>
 
@@ -1166,7 +1193,6 @@
 
             const semesterInputLocked = @json((bool) $semesterAktif?->input_locked_at);
 
-            const musyrifByKelasUrlTemplate = @json(route('admin.musyrif.by_kelas', ['kelas_id' => '__KELAS_ID__']));
 
             const endpoints = {
                 previewMassal: @json(route('admin.santri.migrasi.massal.preview')),
@@ -1187,11 +1213,15 @@
             const toKelasHelp =
                 document.getElementById('toKelasHelp');
 
-            const toMusyrifId =
-                document.getElementById('toMusyrifId');
+            const manualMusyrifStrategy =
+                document.getElementById(
+                    'manualMusyrifStrategy'
+                );
 
-            const toMusyrifHelp =
-                document.getElementById('toMusyrifHelp');
+            const manualMusyrifStrategyHelp =
+                document.getElementById(
+                    'manualMusyrifStrategyHelp'
+                );
 
             const tipe =
                 document.getElementById('tipe');
@@ -1229,9 +1259,19 @@
             const previewRows =
                 document.getElementById('previewRows');
 
-            const oldMusyrifMappingBox =
+            const manualKeepSummary =
                 document.getElementById(
-                    'oldMusyrifMappingBox'
+                    'manualKeepSummary'
+                );
+
+            const manualIndividualAssignmentBox =
+                document.getElementById(
+                    'manualIndividualAssignmentBox'
+                );
+
+            const manualAssignmentNotice =
+                document.getElementById(
+                    'manualAssignmentNotice'
                 );
 
             const assignmentStatusBadge =
@@ -1267,7 +1307,6 @@
             let lastCount = 0;
             let targetMusyrifs = [];
             let previewSantris = [];
-            let musyrifOptionsLoading = false;
             let manualBatchId = null;
             let manualBatchCode = null;
 
@@ -1295,7 +1334,12 @@
                 );
 
                 previewRows.innerHTML = '';
-                oldMusyrifMappingBox.innerHTML = '';
+
+                manualKeepSummary?.classList
+                    .remove('d-none');
+
+                manualIndividualAssignmentBox?.classList
+                    .add('d-none');
 
                 manualBatchInfo.textContent =
                     'Batch belum dibuat.';
@@ -1446,19 +1490,27 @@
                 }
             }
 
+            function musyrifOptionLabel(
+                musyrif
+            ) {
+                const identity = musyrif.kode ?
+                    `${musyrif.nama} — ${musyrif.kode}` :
+                    musyrif.nama;
+
+                return musyrif.kelas_nama ?
+                    `${identity} • ${musyrif.kelas_nama}` :
+                    identity;
+            }
+
             function targetMusyrifOptions(
                 selectedId = ''
             ) {
                 const options = [
-                    '<option value="">Pilih musyrif tujuan...</option>'
+                    '<option value="">Pilih musyrif...</option>'
                 ];
 
                 targetMusyrifs.forEach(
                     function(musyrif) {
-                        const label = musyrif.kode ?
-                            `${musyrif.nama} — ${musyrif.kode}` :
-                            musyrif.nama;
-
                         const selected =
                             String(musyrif.id) ===
                             String(selectedId) ?
@@ -1467,113 +1519,13 @@
 
                         options.push(
                             `<option value="${Number(musyrif.id)}"${selected}>` +
-                            `${escapeHtml(label)}` +
+                            `${escapeHtml(musyrifOptionLabel(musyrif))}` +
                             `</option>`
                         );
                     }
                 );
 
                 return options.join('');
-            }
-
-            async function loadMusyrifByTargetClass() {
-                const kelasId =
-                    toKelasId.value;
-
-                targetMusyrifs = [];
-                toMusyrifId.value = '';
-
-                if (!kelasId) {
-                    toMusyrifId.innerHTML =
-                        '<option value="">Pilih kelas tujuan terlebih dahulu...</option>';
-
-                    toMusyrifId.disabled = true;
-
-                    toMusyrifHelp.textContent =
-                        'Pilih kelas tujuan untuk memuat daftar musyrif.';
-
-                    togglePreviewEnable();
-                    return;
-                }
-
-                musyrifOptionsLoading = true;
-                toMusyrifId.disabled = true;
-
-                toMusyrifId.innerHTML =
-                    '<option value="">Memuat musyrif...</option>';
-
-                toMusyrifHelp.textContent =
-                    'Memuat daftar musyrif kelas tujuan...';
-
-                try {
-                    const endpoint =
-                        musyrifByKelasUrlTemplate.replace(
-                            '__KELAS_ID__',
-                            encodeURIComponent(kelasId)
-                        );
-
-                    const response = await fetch(
-                        endpoint, {
-                            method: 'GET',
-                            credentials: 'same-origin',
-                            headers: {
-                                Accept: 'application/json',
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        }
-                    );
-
-                    const json = await response
-                        .json()
-                        .catch(() => ({}));
-
-                    if (!response.ok) {
-                        throw new Error(
-                            json?.message ||
-                            'Gagal memuat musyrif.'
-                        );
-                    }
-
-                    targetMusyrifs =
-                        Array.isArray(json?.data) ?
-                        json.data : [];
-
-                    toMusyrifId.innerHTML =
-                        '<option value="">(Tidak diterapkan ke semua)</option>';
-
-                    targetMusyrifs.forEach(
-                        function(musyrif) {
-                            const label = musyrif.kode ?
-                                `${musyrif.nama} — ${musyrif.kode}` :
-                                musyrif.nama;
-
-                            toMusyrifId.add(
-                                new Option(
-                                    label,
-                                    musyrif.id
-                                )
-                            );
-                        }
-                    );
-
-                    toMusyrifHelp.textContent =
-                        targetMusyrifs.length > 0 ?
-                        'Pilih untuk menerapkan musyrif yang sama ke semua baris setelah Preview.' :
-                        (
-                            json?.message ||
-                            'Belum ada musyrif pada kelas tujuan.'
-                        );
-                } catch (error) {
-                    toMusyrifId.innerHTML =
-                        '<option value="">Gagal memuat musyrif</option>';
-
-                    toMusyrifHelp.textContent =
-                        error.message;
-                } finally {
-                    musyrifOptionsLoading = false;
-                    toMusyrifId.disabled = false;
-                    togglePreviewEnable();
-                }
             }
 
             function getRowSelects() {
@@ -1584,34 +1536,95 @@
                 );
             }
 
-            function assignmentIsRequired(
-                santri
-            ) {
-                if (tipe.value === 'lulus') {
-                    return false;
+            function manualUsesIndividualMapping() {
+                return manualMusyrifStrategy?.value ===
+                    'individual';
+            }
+
+            function syncManualAssignmentMode() {
+                const individual =
+                    manualUsesIndividualMapping();
+
+                manualKeepSummary?.classList
+                    .toggle('d-none', individual);
+
+                manualIndividualAssignmentBox?.classList
+                    .toggle('d-none', !individual);
+
+                if (manualAssignmentNotice) {
+                    manualAssignmentNotice.textContent =
+                        individual ?
+                        'Pilih musyrif untuk setiap santri. Seluruh Master Musyrif tersedia pada dropdown.' :
+                        'Musyrif lama dipertahankan untuk seluruh santri, termasuk ketika kelas berubah.';
                 }
 
-                const classChanged =
-                    String(fromKelasId.value) !==
-                    String(toKelasId.value);
+                if (manualMusyrifStrategyHelp) {
+                    manualMusyrifStrategyHelp.textContent =
+                        individual ?
+                        'Preview individual ditampilkan untuk mapping satu per satu.' :
+                        'Default mempertahankan musyrif lama walaupun santri berpindah kelas.';
+                }
 
-                return classChanged ||
-                    !santri.musyrif_id;
+                updateAssignmentStatus();
             }
 
             function updateAssignmentStatus() {
-                const selects =
-                    getRowSelects();
+                if (
+                    !manualUsesIndividualMapping()
+                ) {
+                    const missingNames =
+                        previewSantris
+                        .filter(
+                            santri =>
+                            !santri.musyrif_id
+                        )
+                        .map(
+                            santri =>
+                            santri.nama ??
+                            `Santri #${santri.id}`
+                        );
 
+                    const ready =
+                        previewSantris.length -
+                        missingNames.length;
+
+                    assignmentStatusBadge.textContent =
+                        `${ready} / ${previewSantris.length} siap`;
+
+                    assignmentStatusBadge.className =
+                        missingNames.length === 0 ?
+                        'badge text-bg-success rounded-pill px-3 py-2' :
+                        'badge text-bg-warning rounded-pill px-3 py-2';
+
+                    btnExecute.disabled = !semesterInputLocked ||
+                        lastCount === 0 ||
+                        missingNames.length > 0;
+
+                    return missingNames;
+                }
+
+                const selects = getRowSelects();
                 let ready = 0;
                 const missingNames = [];
 
                 selects.forEach(
                     function(select) {
-                        const santriId =
-                            Number(
-                                select.dataset.santriId
-                            );
+                        const valid =
+                            Boolean(select.value);
+
+                        select.classList.toggle(
+                            'assignment-incomplete',
+                            !valid
+                        );
+
+                        if (valid) {
+                            ready++;
+                            return;
+                        }
+
+                        const santriId = Number(
+                            select.dataset.santriId
+                        );
 
                         const santri =
                             previewSantris.find(
@@ -1620,33 +1633,10 @@
                                 santriId
                             );
 
-                        const required =
-                            assignmentIsRequired(
-                                santri ?? {}
-                            );
-
-                        const hasEffectiveValue =
-                            Boolean(select.value) ||
-                            (
-                                !required &&
-                                Boolean(
-                                    santri?.musyrif_id
-                                )
-                            );
-
-                        select.classList.toggle(
-                            'assignment-incomplete',
-                            !hasEffectiveValue
+                        missingNames.push(
+                            santri?.nama ??
+                            `Santri #${santriId}`
                         );
-
-                        if (hasEffectiveValue) {
-                            ready++;
-                        } else {
-                            missingNames.push(
-                                santri?.nama ??
-                                `Santri #${santriId}`
-                            );
-                        }
                     }
                 );
 
@@ -1665,95 +1655,6 @@
                 return missingNames;
             }
 
-            function renderOldMusyrifMappings() {
-                const groups = new Map();
-
-                previewSantris.forEach(
-                    function(santri) {
-                        const key =
-                            santri.musyrif_id ?
-                            String(
-                                santri.musyrif_id
-                            ) :
-                            'none';
-
-                        if (!groups.has(key)) {
-                            groups.set(
-                                key, {
-                                    id: santri.musyrif_id,
-                                    name: santri.musyrif_nama ??
-                                        'Belum ada musyrif',
-                                    count: 0
-                                }
-                            );
-                        }
-
-                        groups.get(key).count++;
-                    }
-                );
-
-                oldMusyrifMappingBox.innerHTML =
-                    Array.from(groups.entries())
-                    .map(
-                        ([key, group]) => `
-                                <div class="col-lg-6">
-                                    <div class="old-musyrif-map-row p-3 h-100">
-                                        <div class="small text-body-secondary">
-                                            Musyrif Lama
-                                        </div>
-
-                                        <div class="fw-bold mb-2">
-                                            ${escapeHtml(group.name)}
-                                            <span class="badge text-bg-light ms-1">
-                                                ${group.count} santri
-                                            </span>
-                                        </div>
-
-                                        <select
-                                            class="form-select form-select-sm old-musyrif-map-select"
-                                            data-from-musyrif-id="${escapeHtml(key)}">
-                                            ${targetMusyrifOptions()}
-                                        </select>
-                                    </div>
-                                </div>
-                            `
-                    )
-                    .join('');
-
-                document
-                    .querySelectorAll(
-                        '.old-musyrif-map-select'
-                    )
-                    .forEach(
-                        function(select) {
-                            select.addEventListener(
-                                'change',
-                                function() {
-                                    const fromId =
-                                        this.dataset
-                                        .fromMusyrifId;
-
-                                    getRowSelects()
-                                        .filter(
-                                            rowSelect =>
-                                            rowSelect.dataset
-                                            .fromMusyrifId ===
-                                            fromId
-                                        )
-                                        .forEach(
-                                            rowSelect => {
-                                                rowSelect.value =
-                                                    this.value;
-                                            }
-                                        );
-
-                                    updateAssignmentStatus();
-                                }
-                            );
-                        }
-                    );
-            }
-
             function renderPreview(
                 json
             ) {
@@ -1770,7 +1671,8 @@
 
                 previewSantris =
                     Array.isArray(json.santris) ?
-                    json.santris : [];
+                    json.santris :
+                    [];
 
                 if (
                     Array.isArray(
@@ -1781,41 +1683,22 @@
                         json.target_musyrifs;
                 }
 
-                const currentGlobalValue =
-                    toMusyrifId.value;
+                const hasMissingCurrentMusyrif =
+                    previewSantris.some(
+                        santri =>
+                        !santri.musyrif_id
+                    );
 
-                toMusyrifId.innerHTML =
-                    '<option value="">(Tidak diterapkan ke semua)</option>';
+                if (hasMissingCurrentMusyrif) {
+                    manualMusyrifStrategy.value =
+                        'individual';
 
-                targetMusyrifs.forEach(
-                    function(musyrif) {
-                        const label = musyrif.kode ?
-                            `${musyrif.nama} — ${musyrif.kode}` :
-                            musyrif.nama;
-
-                        toMusyrifId.add(
-                            new Option(
-                                label,
-                                musyrif.id
-                            )
-                        );
-                    }
-                );
-
-                if (
-                    targetMusyrifs.some(
-                        musyrif =>
-                        String(musyrif.id) ===
-                        String(currentGlobalValue)
-                    )
-                ) {
-                    toMusyrifId.value =
-                        currentGlobalValue;
+                    swalHelper(
+                        'warning',
+                        'Mapping Individual Diperlukan',
+                        'Ada santri yang belum memiliki musyrif lama. Pilih musyrif melalui dropdown individual.'
+                    );
                 }
-
-                const sameClass =
-                    String(fromKelasId.value) ===
-                    String(toKelasId.value);
 
                 previewRows.innerHTML =
                     previewSantris
@@ -1825,26 +1708,16 @@
                             index
                         ) {
                             const selectedId =
-                                sameClass &&
                                 santri.musyrif_id &&
                                 targetMusyrifs.some(
                                     musyrif =>
-                                    Number(
-                                        musyrif.id
-                                    ) ===
+                                    Number(musyrif.id) ===
                                     Number(
                                         santri.musyrif_id
                                     )
                                 ) ?
                                 santri.musyrif_id :
                                 '';
-
-                            const oldMusyrifKey =
-                                santri.musyrif_id ?
-                                String(
-                                    santri.musyrif_id
-                                ) :
-                                'none';
 
                             return `
                                     <tr>
@@ -1882,8 +1755,7 @@
                                             <select
                                                 class="form-select form-select-sm assignment-select santri-musyrif-select"
                                                 data-santri-id="${Number(santri.id)}"
-                                                data-batch-item-id="${Number(santri.batch_item_id)}"
-                                                data-from-musyrif-id="${escapeHtml(oldMusyrifKey)}">
+                                                data-batch-item-id="${Number(santri.batch_item_id)}">
                                                 ${targetMusyrifOptions(selectedId)}
                                             </select>
                                         </td>
@@ -1902,28 +1774,41 @@
                     }
                 );
 
-                renderOldMusyrifMappings();
-                previewBox.classList.remove('d-none');
+                previewBox.classList.remove(
+                    'd-none'
+                );
 
-                updateAssignmentStatus();
+                syncManualAssignmentMode();
             }
 
             function collectAssignmentItems() {
-                return getRowSelects()
-                    .map(
-                        function(select) {
+                if (
+                    !manualUsesIndividualMapping()
+                ) {
+                    return previewSantris.map(
+                        function(santri) {
                             return {
                                 batch_item_id: Number(
-                                    select.dataset
-                                    .batchItemId
+                                    santri.batch_item_id
                                 ),
-                                to_musyrif_id: select.value ?
-                                    Number(
-                                        select.value
-                                    ) : null
+                                to_musyrif_id: null
                             };
                         }
                     );
+                }
+
+                return getRowSelects().map(
+                    function(select) {
+                        return {
+                            batch_item_id: Number(
+                                select.dataset.batchItemId
+                            ),
+                            to_musyrif_id: select.value ?
+                                Number(select.value) :
+                                null
+                        };
+                    }
+                );
             }
 
             function validateAssignments() {
@@ -1938,7 +1823,7 @@
 
                 if (missingNames.length > 0) {
                     throw new Error(
-                        `Masih ada ${missingNames.length} santri yang belum memiliki musyrif tujuan.`
+                        `Masih ada ${missingNames.length} santri yang belum memiliki musyrif.`
                     );
                 }
             }
@@ -1953,16 +1838,12 @@
                 selectedId = ''
             ) {
                 const options = [
-                    '<option value="">Pilih musyrif tujuan...</option>'
+                    '<option value="">Pilih musyrif...</option>'
                 ];
 
                 (group.target_musyrifs ?? [])
                 .forEach(
                     function(musyrif) {
-                        const label = musyrif.kode ?
-                            `${musyrif.nama} — ${musyrif.kode}` :
-                            musyrif.nama;
-
                         const selected =
                             String(musyrif.id) ===
                             String(selectedId) ?
@@ -1971,7 +1852,7 @@
 
                         options.push(
                             `<option value="${Number(musyrif.id)}"${selected}>` +
-                            `${escapeHtml(label)}` +
+                            `${escapeHtml(musyrifOptionLabel(musyrif))}` +
                             `</option>`
                         );
                     }
@@ -1988,66 +1869,41 @@
                 );
             }
 
-            function renderAutoOldMusyrifMappings(
-                group,
+            function getAutoGroupStrategy(
                 groupIndex
             ) {
-                if (group.tipe === 'lulus') {
-                    return '';
-                }
+                return document.querySelector(
+                    `.auto-group-strategy-select[data-group-index="${Number(groupIndex)}"]`
+                )?.value ?? 'keep';
+            }
 
-                const oldGroups = new Map();
+            function syncAutoGroupVisibility(
+                groupIndex
+            ) {
+                const strategy =
+                    getAutoGroupStrategy(
+                        groupIndex
+                    );
 
-                (group.santris ?? []).forEach(
-                    function(santri) {
-                        const key =
-                            santri.from_musyrif_id ?
-                            String(
-                                santri.from_musyrif_id
-                            ) :
-                            'none';
+                const individualBox =
+                    document.querySelector(
+                        `.auto-individual-assignment[data-group-index="${Number(groupIndex)}"]`
+                    );
 
-                        if (!oldGroups.has(key)) {
-                            oldGroups.set(
-                                key, {
-                                    name: santri.from_musyrif_nama ??
-                                        'Belum ada musyrif',
-                                    count: 0
-                                }
-                            );
-                        }
+                const keepSummary =
+                    document.querySelector(
+                        `.auto-group-keep-summary[data-group-index="${Number(groupIndex)}"]`
+                    );
 
-                        oldGroups.get(key).count++;
-                    }
+                individualBox?.classList.toggle(
+                    'd-none',
+                    strategy !== 'individual'
                 );
 
-                return `
-                    <div class="row g-2 mt-2">
-                        ${Array.from(oldGroups.entries())
-                            .map(
-                                ([key, oldGroup]) => `
-                                                                <div class="col-lg-6">
-                                                                    <div class="auto-group-map-card p-2 h-100">
-                                                                        <div class="small text-body-secondary">
-                                                                            Dari ${escapeHtml(oldGroup.name)}
-                                                                            <span class="badge text-bg-light ms-1">
-                                                                                ${oldGroup.count}
-                                                                            </span>
-                                                                        </div>
-
-                                                                        <select
-                                                                            class="form-select form-select-sm mt-1 auto-old-map-select"
-                                                                            data-group-index="${groupIndex}"
-                                                                            data-from-musyrif-id="${escapeHtml(key)}">
-                                                                            ${autoOptions(group)}
-                                                                        </select>
-                                                                    </div>
-                                                                </div>
-                                                            `
-                            )
-                            .join('')}
-                    </div>
-                `;
+                keepSummary?.classList.toggle(
+                    'd-none',
+                    strategy === 'individual'
+                );
             }
 
             function renderAutoPreview(
@@ -2062,7 +1918,8 @@
 
                 autoRows =
                     Array.isArray(json.rows) ?
-                    json.rows : [];
+                    json.rows :
+                    [];
 
                 const graduationIncluded =
                     Boolean(
@@ -2090,109 +1947,157 @@
                             const isGraduation =
                                 group.tipe === 'lulus';
 
-                            const groupApply = isGraduation ?
-                                '' :
-                                `
-                                        <div style="min-width:260px;">
-                                            <label class="form-label mb-1">
-                                                Terapkan ke Grup
-                                            </label>
-
-                                            <select
-                                                class="form-select form-select-sm auto-group-apply-select"
-                                                data-group-index="${groupIndex}">
-                                                <option value="">
-                                                    (Tidak diterapkan)
-                                                </option>
-                                                ${(group.target_musyrifs ?? [])
-                                                    .map(
-                                                        musyrif => {
-                                                            const label = musyrif.kode
-                                                                ? `${musyrif.nama} — ${musyrif.kode}`
-                                                                : musyrif.nama;
-
-                                                            return `
-                                                                                            <option value="${Number(musyrif.id)}">
-                                                                                                ${escapeHtml(label)}
-                                                                                            </option>
-                                                                                        `;
-                                                        }
-                                                    )
-                                                    .join('')}
-                                            </select>
-                                        </div>
-                                    `;
-
-                            const mappingTools =
-                                renderAutoOldMusyrifMappings(
-                                    group,
-                                    groupIndex
+                            const hasMissingCurrentMusyrif =
+                                (group.santris ?? [])
+                                .some(
+                                    santri =>
+                                    !santri.from_musyrif_id
                                 );
 
-                            const rows = (
-                                    group.santris ?? []
-                                )
+                            const defaultStrategy =
+                                hasMissingCurrentMusyrif ?
+                                'individual' :
+                                'keep';
+
+                            const strategyControl =
+                                isGraduation ?
+                                '' :
+                                `
+                                            <div style="min-width:280px;">
+                                                <label class="form-label mb-1">
+                                                    Strategi Musyrif Kelompok
+                                                </label>
+
+                                                <select
+                                                    class="form-select form-select-sm auto-group-strategy-select"
+                                                    data-group-index="${groupIndex}">
+
+                                                    <option value="keep"
+                                                        ${defaultStrategy === 'keep' ? 'selected' : ''}
+                                                        ${hasMissingCurrentMusyrif ? 'disabled' : ''}>
+                                                        Musyrif Tetap Sama
+                                                    </option>
+
+                                                    <option value="individual"
+                                                        ${defaultStrategy === 'individual' ? 'selected' : ''}>
+                                                        Atur / Ganti per Santri
+                                                    </option>
+                                                </select>
+                                            </div>
+                                        `;
+
+                            const rows =
+                                (group.santris ?? [])
                                 .map(
                                     function(
                                         santri,
                                         santriIndex
                                     ) {
-                                        const assignmentCell =
-                                            isGraduation ?
-                                            `
-                                                        <span class="badge text-bg-dark">
-                                                            Musyrif dikosongkan
-                                                        </span>
-                                                    ` :
-                                            `
-                                                        <select
-                                                            class="form-select form-select-sm auto-santri-musyrif-select"
-                                                            data-group-index="${groupIndex}"
-                                                            data-santri-id="${Number(santri.santri_id)}"
-                                                            data-batch-item-id="${Number(santri.batch_item_id)}"
-                                                            data-from-kelas-id="${Number(santri.from_kelas_id)}"
-                                                            data-to-kelas-id="${Number(santri.to_kelas_id)}"
-                                                            data-tipe="${escapeHtml(santri.tipe)}"
-                                                            data-from-musyrif-id="${
-                                                                santri.from_musyrif_id
-                                                                    ? Number(santri.from_musyrif_id)
-                                                                    : 'none'
-                                                            }">
-                                                            ${autoOptions(group)}
-                                                        </select>
-                                                    `;
+                                        const selectedId =
+                                            santri.from_musyrif_id &&
+                                            (group.target_musyrifs ?? [])
+                                            .some(
+                                                musyrif =>
+                                                Number(musyrif.id) ===
+                                                Number(
+                                                    santri.from_musyrif_id
+                                                )
+                                            ) ?
+                                            santri.from_musyrif_id :
+                                            '';
 
                                         return `
-                                                <tr>
-                                                    <td class="ps-3">
-                                                        ${santriIndex + 1}
-                                                    </td>
+                                                    <tr>
+                                                        <td class="ps-3">
+                                                            ${santriIndex + 1}
+                                                        </td>
 
-                                                    <td>
-                                                        <div class="fw-bold">
-                                                            ${escapeHtml(santri.nama ?? '-')}
-                                                        </div>
+                                                        <td>
+                                                            <div class="fw-bold">
+                                                                ${escapeHtml(santri.nama ?? '-')}
+                                                            </div>
 
-                                                        <div class="small text-body-secondary">
-                                                            NIS: ${escapeHtml(santri.nis ?? '-')}
-                                                        </div>
-                                                    </td>
+                                                            <div class="small text-body-secondary">
+                                                                NIS: ${escapeHtml(santri.nis ?? '-')}
+                                                            </div>
+                                                        </td>
 
-                                                    <td>
-                                                        ${escapeHtml(
-                                                            santri.from_musyrif_nama
-                                                            ?? 'Belum ada musyrif'
-                                                        )}
-                                                    </td>
+                                                        <td>
+                                                            ${escapeHtml(
+                                                                santri.from_musyrif_nama
+                                                                ?? 'Belum ada musyrif'
+                                                            )}
+                                                        </td>
 
-                                                    <td class="pe-3">
-                                                        ${assignmentCell}
-                                                    </td>
-                                                </tr>
-                                            `;
+                                                        <td class="pe-3">
+                                                            <select
+                                                                class="form-select form-select-sm auto-santri-musyrif-select"
+                                                                data-group-index="${groupIndex}"
+                                                                data-santri-id="${Number(santri.santri_id)}"
+                                                                data-batch-item-id="${Number(santri.batch_item_id)}">
+                                                                ${autoOptions(group, selectedId)}
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                `;
                                     }
                                 )
                                 .join('');
+
+                            const assignmentContent =
+                                isGraduation ?
+                                `
+                                            <div class="p-3 text-body-secondary small">
+                                                <i class="bi bi-mortarboard-fill me-1"></i>
+                                                Kelulusan mengosongkan assignment musyrif pada semester tujuan.
+                                            </div>
+                                        ` :
+                                `
+                                            <div class="assignment-mode-summary p-3 auto-group-keep-summary ${defaultStrategy === 'individual' ? 'd-none' : ''}"
+                                                data-group-index="${groupIndex}">
+                                                <div class="fw-bold text-success">
+                                                    <i class="bi bi-person-check-fill me-1"></i>
+                                                    Musyrif Tetap Sama
+                                                </div>
+
+                                                <div class="small text-body-secondary mt-1">
+                                                    ${Number(group.count_santri ?? 0)} santri mempertahankan musyrif lama. Preview individual disembunyikan.
+                                                </div>
+                                            </div>
+
+                                            <div class="auto-individual-assignment ${defaultStrategy === 'individual' ? '' : 'd-none'}"
+                                                data-group-index="${groupIndex}">
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-hover align-middle mb-0">
+                                                        <thead>
+                                                            <tr>
+                                                                <th class="ps-3" style="width:55px;">#</th>
+                                                                <th>Santri</th>
+                                                                <th>Musyrif Lama</th>
+                                                                <th class="pe-3" style="min-width:300px;">
+                                                                    Musyrif Semester Tujuan
+                                                                </th>
+                                                            </tr>
+                                                        </thead>
+
+                                                        <tbody>
+                                                            ${rows || `
+                                                                    <tr>
+                                                                        <td colspan="4"
+                                                                            class="text-center text-body-secondary py-3">
+                                                                            Tidak ada santri aktif.
+                                                                        </td>
+                                                                    </tr>
+                                                                `}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                <div class="small text-body-secondary p-3 pt-2">
+                                                    Dropdown menampilkan seluruh data Master Musyrif tanpa filter kelas_id.
+                                                </div>
+                                            </div>
+                                        `;
 
                             return `
                                     <section class="auto-mapping-group"
@@ -2212,37 +2117,11 @@
                                                     </div>
                                                 </div>
 
-                                                ${groupApply}
+                                                ${strategyControl}
                                             </div>
-
-                                            ${mappingTools}
                                         </div>
 
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-hover align-middle mb-0">
-                                                <thead>
-                                                    <tr>
-                                                        <th class="ps-3" style="width:55px;">#</th>
-                                                        <th>Santri</th>
-                                                        <th>Musyrif Lama</th>
-                                                        <th class="pe-3" style="min-width:260px;">
-                                                            Musyrif Tujuan
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-
-                                                <tbody>
-                                                    ${rows || `
-                                                                                    <tr>
-                                                                                        <td colspan="4"
-                                                                                            class="text-center text-body-secondary py-3">
-                                                                                            Tidak ada santri aktif.
-                                                                                        </td>
-                                                                                    </tr>
-                                                                                `}
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                        ${assignmentContent}
                                     </section>
                                 `;
                         }
@@ -2251,64 +2130,18 @@
 
                 document
                     .querySelectorAll(
-                        '.auto-group-apply-select'
+                        '.auto-group-strategy-select'
                     )
                     .forEach(
                         function(select) {
                             select.addEventListener(
                                 'change',
                                 function() {
-                                    const groupIndex =
-                                        this.dataset.groupIndex;
-
-                                    getAutoRowSelects()
-                                        .filter(
-                                            row =>
-                                            row.dataset.groupIndex ===
-                                            groupIndex
+                                    syncAutoGroupVisibility(
+                                        Number(
+                                            this.dataset.groupIndex
                                         )
-                                        .forEach(
-                                            row => {
-                                                row.value =
-                                                    this.value;
-                                            }
-                                        );
-
-                                    updateAutoAssignmentStatus();
-                                }
-                            );
-                        }
-                    );
-
-                document
-                    .querySelectorAll(
-                        '.auto-old-map-select'
-                    )
-                    .forEach(
-                        function(select) {
-                            select.addEventListener(
-                                'change',
-                                function() {
-                                    const groupIndex =
-                                        this.dataset.groupIndex;
-
-                                    const fromMusyrifId =
-                                        this.dataset.fromMusyrifId;
-
-                                    getAutoRowSelects()
-                                        .filter(
-                                            row =>
-                                            row.dataset.groupIndex ===
-                                            groupIndex &&
-                                            row.dataset.fromMusyrifId ===
-                                            fromMusyrifId
-                                        )
-                                        .forEach(
-                                            row => {
-                                                row.value =
-                                                    this.value;
-                                            }
-                                        );
+                                    );
 
                                     updateAutoAssignmentStatus();
                                 }
@@ -2341,13 +2174,23 @@
                 const items = [];
 
                 autoRows.forEach(
-                    function(group) {
+                    function(
+                        group,
+                        groupIndex
+                    ) {
+                        const strategy =
+                            group.tipe === 'lulus' ?
+                            'graduation' :
+                            getAutoGroupStrategy(
+                                groupIndex
+                            );
+
                         (group.santris ?? [])
                         .forEach(
                             function(santri) {
                                 if (
-                                    group.tipe ===
-                                    'lulus'
+                                    strategy === 'graduation' ||
+                                    strategy === 'keep'
                                 ) {
                                     items.push({
                                         batch_item_id: Number(
@@ -2361,7 +2204,7 @@
 
                                 const select =
                                     document.querySelector(
-                                        `.auto-santri-musyrif-select[data-santri-id="${Number(santri.santri_id)}"]`
+                                        `.auto-santri-musyrif-select[data-batch-item-id="${Number(santri.batch_item_id)}"]`
                                     );
 
                                 items.push({
@@ -2369,9 +2212,8 @@
                                         santri.batch_item_id
                                     ),
                                     to_musyrif_id: select?.value ?
-                                        Number(
-                                            select.value
-                                        ) : null
+                                        Number(select.value) :
+                                        null
                                 });
                             }
                         );
@@ -2382,66 +2224,76 @@
             }
 
             function updateAutoAssignmentStatus() {
-                const total = autoRows
-                    .reduce(
-                        (
-                            sum,
-                            group
-                        ) =>
-                        sum +
-                        Number(
-                            group.count_santri ??
-                            0
-                        ),
-                        0
-                    );
+                const total = autoRows.reduce(
+                    (sum, group) =>
+                    sum + Number(
+                        group.count_santri ?? 0
+                    ),
+                    0
+                );
 
                 let ready = 0;
                 let missing = 0;
 
                 autoRows.forEach(
-                    function(group) {
+                    function(
+                        group,
+                        groupIndex
+                    ) {
                         if (group.tipe === 'lulus') {
                             ready += Number(
-                                group.count_santri ??
-                                0
+                                group.count_santri ?? 0
                             );
 
                             return;
                         }
 
-                        const groupSelects =
-                            getAutoRowSelects()
+                        const strategy =
+                            getAutoGroupStrategy(
+                                groupIndex
+                            );
+
+                        if (strategy === 'keep') {
+                            (group.santris ?? [])
+                            .forEach(
+                                function(santri) {
+                                    if (
+                                        santri.from_musyrif_id
+                                    ) {
+                                        ready++;
+                                    } else {
+                                        missing++;
+                                    }
+                                }
+                            );
+
+                            return;
+                        }
+
+                        getAutoRowSelects()
                             .filter(
                                 select =>
                                 Number(
-                                    select.dataset
-                                    .groupIndex
-                                ) ===
-                                autoRows.indexOf(
-                                    group
-                                )
-                            );
+                                    select.dataset.groupIndex
+                                ) === groupIndex
+                            )
+                            .forEach(
+                                function(select) {
+                                    const valid =
+                                        Boolean(select.value);
 
-                        groupSelects.forEach(
-                            function(select) {
-                                const valid =
-                                    Boolean(
-                                        select.value
+                                    select.classList.toggle(
+                                        'auto-assignment-incomplete',
+                                        !valid
                                     );
 
-                                select.classList.toggle(
-                                    'auto-assignment-incomplete',
-                                    !valid
-                                );
-
-                                if (valid) {
-                                    ready++;
-                                } else {
-                                    missing++;
+                                    if (valid) {
+                                        ready++;
+                                    } else {
+                                        missing++;
+                                    }
                                 }
-                            }
-                        );
+                            );
                     }
                 );
 
@@ -2449,8 +2301,7 @@
                     `${ready} / ${total} siap`;
 
                 autoAssignmentStatusBadge.className =
-                    ready === total &&
-                    total > 0 ?
+                    ready === total && total > 0 ?
                     'badge text-bg-success rounded-pill px-3 py-2' :
                     'badge text-bg-warning rounded-pill px-3 py-2';
 
@@ -2465,18 +2316,16 @@
 
                 btnAutoExecute.setAttribute(
                     'aria-disabled',
-                    canExecute ?
-                    'false' :
-                    'true'
+                    canExecute ? 'false' : 'true'
                 );
 
                 btnAutoExecute.title = canExecute ?
-                    'Eksekusi snapshot Auto-Mapping' :
-                    (
-                        !semesterInputLocked ?
-                        'Kunci input semester aktif terlebih dahulu' :
-                        'Lengkapi seluruh assignment musyrif'
-                    );
+                    'Eksekusi Auto-Mapping' :
+                    missing > 0 ?
+                    'Lengkapi mapping individual yang masih kosong' :
+                    !semesterInputLocked ?
+                    'Kunci input semester aktif sebelum eksekusi' :
+                    'Lakukan Auto Preview terlebih dahulu';
 
                 return {
                     total,
@@ -2487,9 +2336,6 @@
             }
 
             function validateAutoAssignments() {
-                const status =
-                    updateAutoAssignmentStatus();
-
                 if (!autoLast?.ok) {
                     throw new Error(
                         'Lakukan Auto Preview terlebih dahulu.'
@@ -2502,9 +2348,18 @@
                     );
                 }
 
+                const status =
+                    updateAutoAssignmentStatus();
+
                 if (status.missing > 0) {
                     throw new Error(
                         `Masih ada ${status.missing} assignment musyrif yang belum lengkap.`
+                    );
+                }
+
+                if (!semesterInputLocked) {
+                    throw new Error(
+                        'Kunci input semester aktif sebelum menjalankan Eksekusi Auto.'
                     );
                 }
             }
@@ -2554,21 +2409,10 @@
             | Manual events
             |--------------------------------------------------------------------------
             */
-            toMusyrifId.addEventListener(
+            manualMusyrifStrategy?.addEventListener(
                 'change',
                 function() {
-                    if (!this.value) {
-                        return;
-                    }
-
-                    getRowSelects().forEach(
-                        select => {
-                            select.value =
-                                this.value;
-                        }
-                    );
-
-                    updateAssignmentStatus();
+                    syncManualAssignmentMode();
                 }
             );
 
@@ -2607,7 +2451,7 @@
 
             fromKelasId.addEventListener(
                 'change',
-                async function() {
+                function() {
                     resetManualFlow();
 
                     if (
@@ -2620,27 +2464,20 @@
 
                     syncTransitionControls();
 
-                    if (
-                        tipe.value ===
-                        'tinggal_kelas'
-                    ) {
-                        await loadMusyrifByTargetClass();
-                    }
                 }
             );
 
             toKelasId.addEventListener(
                 'change',
-                async function() {
+                function() {
                     resetManualFlow();
                     syncTransitionControls();
-                    await loadMusyrifByTargetClass();
                 }
             );
 
             tipe.addEventListener(
                 'change',
-                async function() {
+                function() {
                     resetManualFlow();
 
                     if (
@@ -2653,7 +2490,6 @@
                     }
 
                     syncTransitionControls();
-                    await loadMusyrifByTargetClass();
                 }
             );
 
@@ -2730,7 +2566,9 @@
                         swalHelper(
                             'success',
                             'Preview Berhasil',
-                            'Silakan periksa assignment musyrif setiap santri.'
+                            manualUsesIndividualMapping() ?
+                            'Silakan periksa mapping musyrif setiap santri.' :
+                            'Musyrif lama akan dipertahankan untuk seluruh santri.'
                         );
                     } catch (error) {
                         if (window.Swal) {
@@ -2772,7 +2610,8 @@
                             await Swal.fire({
                                 icon: 'warning',
                                 title: 'Konfirmasi Migrasi',
-                                html: `Proses <b>${items.length} santri</b> dengan assignment musyrif per santri?<br>` +
+                                html: `Proses <b>${items.length} santri</b>?<br>` +
+                                    `<small>${manualUsesIndividualMapping() ? 'Menggunakan mapping musyrif individual.' : 'Musyrif lama dipertahankan.'}</small><br>` +
                                     `<small class="text-danger">Aksi ini tidak dapat dibatalkan.</small>`,
                                 showCancelButton: true,
                                 confirmButtonText: 'Ya, Proses',
@@ -2945,7 +2784,7 @@
                         swalHelper(
                             'success',
                             'Snapshot Berhasil',
-                            'Lengkapi assignment musyrif pada setiap kelompok kelas.' +
+                            'Periksa strategi musyrif pada setiap kelompok kelas.' +
                             graduationMessage
                         );
                     } catch (error) {
@@ -3075,7 +2914,6 @@
             }
 
             syncTransitionControls();
-            loadMusyrifByTargetClass();
             updateAssignmentStatus();
             updateAutoAssignmentStatus();
         })();

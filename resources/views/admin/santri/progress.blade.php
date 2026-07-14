@@ -270,7 +270,99 @@
 
         .chart-wrap {
             position: relative;
+            height: 280px;
             min-height: 280px;
+        }
+
+        .chart-wrap canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .fullscreen-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .fullscreen-card-title {
+            min-width: 0;
+        }
+
+        .btn-card-fullscreen {
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .45rem;
+            padding: .48rem .78rem;
+            border: 1px solid var(--student-border);
+            border-radius: 999px;
+            color: var(--student-text);
+            background: var(--student-surface-soft);
+            font-size: .72rem;
+            font-weight: 800;
+            line-height: 1;
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background-color .2s ease;
+        }
+
+        .btn-card-fullscreen:hover {
+            transform: translateY(-1px);
+            border-color: rgba(111, 66, 193, .26);
+            color: var(--student-purple-dark);
+            background: var(--student-purple-soft);
+            box-shadow: 0 8px 18px rgba(31, 41, 55, .08);
+        }
+
+        [data-coreui-theme="dark"] .btn-card-fullscreen:hover {
+            color: #d8c6ff;
+        }
+
+        .fullscreen-target.is-card-fullscreen {
+            width: 100vw;
+            height: 100vh;
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 0;
+            background: var(--student-surface);
+        }
+
+        .fullscreen-target.is-card-fullscreen .student-card-header {
+            flex: 0 0 auto;
+        }
+
+        .fullscreen-target.is-card-fullscreen .fullscreen-fill {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .fullscreen-target.is-card-fullscreen .enterprise-progress-container {
+            max-height: none;
+        }
+
+        .fullscreen-target.is-card-fullscreen .juz-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .fullscreen-target.is-card-fullscreen .chart-wrap {
+            height: calc(100vh - 215px);
+            min-height: 360px;
+        }
+
+        .fullscreen-target:not(.is-card-fullscreen) .chart-wrap {
+            height: 280px;
+            min-height: 280px;
+        }
+
+        @media (min-width: 1400px) {
+            .fullscreen-target.is-card-fullscreen .juz-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
         }
 
         .student-dashboard .table {
@@ -373,6 +465,183 @@
             background: var(--student-surface-soft);
         }
 
+        .readable-note {
+            display: flex;
+            align-items: flex-start;
+            gap: .75rem;
+            padding: .9rem 1rem;
+            border: 1px solid var(--student-border);
+            border-radius: 16px;
+            background: var(--student-surface-soft);
+            color: var(--student-muted);
+            font-size: .76rem;
+            line-height: 1.55;
+        }
+
+        .readable-note i {
+            color: var(--student-purple);
+            font-size: 1.05rem;
+            margin-top: .05rem;
+        }
+
+        .juz-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .85rem;
+        }
+
+        .juz-card {
+            position: relative;
+            overflow: hidden;
+            padding: .95rem;
+            border: 1px solid var(--student-border);
+            border-radius: 18px;
+            background: var(--student-surface);
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .juz-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(111, 66, 193, .24);
+            box-shadow: var(--student-shadow);
+        }
+
+        .juz-card.is-complete {
+            background:
+                linear-gradient(135deg, rgba(25, 135, 84, .09), transparent 48%),
+                var(--student-surface);
+        }
+
+        .juz-card.is-progress {
+            background:
+                linear-gradient(135deg, rgba(111, 66, 193, .08), transparent 48%),
+                var(--student-surface);
+        }
+
+        .juz-card.is-empty {
+            opacity: .78;
+        }
+
+        .juz-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: .75rem;
+            margin-bottom: .75rem;
+        }
+
+        .juz-number {
+            font-size: 1rem;
+            font-weight: 850;
+            color: var(--student-text);
+        }
+
+        .juz-status {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .36rem .58rem;
+            border-radius: 999px;
+            font-size: .68rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .stage-road {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: .32rem;
+            margin-bottom: .75rem;
+        }
+
+        .stage-dot {
+            min-height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--student-border);
+            border-radius: 999px;
+            background: var(--student-surface-soft);
+            color: var(--student-muted);
+            font-size: .62rem;
+            font-weight: 850;
+        }
+
+        .stage-dot.is-done {
+            color: #fff;
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--student-purple), #8e44ad);
+            box-shadow: 0 6px 14px rgba(111, 66, 193, .16);
+        }
+
+        .stage-dot.is-exam.is-done {
+            background: linear-gradient(135deg, #198754, #20c997);
+            box-shadow: 0 6px 14px rgba(25, 135, 84, .18);
+        }
+
+        .juz-mini-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .45rem;
+            margin-top: .75rem;
+        }
+
+        .juz-mini-metric {
+            padding: .58rem .65rem;
+            border-radius: 13px;
+            background: var(--student-surface-soft);
+        }
+
+        .juz-mini-label {
+            color: var(--student-muted);
+            font-size: .61rem;
+            font-weight: 800;
+            letter-spacing: .055em;
+            text-transform: uppercase;
+        }
+
+        .juz-mini-value {
+            margin-top: .12rem;
+            color: var(--student-text);
+            font-size: .9rem;
+            font-weight: 850;
+        }
+
+        .juz-explain {
+            min-height: 38px;
+            margin-top: .75rem;
+            color: var(--student-muted);
+            font-size: .68rem;
+            line-height: 1.45;
+        }
+
+        .chart-legend-simple {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .6rem;
+            margin-bottom: .9rem;
+        }
+
+        .chart-legend-item {
+            padding: .72rem .8rem;
+            border: 1px solid var(--student-border);
+            border-radius: 14px;
+            background: var(--student-surface-soft);
+        }
+
+        .chart-legend-title {
+            color: var(--student-text);
+            font-size: .75rem;
+            font-weight: 850;
+        }
+
+        .chart-legend-copy {
+            margin-top: .15rem;
+            color: var(--student-muted);
+            font-size: .66rem;
+            line-height: 1.4;
+        }
+
         @media (max-width: 767.98px) {
             .welcome-card {
                 border-radius: 18px;
@@ -391,6 +660,14 @@
                 padding: 0.9rem 1rem;
             }
 
+            .fullscreen-card-header {
+                flex-direction: column;
+            }
+
+            .btn-card-fullscreen {
+                display: none;
+            }
+
             .summary-card {
                 padding: 1rem;
             }
@@ -400,6 +677,7 @@
             }
 
             .chart-wrap {
+                height: 240px;
                 min-height: 240px;
             }
 
@@ -414,6 +692,11 @@
 
             .enterprise-percent {
                 text-align: left;
+            }
+
+            .juz-grid,
+            .chart-legend-simple {
+                grid-template-columns: 1fr;
             }
 
             .dataTables_wrapper .row:first-child,
@@ -678,17 +961,38 @@
                 @php
                     $hafalanKpi = [
                         [
-                            'label' => 'Setor',
-                            'value' => $totalSetor ?? 0,
-                            'sub' => 'Lulus atau ulang',
+                            'label' => 'Setoran Harian',
+                            'value' => $totalSetorHarian ?? 0,
+                            'sub' => 'Harian + Tahap 1–3',
                             'color' => 'success',
                             'icon' => 'journal-check',
                         ],
                         [
-                            'label' => 'Hadir (TS)',
+                            'label' => 'Ujian / Juz',
+                            'value' => $totalUjian ?? 0,
+                            'sub' => 'Juz lulus ujian akhir',
+                            'color' => 'primary',
+                            'icon' => 'award-fill',
+                        ],
+                        [
+                            'label' => 'Nilai Sementara',
+                            'value' => $avgNilaiSementara ?? 0,
+                            'sub' => 'Dari harian, maksimal 70',
+                            'color' => 'warning',
+                            'icon' => 'speedometer2',
+                        ],
+                        [
+                            'label' => 'Nilai Ujian',
+                            'value' => $avgNilaiUjian ?? 0 ?: '-',
+                            'sub' => 'Nilai final dari ujian',
+                            'color' => 'info',
+                            'icon' => 'graph-up-arrow',
+                        ],
+                        [
+                            'label' => 'HTS',
                             'value' => $totalHadirTidakSetor ?? 0,
                             'sub' => 'Hadir tidak setor',
-                            'color' => 'warning',
+                            'color' => 'secondary',
                             'icon' => 'person-exclamation',
                         ],
                         [
@@ -712,19 +1016,12 @@
                             'color' => 'danger',
                             'icon' => 'x-octagon',
                         ],
-                        [
-                            'label' => 'Rata Nilai',
-                            'value' => $avgNilai ?? 0,
-                            'sub' => 'Skala 0–100',
-                            'color' => 'info',
-                            'icon' => 'graph-up-arrow',
-                        ],
                     ];
                 @endphp
 
                 <div class="row g-3 mb-4">
                     @foreach ($hafalanKpi as $item)
-                        <div class="col-6 col-md-4 col-xl-2">
+                        <div class="col-6 col-md-3 col-xl-3">
                             <div class="kpi-card">
                                 <div class="d-flex justify-content-between align-items-start gap-2">
                                     <div class="min-w-0">
@@ -745,12 +1042,13 @@
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                         <div>
                             <h3 class="student-section-title">Overall Progress Hafalan</h3>
-                            <p class="student-section-copy">Rata-rata tahap tertinggi pada scope {{ $scopeLabel }}.
+                            <p class="student-section-copy">Rata-rata progress berdasarkan tahapan. Proses harian maksimal
+                                70%, ujian akhir membuat progress menjadi 100%.
                             </p>
                         </div>
                         <div class="text-md-end">
                             <div class="summary-value">{{ $overallPct ?? 0 }}%</div>
-                            <div class="small text-muted">{{ $juzSelesai ?? 0 }} Juz selesai ujian akhir</div>
+                            <div class="small text-muted">{{ $juzSelesai ?? 0 }} dari 30 Juz sudah lulus ujian akhir</div>
                         </div>
                     </div>
                     <div class="progress summary-progress">
@@ -761,49 +1059,145 @@
 
                 <div class="row g-4 mb-4">
                     <div class="col-lg-6">
-                        <section class="student-card h-100">
-                            <header class="student-card-header">
-                                <h3 class="student-section-title"><i class="bi bi-list-stars me-2"></i>Progress per Juz
-                                </h3>
-                                <p class="student-section-copy">Semua Juz tetap ditampilkan, termasuk yang belum dimulai.
-                                </p>
+                        <section class="student-card h-100 fullscreen-target" id="progressJuzCard">
+                            <header class="student-card-header fullscreen-card-header">
+                                <div class="fullscreen-card-title">
+                                    <h3 class="student-section-title"><i class="bi bi-list-stars me-2"></i>Progress per
+                                        Juz
+                                    </h3>
+                                    <p class="student-section-copy">
+                                        Cara baca sederhana: santri berjalan dari Harian → Tahap 1 → Tahap 2 → Tahap 3 →
+                                        Ujian.
+                                    </p>
+                                </div>
+
+                                <button type="button" class="btn-card-fullscreen d-none d-lg-inline-flex"
+                                    data-fullscreen-target="progressJuzCard"
+                                    aria-label="Lihat Progress per Juz fullscreen">
+                                    <i class="bi bi-arrows-fullscreen"></i>
+                                    <span>Fullscreen</span>
+                                </button>
                             </header>
-                            <div class="p-4 enterprise-progress-container">
-                                @foreach ($progressPerJuz as $p)
-                                    <div class="enterprise-progress-row">
-                                        <div class="enterprise-progress-header">
-                                            <div class="enterprise-progress-name">Juz {{ $p['juz'] }}</div>
-                                            <div class="enterprise-progress-meta">
-                                                @if ($p['tahap'])
-                                                    <span class="badge bg-body-secondary text-body">
-                                                        {{ strtoupper(str_replace('_', ' ', $p['tahap'])) }}
-                                                    </span>
-                                                @endif
+                            <div class="p-4 enterprise-progress-container fullscreen-fill">
+                                <div class="readable-note mb-3">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    <div>
+                                        <strong>Patokan nilai:</strong> nilai harian/tahap hanya menjadi nilai sementara dan
+                                        dibatasi maksimal 70.
+                                        Nilai final baru diambil dari <strong>Ujian Akhir</strong>.
+                                    </div>
+                                </div>
+
+                                <div class="juz-grid">
+                                    @foreach ($progressPerJuz as $p)
+                                        @php
+                                            $cardClass =
+                                                ($p['pct'] ?? 0) >= 100
+                                                    ? 'is-complete'
+                                                    : (($p['pct'] ?? 0) > 0
+                                                        ? 'is-progress'
+                                                        : 'is-empty');
+
+                                            $stages = [
+                                                'harian' => 'H',
+                                                'tahap_1' => 'T1',
+                                                'tahap_2' => 'T2',
+                                                'tahap_3' => 'T3',
+                                                'ujian_akhir' => 'U',
+                                            ];
+                                        @endphp
+
+                                        <article class="juz-card {{ $cardClass }}">
+                                            <div class="juz-card-top">
+                                                <div>
+                                                    <div class="juz-number">Juz {{ $p['juz'] }}</div>
+                                                    <div class="small text-muted">{{ $p['pct'] }}% progress</div>
+                                                </div>
+
                                                 <span
-                                                    class="badge bg-{{ $p['color'] }} {{ $p['color'] === 'light' ? 'text-dark' : '' }}">
+                                                    class="juz-status bg-{{ $p['color'] }} {{ $p['color'] === 'light' ? 'text-dark' : 'text-white' }}">
                                                     {{ $p['status'] }}
                                                 </span>
-                                                <span class="enterprise-percent">{{ $p['pct'] }}%</span>
                                             </div>
-                                        </div>
-                                        <div class="progress enterprise-progress">
-                                            <div class="progress-bar bg-{{ $p['color'] }}"
-                                                data-width="{{ $p['pct'] }}"></div>
-                                        </div>
-                                    </div>
-                                @endforeach
+
+                                            <div class="stage-road" aria-label="Tahapan Juz {{ $p['juz'] }}">
+                                                @foreach ($stages as $stageKey => $stageShort)
+                                                    <span
+                                                        class="stage-dot {{ $p['stage_checks'][$stageKey] ?? false ? 'is-done' : '' }} {{ $stageKey === 'ujian_akhir' ? 'is-exam' : '' }}"
+                                                        title="{{ $stageKey === 'ujian_akhir' ? 'Ujian Akhir' : \Illuminate\Support\Str::title(str_replace('_', ' ', $stageKey)) }}">
+                                                        {{ $stageShort }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+
+                                            <div class="progress enterprise-progress">
+                                                <div class="progress-bar bg-{{ $p['color'] }}"
+                                                    data-width="{{ $p['pct'] }}"></div>
+                                            </div>
+
+                                            <div class="juz-mini-metrics">
+                                                <div class="juz-mini-metric">
+                                                    <div class="juz-mini-label">Setoran</div>
+                                                    <div class="juz-mini-value">{{ $p['daily_count'] ?? 0 }}</div>
+                                                </div>
+                                                <div class="juz-mini-metric">
+                                                    <div class="juz-mini-label">Ujian</div>
+                                                    <div class="juz-mini-value">{{ $p['exam_count'] ?? 0 }}</div>
+                                                </div>
+                                                <div class="juz-mini-metric">
+                                                    <div class="juz-mini-label">Nilai Sementara</div>
+                                                    <div class="juz-mini-value">{{ $p['temporary_average'] ?? '-' }}</div>
+                                                </div>
+                                                <div class="juz-mini-metric">
+                                                    <div class="juz-mini-label">Nilai Ujian</div>
+                                                    <div class="juz-mini-value">{{ $p['exam_average'] ?? '-' }}</div>
+                                                </div>
+                                            </div>
+
+                                            <div class="juz-explain">
+                                                {{ $p['explanation'] }}
+                                            </div>
+                                        </article>
+                                    @endforeach
+                                </div>
                             </div>
                         </section>
                     </div>
 
                     <div class="col-lg-6">
-                        <section class="student-card h-100">
-                            <header class="student-card-header">
-                                <h3 class="student-section-title"><i class="bi bi-activity me-2"></i>Analitik Capaian per
-                                    Juz</h3>
-                                <p class="student-section-copy">Visualisasi persentase tahapan Hafalan Juz 1 sampai 30.</p>
+                        <section class="student-card h-100 fullscreen-target" id="analyticsJuzCard">
+                            <header class="student-card-header fullscreen-card-header">
+                                <div class="fullscreen-card-title">
+                                    <h3 class="student-section-title"><i class="bi bi-activity me-2"></i>Analitik Capaian
+                                        per
+                                        Juz</h3>
+                                    <p class="student-section-copy">Bar makin tinggi berarti Juz makin dekat ke ujian
+                                        akhir.
+                                    </p>
+                                </div>
+
+                                <button type="button" class="btn-card-fullscreen d-none d-lg-inline-flex"
+                                    data-fullscreen-target="analyticsJuzCard" data-fullscreen-chart="juz"
+                                    aria-label="Lihat Analitik Capaian per Juz fullscreen">
+                                    <i class="bi bi-arrows-fullscreen"></i>
+                                    <span>Fullscreen</span>
+                                </button>
                             </header>
-                            <div class="p-4">
+                            <div class="p-4 fullscreen-fill">
+                                <div class="chart-legend-simple">
+                                    <div class="chart-legend-item">
+                                        <div class="chart-legend-title">0%</div>
+                                        <div class="chart-legend-copy">Belum ada setoran.</div>
+                                    </div>
+                                    <div class="chart-legend-item">
+                                        <div class="chart-legend-title">25–70%</div>
+                                        <div class="chart-legend-copy">Masih harian/tahapan.</div>
+                                    </div>
+                                    <div class="chart-legend-item">
+                                        <div class="chart-legend-title">100%</div>
+                                        <div class="chart-legend-copy">Sudah lulus ujian.</div>
+                                    </div>
+                                </div>
                                 <div class="chart-wrap"><canvas id="chartJuzPct"></canvas></div>
                             </div>
                         </section>
@@ -827,6 +1221,7 @@
                                     <th>Tanggal</th>
                                     <th>Semester</th>
                                     <th>Juz</th>
+                                    <th>Tahapan</th>
                                     <th>Surah / Ayat</th>
                                     <th>Status</th>
                                     <th>Nilai</th>
@@ -1110,13 +1505,75 @@
             const hasDataTable = hasJquery && $.fn && typeof $.fn.DataTable !== 'undefined';
             const hasChart = typeof window.Chart !== 'undefined';
 
+            @php
+                /*
+                 * Data chart sengaja dihitung di blok @php terpisah.
+                 * Jangan letakkan closure/match langsung di @json karena parser Blade pada beberapa versi
+                 * bisa membaca kurung/kurawal secara keliru dan memunculkan error syntax dekat property `label`.
+                 */
+                $chartJuzLabels = $progressPerJuz
+                    ->pluck('juz')
+                    ->map(function ($juz) {
+                        return 'Juz ' . $juz;
+                    })
+                    ->values();
+
+                $chartJuzData = $progressPerJuz
+                    ->pluck('pct')
+                    ->map(function ($value) {
+                        return (float) $value;
+                    })
+                    ->values();
+
+                $chartJuzStatuses = $progressPerJuz->pluck('status')->values();
+                $chartJuzDailyCounts = $progressPerJuz->pluck('daily_count')->values();
+                $chartJuzExamCounts = $progressPerJuz->pluck('exam_count')->values();
+                $chartJuzTemporaryScores = $progressPerJuz->pluck('temporary_average')->values();
+                $chartJuzExamScores = $progressPerJuz->pluck('exam_average')->values();
+
+                $chartJuzColors = $progressPerJuz
+                    ->map(function ($item) {
+                        $color = $item['color'] ?? 'light';
+
+                        switch ($color) {
+                            case 'success':
+                                return 'rgba(25, 135, 84, .78)';
+                            case 'warning':
+                                return 'rgba(255, 193, 7, .82)';
+                            case 'info':
+                                return 'rgba(13, 202, 240, .72)';
+                            case 'primary':
+                                return 'rgba(13, 110, 253, .72)';
+                            case 'secondary':
+                                return 'rgba(108, 117, 125, .72)';
+                            default:
+                                return 'rgba(148, 163, 184, .45)';
+                        }
+                    })
+                    ->values();
+
+                $chartBukuLabels = $progressPerBuku->pluck('label')->values();
+                $chartBukuData = $progressPerBuku
+                    ->pluck('pct')
+                    ->map(function ($value) {
+                        return (float) $value;
+                    })
+                    ->values();
+            @endphp
+
             const selectedScope = @json($scope);
             const selectedSemesterId = @json($selectedSemesterId);
 
-            const chartJuzLabels = @json($progressPerJuz->pluck('juz')->map(fn($juz) => 'Juz ' . $juz)->values());
-            const chartJuzData = @json($progressPerJuz->pluck('pct')->map(fn($value) => (float) $value)->values());
-            const chartBukuLabels = @json($progressPerBuku->pluck('label')->values());
-            const chartBukuData = @json($progressPerBuku->pluck('pct')->map(fn($value) => (float) $value)->values());
+            const chartJuzLabels = @json($chartJuzLabels);
+            const chartJuzData = @json($chartJuzData);
+            const chartJuzStatuses = @json($chartJuzStatuses);
+            const chartJuzDailyCounts = @json($chartJuzDailyCounts);
+            const chartJuzExamCounts = @json($chartJuzExamCounts);
+            const chartJuzTemporaryScores = @json($chartJuzTemporaryScores);
+            const chartJuzExamScores = @json($chartJuzExamScores);
+            const chartJuzColors = @json($chartJuzColors);
+            const chartBukuLabels = @json($chartBukuLabels);
+            const chartBukuData = @json($chartBukuData);
 
             let chartJuz = null;
             let chartBuku = null;
@@ -1200,22 +1657,51 @@
                 const canvas = document.getElementById('chartJuzPct');
                 if (!hasChart || !canvas || chartJuz) return;
 
+                const baseOptions = chartOptions();
+                const theme = chartTheme();
+
                 chartJuz = new Chart(canvas, {
-                    type: 'line',
+                    type: 'bar',
                     data: {
                         labels: chartJuzLabels,
                         datasets: [{
+                            label: 'Progress Juz',
                             data: chartJuzData,
-                            borderColor: '#6f42c1',
-                            backgroundColor: 'rgba(111,66,193,.10)',
-                            fill: true,
-                            tension: .35,
-                            borderWidth: 3,
-                            pointRadius: 3,
-                            pointHoverRadius: 5
+                            backgroundColor: chartJuzColors,
+                            borderRadius: 8,
+                            maxBarThickness: 34
                         }]
                     },
-                    options: chartOptions()
+                    options: {
+                        ...baseOptions,
+                        interaction: {
+                            intersect: true,
+                            mode: 'nearest'
+                        },
+                        plugins: {
+                            ...baseOptions.plugins,
+                            tooltip: {
+                                backgroundColor: theme.tooltipBg,
+                                titleColor: theme.tooltipText,
+                                bodyColor: theme.tooltipText,
+                                borderColor: theme.grid,
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: function(context) {
+                                        const i = context.dataIndex;
+                                        return [
+                                            `Progress: ${context.parsed.y}%`,
+                                            `Status: ${chartJuzStatuses[i] || '-'}`,
+                                            `Setoran harian/tahap: ${chartJuzDailyCounts[i] ?? 0}`,
+                                            `Ujian akhir: ${chartJuzExamCounts[i] ?? 0}`,
+                                            `Nilai sementara: ${chartJuzTemporaryScores[i] ?? '-'}`,
+                                            `Nilai ujian: ${chartJuzExamScores[i] ?? '-'}`
+                                        ];
+                                    }
+                                }
+                            }
+                        }
+                    }
                 });
             }
 
@@ -1251,6 +1737,135 @@
                     const width = Math.min(100, Math.max(0, Number(bar.dataset.width || 0)));
                     bar.style.width = '0%';
                     setTimeout(() => bar.style.width = width + '%', 120 + index * 25);
+                });
+            }
+
+            function resetJuzChartNormalHeight() {
+                const canvas = document.getElementById('chartJuzPct');
+                if (!canvas) return;
+
+                const wrap = canvas.closest('.chart-wrap');
+                const analyticsCard = document.getElementById('analyticsJuzCard');
+                const isAnalyticsFullscreen = analyticsCard && analyticsCard.classList.contains(
+                    'is-card-fullscreen');
+
+                if (isAnalyticsFullscreen) return;
+
+                if (wrap) {
+                    wrap.style.height = '';
+                    wrap.style.minHeight = '';
+                }
+
+                canvas.style.width = '';
+                canvas.style.height = '';
+            }
+
+            function resizeJuzChart() {
+                if (!chartJuz) return;
+
+                const resize = function() {
+                    resetJuzChartNormalHeight();
+                    chartJuz.resize();
+                    chartJuz.update('none');
+                };
+
+                requestAnimationFrame(function() {
+                    resize();
+                    setTimeout(resize, 120);
+                    setTimeout(resize, 320);
+                });
+            }
+
+            function fullscreenElement() {
+                return document.fullscreenElement ||
+                    document.webkitFullscreenElement ||
+                    document.mozFullScreenElement ||
+                    document.msFullscreenElement ||
+                    null;
+            }
+
+            function requestFullscreen(element) {
+                if (element.requestFullscreen) return Promise.resolve(element.requestFullscreen());
+                if (element.webkitRequestFullscreen) return Promise.resolve(element.webkitRequestFullscreen());
+                if (element.mozRequestFullScreen) return Promise.resolve(element.mozRequestFullScreen());
+                if (element.msRequestFullscreen) return Promise.resolve(element.msRequestFullscreen());
+                return Promise.reject(new Error('Fullscreen API tidak didukung browser ini.'));
+            }
+
+            function exitFullscreen() {
+                if (document.exitFullscreen) return Promise.resolve(document.exitFullscreen());
+                if (document.webkitExitFullscreen) return Promise.resolve(document.webkitExitFullscreen());
+                if (document.mozCancelFullScreen) return Promise.resolve(document.mozCancelFullScreen());
+                if (document.msExitFullscreen) return Promise.resolve(document.msExitFullscreen());
+                return Promise.resolve();
+            }
+
+            function setFullscreenButtonState(activeCard) {
+                document.querySelectorAll('[data-fullscreen-target]').forEach(function(button) {
+                    const targetId = button.dataset.fullscreenTarget;
+                    const isActive = Boolean(activeCard && activeCard.id === targetId);
+                    const icon = button.querySelector('i');
+                    const label = button.querySelector('span');
+
+                    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+
+                    if (icon) {
+                        icon.className = isActive ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen';
+                    }
+
+                    if (label) {
+                        label.textContent = isActive ? 'Keluar' : 'Fullscreen';
+                    }
+                });
+            }
+
+            function syncFullscreenState() {
+                const active = fullscreenElement();
+
+                document.querySelectorAll('.fullscreen-target').forEach(function(card) {
+                    const isActive = active === card;
+
+                    card.classList.toggle('is-card-fullscreen', isActive);
+
+                    if (!isActive) {
+                        card.style.width = '';
+                        card.style.height = '';
+                        card.style.maxHeight = '';
+                    }
+                });
+
+                if (!active) {
+                    resetJuzChartNormalHeight();
+                }
+
+                setFullscreenButtonState(active);
+                resizeJuzChart();
+            }
+
+            function bindCardFullscreen() {
+                document.querySelectorAll('[data-fullscreen-target]').forEach(function(button) {
+                    button.addEventListener('click', function() {
+                        const target = document.getElementById(button.dataset.fullscreenTarget);
+                        if (!target) return;
+
+                        const active = fullscreenElement();
+
+                        if (active === target) {
+                            exitFullscreen().catch(function(error) {
+                                console.warn('Gagal keluar fullscreen:', error);
+                            });
+                            return;
+                        }
+
+                        requestFullscreen(target).catch(function(error) {
+                            console.warn('Gagal membuka fullscreen:', error);
+                        });
+                    });
+                });
+
+                ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']
+                .forEach(function(eventName) {
+                    document.addEventListener(eventName, syncFullscreenState);
                 });
             }
 
@@ -1312,6 +1927,11 @@
                         {
                             data: 'juz',
                             name: 'ht.juz'
+                        },
+                        {
+                            data: 'tahap',
+                            orderable: false,
+                            searchable: false
                         },
                         {
                             data: 'surah_ayat',
@@ -1496,6 +2116,7 @@
 
             renderJuzChart();
             animateProgressBars();
+            bindCardFullscreen();
             tables = initDataTables();
             bindTabs();
 

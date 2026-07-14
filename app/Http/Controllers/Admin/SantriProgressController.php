@@ -38,11 +38,28 @@ class SantriProgressController extends Controller
     ];
 
     private const TAHAP_WEIGHT = [
-        'harian' => 20,
+        // Disamakan dengan logika laporan: proses harian/tahap hanya nilai sementara,
+        // maksimal 70 sebelum santri lulus ujian akhir.
+        'harian' => 25,
         'tahap_1' => 40,
-        'tahap_2' => 60,
-        'tahap_3' => 80,
+        'tahap_2' => 55,
+        'tahap_3' => 70,
         'ujian_akhir' => 100,
+    ];
+
+    private const DAILY_TAHAP = [
+        'harian',
+        'tahap_1',
+        'tahap_2',
+        'tahap_3',
+    ];
+
+    private const TAHAP_LABEL = [
+        'harian' => 'Harian',
+        'tahap_1' => 'Tahap 1',
+        'tahap_2' => 'Tahap 2',
+        'tahap_3' => 'Tahap 3',
+        'ujian_akhir' => 'Ujian Akhir',
     ];
 
     private const BUKU_TAHSIN = [
@@ -282,6 +299,14 @@ class SantriProgressController extends Controller
                 $scopeSummary['hafalan']['juz_selesai'],
                 'totalSetor' =>
                 $scopeSummary['hafalan']['setor'],
+                'totalSetorHarian' =>
+                $scopeSummary['hafalan']['setor_harian'],
+                'totalUjian' =>
+                $scopeSummary['hafalan']['ujian'],
+                'avgNilaiSementara' =>
+                $scopeSummary['hafalan']['avg_nilai_sementara'],
+                'avgNilaiUjian' =>
+                $scopeSummary['hafalan']['avg_nilai_ujian'],
                 'totalHadirTidakSetor' =>
                 $scopeSummary['hafalan']['hadir_tidak_setor'],
                 'totalSakit' =>
@@ -376,6 +401,7 @@ class SantriProgressController extends Controller
                 'hafalans.catatan',
                 'hafalans.created_at',
                 'ht.juz as template_juz',
+                'ht.tahap as template_tahap',
                 'ht.label as template_label',
             ])
             ->orderByDesc(
@@ -407,6 +433,13 @@ class SantriProgressController extends Controller
                 fn($row) =>
                 $row->template_juz
                     ?? '-'
+            )
+            ->addColumn(
+                'tahap',
+                fn($row) =>
+                $this->hafalanTahapBadge(
+                    $row->template_tahap
+                )
             )
             ->addColumn(
                 'surah_ayat',
@@ -466,6 +499,7 @@ class SantriProgressController extends Controller
             )
             ->rawColumns([
                 'status',
+                'tahap',
             ])
             ->make(true);
     }
@@ -747,48 +781,11 @@ class SantriProgressController extends Controller
             ->where('pct', 100)
             ->count();
 
-        $avgNilaiQuery = Hafalan::query()
-            ->where(
-                'santri_id',
-                $santriId
-            )
-            ->whereIn(
-                'status',
-                [
-                    'lulus',
-                    'ulang',
-                ]
-            )
-            ->when(
-                $semesterId,
-                fn(Builder $query) =>
-                $query->where(
-                    'semester_id',
-                    $semesterId
-                )
+        $hafalanStageSummary =
+            $this->hafalanStageSummary(
+                $santriId,
+                $semesterId
             );
-
-        $avgNilai = (float) (
-            $avgNilaiQuery
-            ->selectRaw(
-                "
-                    ROUND(
-                        AVG(
-                            CASE nilai_label
-                                WHEN 'mumtaz' THEN 95
-                                WHEN 'jayyid_jiddan' THEN 85
-                                WHEN 'jayyid' THEN 75
-                                WHEN 'mardud' THEN 65
-                                ELSE NULL
-                            END
-                        ),
-                        1
-                    ) AS average_score
-                    "
-            )
-            ->value('average_score')
-            ?? 0
-        );
 
         $progressPerBuku =
             $this->buildTahsinProgress(
@@ -916,14 +913,15 @@ class SantriProgressController extends Controller
                 'juz_selesai' =>
                 $juzSelesai,
                 'setor' =>
-                (int) (
-                    $hafalanStatus['lulus']
-                    ?? 0
-                )
-                    + (int) (
-                        $hafalanStatus['ulang']
-                        ?? 0
-                    ),
+                $hafalanStageSummary['setor_total'],
+                'setor_harian' =>
+                $hafalanStageSummary['setor_harian'],
+                'ujian' =>
+                $hafalanStageSummary['ujian_juz'],
+                'avg_nilai_sementara' =>
+                $hafalanStageSummary['avg_nilai_sementara'],
+                'avg_nilai_ujian' =>
+                $hafalanStageSummary['avg_nilai_ujian'],
                 'hadir_tidak_setor' =>
                 (int) (
                     $hafalanStatus['hadir_tidak_setor']
@@ -944,8 +942,9 @@ class SantriProgressController extends Controller
                     $hafalanStatus['alpha']
                     ?? 0
                 ),
+                // Sama seperti Laporan Page: nilai final dashboard santri memakai rata-rata ujian akhir yang lulus.
                 'avg_nilai' =>
-                $avgNilai,
+                $hafalanStageSummary['avg_nilai_ujian'],
             ],
 
             'tahsin' => [
@@ -1020,6 +1019,10 @@ class SantriProgressController extends Controller
                 'overall_pct' => 0,
                 'juz_selesai' => 0,
                 'setor' => 0,
+                'setor_harian' => 0,
+                'ujian' => 0,
+                'avg_nilai_sementara' => 0,
+                'avg_nilai_ujian' => 0,
                 'hadir_tidak_setor' => 0,
                 'sakit' => 0,
                 'izin' => 0,
@@ -1097,11 +1100,110 @@ class SantriProgressController extends Controller
             ->count();
     }
 
+    private function nilaiScoreSql(string $column = 'hafalans.nilai_label'): string
+    {
+        return "CASE {$column}
+            WHEN 'mumtaz' THEN 95
+            WHEN 'jayyid_jiddan' THEN 85
+            WHEN 'jayyid' THEN 75
+            WHEN 'mardud' THEN 65
+            ELSE NULL
+        END";
+    }
+
+    private function hafalanStageSummary(
+        int $santriId,
+        ?int $semesterId
+    ): array {
+        $scoreSql = $this->nilaiScoreSql();
+
+        $summary = Hafalan::query()
+            ->join(
+                'hafalan_templates as ht',
+                'ht.id',
+                '=',
+                'hafalans.hafalan_template_id'
+            )
+            ->where(
+                'hafalans.santri_id',
+                $santriId
+            )
+            ->whereIn(
+                'hafalans.status',
+                [
+                    'lulus',
+                    'ulang',
+                ]
+            )
+            ->when(
+                $semesterId,
+                fn(Builder $query) =>
+                $query->where(
+                    'hafalans.semester_id',
+                    $semesterId
+                )
+            )
+            ->selectRaw(
+                "COUNT(*) AS setor_total"
+            )
+            ->selectRaw(
+                "SUM(CASE WHEN ht.tahap IN ('harian','tahap_1','tahap_2','tahap_3') THEN 1 ELSE 0 END) AS setor_harian"
+            )
+            ->selectRaw(
+                "COUNT(DISTINCT CASE WHEN ht.tahap = 'ujian_akhir' AND hafalans.status = 'lulus' THEN ht.juz ELSE NULL END) AS ujian_juz"
+            )
+            ->selectRaw(
+                "AVG(CASE WHEN ht.tahap IN ('harian','tahap_1','tahap_2','tahap_3') THEN {$scoreSql} ELSE NULL END) AS avg_harian_raw"
+            )
+            ->selectRaw(
+                "AVG(CASE WHEN ht.tahap = 'ujian_akhir' AND hafalans.status = 'lulus' THEN {$scoreSql} ELSE NULL END) AS avg_ujian_raw"
+            )
+            ->first();
+
+        $avgHarianRaw = $summary?->avg_harian_raw !== null
+            ? (float) $summary->avg_harian_raw
+            : null;
+
+        $avgUjianRaw = $summary?->avg_ujian_raw !== null
+            ? (float) $summary->avg_ujian_raw
+            : null;
+
+        return [
+            'setor_total' => (int) (
+                $summary->setor_total
+                ?? 0
+            ),
+            'setor_harian' => (int) (
+                $summary->setor_harian
+                ?? 0
+            ),
+            'ujian_juz' => (int) (
+                $summary->ujian_juz
+                ?? 0
+            ),
+            'avg_nilai_sementara' => $avgHarianRaw !== null
+                ? min(
+                    70,
+                    round(
+                        $avgHarianRaw,
+                        1
+                    )
+                )
+                : 0,
+            'avg_nilai_ujian' => $avgUjianRaw !== null
+                ? round(
+                    $avgUjianRaw,
+                    1
+                )
+                : 0,
+        ];
+    }
+
     private function buildHafalanProgress(
         int $santriId,
         ?int $semesterId
     ): Collection {
-        $tahapPerJuz = Hafalan::query()
+        $rows = Hafalan::query()
             ->join(
                 'hafalan_templates',
                 'hafalan_templates.id',
@@ -1112,9 +1214,12 @@ class SantriProgressController extends Controller
                 'hafalans.santri_id',
                 $santriId
             )
-            ->where(
+            ->whereIn(
                 'hafalans.status',
-                'lulus'
+                [
+                    'lulus',
+                    'ulang',
+                ]
             )
             ->when(
                 $semesterId,
@@ -1124,78 +1229,216 @@ class SantriProgressController extends Controller
                     $semesterId
                 )
             )
-            ->select(
+            ->select([
+                'hafalans.id',
+                'hafalans.status',
+                'hafalans.nilai_label',
+                'hafalans.tanggal_setoran',
                 'hafalan_templates.juz',
-                'hafalan_templates.tahap'
-            )
+                'hafalan_templates.tahap',
+            ])
+            ->orderBy('hafalan_templates.juz')
+            ->orderBy('hafalan_templates.urutan')
+            ->orderByDesc('hafalans.tanggal_setoran')
+            ->orderByDesc('hafalans.id')
             ->get()
-            ->groupBy('juz')
-            ->map(
-                function (
-                    Collection $rows
-                ) {
-                    return $rows
-                        ->sortByDesc(
-                            fn($row) =>
-                            self::TAHAP_RANK[$row->tahap]
-                                ?? 0
-                        )
-                        ->first()?->tahap;
-                }
-            );
+            ->groupBy('juz');
 
         return collect(
             range(1, 30)
         )->map(
             function (
                 int $juz
-            ) use ($tahapPerJuz) {
-                $tahap =
-                    $tahapPerJuz->get(
-                        $juz
+            ) use ($rows) {
+                $juzRows = $rows->get(
+                    $juz,
+                    collect()
+                );
+
+                $dailyRows = $juzRows
+                    ->whereIn(
+                        'tahap',
+                        self::DAILY_TAHAP
                     );
 
-                $pct = $tahap
+                $dailyScoredRows = $dailyRows
+                    ->filter(
+                        fn($row) =>
+                        in_array(
+                            $row->status,
+                            [
+                                'lulus',
+                                'ulang',
+                            ],
+                            true
+                        )
+                            && isset(
+                                self::NILAI_MAP[$row->nilai_label]
+                            )
+                    );
+
+                $examRows = $juzRows
+                    ->where(
+                        'tahap',
+                        'ujian_akhir'
+                    );
+
+                $examScoredRows = $examRows
+                    ->filter(
+                        fn($row) =>
+                        $row->status === 'lulus'
+                            && isset(
+                                self::NILAI_MAP[$row->nilai_label]
+                            )
+                    );
+
+                $tempRawAverage = $dailyScoredRows
+                    ->map(
+                        fn($row) =>
+                        self::NILAI_MAP[$row->nilai_label]
+                    )
+                    ->avg();
+
+                $temporaryAverage = $tempRawAverage !== null
+                    ? min(
+                        70,
+                        round(
+                            (float) $tempRawAverage,
+                            1
+                        )
+                    )
+                    : null;
+
+                $examAverage = $examScoredRows
+                    ->map(
+                        fn($row) =>
+                        self::NILAI_MAP[$row->nilai_label]
+                    )
+                    ->avg();
+
+                $examAverage = $examAverage !== null
+                    ? round(
+                        (float) $examAverage,
+                        1
+                    )
+                    : null;
+
+                $stageChecks = collect(
+                    [
+                        'harian',
+                        'tahap_1',
+                        'tahap_2',
+                        'tahap_3',
+                        'ujian_akhir',
+                    ]
+                )->mapWithKeys(
+                    fn(string $stage) => [
+                        $stage => $juzRows
+                            ->where(
+                                'tahap',
+                                $stage
+                            )
+                            ->where(
+                                'status',
+                                'lulus'
+                            )
+                            ->isNotEmpty(),
+                    ]
+                );
+
+                $highestDailyTahap = $dailyRows
+                    ->where(
+                        'status',
+                        'lulus'
+                    )
+                    ->sortByDesc(
+                        fn($row) =>
+                        self::TAHAP_RANK[$row->tahap]
+                            ?? 0
+                    )
+                    ->first()?->tahap;
+
+                $hasFinalPass = (bool) $stageChecks
+                    ->get(
+                        'ujian_akhir',
+                        false
+                    );
+
+                $latestExam = $examRows
+                    ->sortByDesc(
+                        fn($row) =>
+                        sprintf(
+                            '%s-%010d',
+                            $row->tanggal_setoran
+                                ?: '',
+                            (int) $row->id
+                        )
+                    )
+                    ->first();
+
+                $currentTahap = $hasFinalPass
+                    ? 'ujian_akhir'
+                    : $highestDailyTahap;
+
+                $pct = $currentTahap
                     ? (
-                        self::TAHAP_WEIGHT[$tahap]
+                        self::TAHAP_WEIGHT[$currentTahap]
                         ?? 0
                     )
                     : 0;
 
-                [$status, $color] =
-                    match (true) {
-                        $pct >= 100 => [
-                            'Selesai',
-                            'success',
-                        ],
-                        $pct >= 80 => [
-                            'Tahap 3',
-                            'info',
-                        ],
-                        $pct >= 60 => [
-                            'Tahap 2',
-                            'primary',
-                        ],
-                        $pct >= 40 => [
-                            'Tahap 1',
-                            'warning',
-                        ],
-                        $pct > 0 => [
-                            'Harian',
-                            'secondary',
-                        ],
-                        default => [
-                            'Belum mulai',
-                            'light',
-                        ],
-                    };
+                if ($hasFinalPass) {
+                    [$status, $color, $explanation] = [
+                        'Selesai Ujian',
+                        'success',
+                        'Juz ini sudah lulus ujian akhir. Nilai final memakai nilai ujian.',
+                    ];
+                } elseif ($latestExam) {
+                    [$status, $color, $explanation] = [
+                        'Ujian Mengulang',
+                        'warning',
+                        'Sudah pernah ujian akhir, tetapi belum tercatat lulus. Perlu penguatan atau ujian ulang.',
+                    ];
+                } elseif ($currentTahap) {
+                    [$status, $color, $explanation] = [
+                        self::TAHAP_LABEL[$currentTahap]
+                            ?? 'Proses',
+                        match ($currentTahap) {
+                            'tahap_3' => 'info',
+                            'tahap_2' => 'primary',
+                            'tahap_1' => 'warning',
+                            default => 'secondary',
+                        },
+                        'Masih proses setoran harian/tahapan. Progress maksimal 70% sampai lulus ujian akhir.',
+                    ];
+                } else {
+                    [$status, $color, $explanation] = [
+                        'Belum Mulai',
+                        'light',
+                        'Belum ada setoran lulus/ulang pada Juz ini.',
+                    ];
+                }
 
                 return [
                     'juz' => $juz,
                     'pct' => $pct,
                     'status' => $status,
                     'color' => $color,
-                    'tahap' => $tahap,
+                    'tahap' => $currentTahap,
+                    'tahap_label' => $currentTahap
+                        ? (
+                            self::TAHAP_LABEL[$currentTahap]
+                            ?? $currentTahap
+                        )
+                        : null,
+                    'stage_checks' => $stageChecks->all(),
+                    'daily_count' => $dailyRows->count(),
+                    'exam_count' => $examRows->count(),
+                    'temporary_average' => $temporaryAverage,
+                    'exam_average' => $examAverage,
+                    'latest_exam_status' => $latestExam?->status,
+                    'is_exam_passed' => $hasFinalPass,
+                    'explanation' => $explanation,
                 ];
             }
         );
@@ -1209,9 +1452,24 @@ class SantriProgressController extends Controller
             fn(int $juz) => [
                 'juz' => $juz,
                 'pct' => 0,
-                'status' => 'Belum mulai',
+                'status' => 'Belum Mulai',
                 'color' => 'light',
                 'tahap' => null,
+                'tahap_label' => null,
+                'stage_checks' => [
+                    'harian' => false,
+                    'tahap_1' => false,
+                    'tahap_2' => false,
+                    'tahap_3' => false,
+                    'ujian_akhir' => false,
+                ],
+                'daily_count' => 0,
+                'exam_count' => 0,
+                'temporary_average' => null,
+                'exam_average' => null,
+                'latest_exam_status' => null,
+                'is_exam_passed' => false,
+                'explanation' => 'Belum ada setoran lulus/ulang pada Juz ini.',
             ]
         );
     }
@@ -1510,6 +1768,49 @@ class SantriProgressController extends Controller
             'mardud' => 'مردود',
             default => '-',
         };
+    }
+
+    private function hafalanTahapBadge(
+        ?string $tahap
+    ): string {
+        if (!$tahap) {
+            return '-';
+        }
+
+        [$class, $label] = match ($tahap) {
+            'ujian_akhir' => [
+                'bg-success',
+                'Ujian Akhir',
+            ],
+            'tahap_3' => [
+                'bg-info',
+                'Tahap 3',
+            ],
+            'tahap_2' => [
+                'bg-primary',
+                'Tahap 2',
+            ],
+            'tahap_1' => [
+                'bg-warning text-dark',
+                'Tahap 1',
+            ],
+            'harian' => [
+                'bg-secondary',
+                'Harian',
+            ],
+            default => [
+                'bg-dark',
+                str(
+                    str_replace(
+                        '_',
+                        ' ',
+                        $tahap
+                    )
+                )->title(),
+            ],
+        };
+
+        return "<span class='badge {$class}'>{$label}</span>";
     }
 
     private function hafalanStatusBadge(

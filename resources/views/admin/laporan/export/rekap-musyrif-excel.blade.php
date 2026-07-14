@@ -1,117 +1,39 @@
 <table>
-
-    {{-- REPORT TITLE --}}
-    <tr>
-        <td colspan="10">
-            EXECUTIVE REPORT HAFALAN PER MUSYRIF
-        </td>
-    </tr>
-
-    <tr>
-        <td colspan="10">
-            Periode: {{ $periode }}
-        </td>
-    </tr>
-
-    <tr></tr>
-
-    {{-- TABLE HEADER --}}
     <thead>
-
         <tr>
-
-            <th>No</th>
-
-            <th>Musyrif</th>
-
-            <th>Jumlah Santri</th>
-
-            <th>Total Setoran</th>
-
-            <th>Hadir Tidak Setor</th>
-
-            <th>Sakit</th>
-
-            <th>Izin</th>
-
-            <th>Alpha</th>
-
-            <th>Rata-rata Nilai</th>
-
-            <th>Kategori Pembinaan</th>
-
+            <th colspan="12">Rekap Hafalan per Musyrif - Periode: {{ $periode }}</th>
         </tr>
-
+        <tr>
+            <th>No</th>
+            <th>Musyrif</th>
+            <th>Santri Binaan</th>
+            <th>Santri Aktif</th>
+            <th>Setoran Harian</th>
+            <th>Ujian / Juz</th>
+            <th>Cakupan Ujian (%)</th>
+            <th>HTS</th>
+            <th>Sakit</th>
+            <th>Izin</th>
+            <th>Alpha</th>
+            <th>Rata-rata Nilai Ujian</th>
+        </tr>
     </thead>
-
     <tbody>
-
         @foreach ($data as $row)
-            @php
-
-                $nilai = $row->rata_nilai;
-
-                $kategori = '-';
-
-                if (!is_null($nilai)) {
-                    if ($nilai >= 90) {
-                        $kategori = 'Excellent';
-                    } elseif ($nilai >= 80) {
-                        $kategori = 'Good';
-                    } elseif ($nilai >= 70) {
-                        $kategori = 'Average';
-                    } else {
-                        $kategori = 'Need Improvement';
-                    }
-                }
-
-            @endphp
-
             <tr>
-
-                <td>
-                    {{ $loop->iteration }}
-                </td>
-
-                <td>
-                    {{ $row->nama }}
-                </td>
-
-                <td>
-                    {{ (int) ($row->jumlah_santri ?? 0) }}
-                </td>
-
-                <td>
-                    {{ (int) ($row->total_setor ?? 0) }}
-                </td>
-
-                <td>
-                    {{ (int) ($row->hadir_tidak_setor ?? 0) }}
-                </td>
-
-                <td>
-                    {{ (int) ($row->sakit ?? 0) }}
-                </td>
-
-                <td>
-                    {{ (int) ($row->izin ?? 0) }}
-                </td>
-
-                <td>
-                    {{ (int) ($row->alpha ?? 0) }}
-                </td>
-
-                <td>
-                    {{ !is_null($nilai) ? number_format($nilai, 2) : '' }}
-                </td>
-
-                <td>
-                    {{ $kategori }}
-                </td>
-
+                <td>{{ $loop->iteration }}</td>
+                <td>{{ $row->nama ?? '-' }}</td>
+                <td>{{ (int) ($row->jumlah_santri ?? 0) }}</td>
+                <td>{{ (int) ($row->santri_aktif_setoran ?? 0) }}</td>
+                <td>{{ (int) ($row->jumlah_setoran_harian ?? 0) }}</td>
+                <td>{{ (int) ($row->jumlah_ujian ?? 0) }}</td>
+                <td>{{ is_null($row->coverage_ujian_pct) ? '0' : number_format((float) $row->coverage_ujian_pct, 1) }}</td>
+                <td>{{ (int) ($row->hadir_tidak_setor ?? 0) }}</td>
+                <td>{{ (int) ($row->sakit ?? 0) }}</td>
+                <td>{{ (int) ($row->izin ?? 0) }}</td>
+                <td>{{ (int) ($row->alpha ?? 0) }}</td>
+                <td>{{ is_null($row->rata_nilai_ujian) ? '-' : number_format((float) $row->rata_nilai_ujian, 2) }}</td>
             </tr>
         @endforeach
-
     </tbody>
-
 </table>

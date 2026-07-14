@@ -99,6 +99,131 @@
             border-color: #dc3545 !important;
         }
 
+
+        /* ================= GENDER FILTER TABS ================= */
+        .gender-filter-tabs {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.35rem;
+            border-radius: 999px;
+            background: var(--cui-tertiary-bg, #f8f9fa);
+            border: 1px solid var(--cui-border-color);
+        }
+
+        .gender-filter-tabs .nav-link {
+            border: 0;
+            border-radius: 999px;
+            padding: 0.55rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--cui-secondary-color);
+            background: transparent;
+            transition: all 0.2s ease;
+        }
+
+        .gender-filter-tabs .nav-link:hover {
+            color: var(--islamic-purple-700, #59359d);
+            background: rgba(111, 66, 193, 0.08);
+        }
+
+        .gender-filter-tabs .nav-link.active {
+            color: #ffffff;
+            background: var(--islamic-purple-600, #6f42c1);
+            box-shadow: 0 10px 24px rgba(89, 53, 157, 0.22);
+        }
+
+        [data-coreui-theme="dark"] .gender-filter-tabs {
+            background: var(--cui-tertiary-bg);
+        }
+
+
+        /* ================= DRAG & DROP IMPORT EXCEL ================= */
+        .import-dropzone {
+            position: relative;
+            border: 2px dashed rgba(111, 66, 193, 0.35);
+            border-radius: 22px;
+            padding: 2rem;
+            background:
+                radial-gradient(circle at top right, rgba(111, 66, 193, 0.08), transparent 34%),
+                var(--cui-tertiary-bg, #f8f9fa);
+            transition:
+                border-color 0.2s ease,
+                background 0.2s ease,
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+        .import-dropzone:hover,
+        .import-dropzone.is-dragover {
+            border-color: var(--islamic-purple-600, #6f42c1);
+            background:
+                radial-gradient(circle at top right, rgba(111, 66, 193, 0.14), transparent 34%),
+                rgba(111, 66, 193, 0.04);
+            transform: translateY(-2px);
+            box-shadow: 0 16px 36px rgba(89, 53, 157, 0.12);
+        }
+
+        .import-dropzone-icon {
+            width: 76px;
+            height: 76px;
+            border-radius: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--islamic-purple-700, #59359d);
+            background: rgba(111, 66, 193, 0.12);
+            font-size: 2.1rem;
+        }
+
+        .import-file-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .import-file-name {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            max-width: 100%;
+            padding: 0.5rem 0.9rem;
+            border-radius: 999px;
+            background: rgba(25, 135, 84, 0.12);
+            color: #198754;
+            font-size: 0.82rem;
+            font-weight: 700;
+            word-break: break-word;
+        }
+
+        .import-dropzone-note {
+            max-width: 620px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .import-template-hint {
+            border: 1px dashed rgba(25, 135, 84, 0.32);
+            background: rgba(25, 135, 84, 0.08);
+            border-radius: 16px;
+            padding: 0.8rem 1rem;
+        }
+
+        [data-coreui-theme="dark"] .import-dropzone {
+            background:
+                radial-gradient(circle at top right, rgba(147, 108, 246, 0.12), transparent 34%),
+                var(--cui-tertiary-bg);
+            border-color: rgba(216, 198, 255, 0.28);
+        }
+
+        [data-coreui-theme="dark"] .import-dropzone-icon {
+            color: #d8c6ff;
+            background: rgba(147, 108, 246, 0.18);
+        }
+
         /* ================= FLOATING PAGE GUIDE ================= */
         .page-guide-fab {
             position: fixed;
@@ -272,14 +397,20 @@
             <h4 class="mb-0 fw-bold text-adaptive-purple">Data Musyrif</h4>
             <span class="text-muted small">Kelola daftar pembimbing dan pantau kehadiran harian</span>
         </div>
-        <div class="col-12 col-md-auto ms-auto d-flex gap-2">
-            <button class="btn btn-outline-success rounded-pill px-4 shadow-sm fw-bold" data-coreui-toggle="modal"
-                data-coreui-target="#modalImport">
-                <i class="bi bi-file-earmark-excel"></i> Import Excel
+        <div class="col-12 col-md-auto ms-auto d-flex flex-wrap justify-content-md-end gap-2">
+            <a href="{{ route('admin.musyrif.template_import') }}" target="_blank" rel="noopener noreferrer"
+                class="btn btn-outline-primary rounded-pill px-4 shadow-sm fw-bold">
+                <i class="bi bi-file-earmark-arrow-down me-1"></i> Download Template Excel
+            </a>
+
+            <button type="button" class="btn btn-outline-success rounded-pill px-4 shadow-sm fw-bold"
+                data-coreui-toggle="modal" data-coreui-target="#modalImport">
+                <i class="bi bi-file-earmark-excel me-1"></i> Import Excel
             </button>
-            <button class="btn text-white px-4 rounded-pill shadow-sm fw-bold"
+
+            <button type="button" class="btn text-white px-4 rounded-pill shadow-sm fw-bold"
                 style="background: var(--islamic-purple-600);" id="btnAddMusyrif">
-                <i class="bi bi-plus-lg"></i> Tambah Musyrif
+                <i class="bi bi-plus-lg me-1"></i> Tambah Musyrif
             </button>
         </div>
     </div>
@@ -287,6 +418,33 @@
     {{-- MAIN CARD --}}
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-0">
+            {{-- TABS FILTER GENDER --}}
+            <div class="px-3 pt-3">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                    <div>
+                        <ul class="nav gender-filter-tabs" id="genderTabs" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-jk="" type="button">
+                                    <i class="bi bi-people-fill me-1"></i> Semua
+                                </button>
+                            </li>
+
+                            <li class="nav-item">
+                                <button class="nav-link" data-jk="L" type="button">
+                                    <i class="bi bi-gender-male me-1"></i> Putra
+                                </button>
+                            </li>
+
+                            <li class="nav-item">
+                                <button class="nav-link" data-jk="P" type="button">
+                                    <i class="bi bi-gender-female me-1"></i> Putri
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table id="musyrif-table" class="table table-striped table-hover align-middle w-100 mb-0 text-nowrap">
                     <thead class="table-light">
@@ -334,13 +492,21 @@
                     <div class="modal-body p-4">
                         <div class="row g-3">
                             {{-- BAGIAN 1: IDENTITAS UTAMA --}}
-                            <div class="col-md-8">
+                            <div class="col-md-6">
                                 <label class="form-label">Nama Lengkap</label>
                                 <input type="text" class="form-control" name="nama" id="nama" required>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label">Kode/NIP</label>
                                 <input type="text" class="form-control" name="kode" id="kode">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Jenis Kelamin</label>
+                                <select class="form-select" name="jenis_kelamin" id="jenis_kelamin">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="L">Putra / Laki-laki</option>
+                                    <option value="P">Putri / Perempuan</option>
+                                </select>
                             </div>
 
                             <div class="col-md-6">
@@ -502,6 +668,10 @@
                                     <td class="fw-bold" id="det_kelas"></td>
                                 </tr>
                                 <tr>
+                                    <td class="text-muted small">Jenis Kelamin</td>
+                                    <td class="fw-bold" id="det_jenis_kelamin"></td>
+                                </tr>
+                                <tr>
                                     <td class="text-muted small">Domisili</td>
                                     <td class="fw-bold" id="det_domisili"></td>
                                 </tr>
@@ -580,26 +750,70 @@
 
                 <div class="modal-body p-4">
                     {{-- STEP 1: UPLOAD AREA --}}
-                    <div class="bg-light rounded-4 p-4 mb-4 border border-dashed text-center" id="importUploadBox">
+                    <div class="mb-4" id="importUploadBox">
                         <form id="formImportUpload">
                             @csrf
-                            <i class="bi bi-file-earmark-excel text-success" style="font-size: 3rem;"></i>
-                            <h6 class="mt-3 fw-bold">Pilih File Master Musyrif</h6>
-                            <p class="text-muted small">Pastikan file memiliki header kolom yang sesuai</p>
 
-                            <input type="file" class="form-control mx-auto mt-2 mb-3 shadow-sm" name="file"
-                                id="import_file" accept=".xlsx,.xls,.csv" required
-                                style="max-width: 450px; border-radius: 10px;">
+                            <div class="import-dropzone text-center" id="importDropzone">
+                                <input type="file" class="import-file-hidden" name="file" id="import_file"
+                                    accept=".xlsx,.xls,.csv" required>
 
-                            <div class="d-flex justify-content-center gap-2">
-                                <button class="btn btn-primary px-4 rounded-pill fw-bold shadow-sm" type="submit"
-                                    id="btnUploadReadSheet">
-                                    <i class="bi bi-search me-1"></i> Baca Isi File
-                                </button>
-                                <button class="btn btn-outline-secondary px-4 rounded-pill fw-bold" type="button"
-                                    id="btnResetImport">
-                                    Reset
-                                </button>
+                                <div class="import-dropzone-icon mb-3">
+                                    <i class="bi bi-cloud-arrow-up-fill"></i>
+                                </div>
+
+                                <h6 class="fw-bold mb-1">Drag & Drop File Excel di Sini</h6>
+
+                                <p class="text-muted small import-dropzone-note mb-3">
+                                    Tarik file <b>.xlsx</b>, <b>.xls</b>, atau <b>.csv</b> ke area ini,
+                                    atau klik tombol di bawah untuk memilih file secara manual.
+                                </p>
+
+                                <div class="import-template-hint small text-success-emphasis mb-3 mx-auto"
+                                    style="max-width: 720px;">
+                                    <i class="bi bi-shield-check me-1"></i>
+                                    Template import terbaru sudah memakai dropdown untuk field pilihan:
+                                    <b>jenis_kelamin</b>, <b>kelas</b>, <b>pendidikan_terakhir</b>,
+                                    <b>domisili</b>, <b>halaqah</b>, dan <b>is_sertifikasi_ummi</b>.
+                                </div>
+
+                                <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                                    <button type="button"
+                                        class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold"
+                                        id="btnChooseImportFile">
+                                        <i class="bi bi-folder2-open me-1"></i> Pilih File
+                                    </button>
+
+                                    <a href="{{ route('admin.musyrif.template_import') }}" target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="btn btn-outline-success btn-sm rounded-pill px-4 fw-bold">
+                                        <i class="bi bi-download me-1"></i> Download Template Validasi
+                                    </a>
+                                </div>
+
+                                <div id="importSelectedFileWrap" class="d-none mb-3">
+                                    <span class="import-file-name">
+                                        <i class="bi bi-file-earmark-excel-fill"></i>
+                                        <span id="importSelectedFileName">Belum ada file</span>
+                                    </span>
+                                </div>
+
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button class="btn btn-primary px-4 rounded-pill fw-bold shadow-sm" type="submit"
+                                        id="btnUploadReadSheet">
+                                        <i class="bi bi-search me-1"></i> Baca Isi File
+                                    </button>
+
+                                    <button class="btn btn-outline-secondary px-4 rounded-pill fw-bold" type="button"
+                                        id="btnResetImport">
+                                        Reset
+                                    </button>
+                                </div>
+
+                                <div class="small text-muted mt-3">
+                                    Format database: <b>L</b> untuk Putra/Laki-laki, <b>P</b> untuk Putri/Perempuan,
+                                    dan sertifikasi Ummi memakai <b>1</b> atau <b>0</b>.
+                                </div>
                             </div>
                         </form>
                     </div>
@@ -788,8 +1002,8 @@
                                     <div>
                                         <div class="fw-bold mb-1">Import Excel</div>
                                         <p class="text-muted small mb-0">
-                                            Upload file, baca daftar sheet, pilih sheet yang benar, lakukan preview,
-                                            lalu jalankan proses import setelah data diverifikasi.
+                                            Download template resmi terlebih dahulu, isi sheet <b>Data Musyrif</b>,
+                                            upload file, lakukan preview, lalu jalankan import setelah data diverifikasi.
                                         </p>
                                     </div>
                                 </div>
@@ -897,23 +1111,46 @@
             // ==========================================
             // 1. INISIALISASI KOMPONEN & VARIABLE
             // ==========================================
-            const modalEl = document.getElementById('modalMusyrif');
-            const modalMusyrif = new coreui.Modal(modalEl);
-            const modalDetail = new coreui.Modal(document.getElementById('modalDetailMusyrif'));
-            const modalImport = new coreui.Modal(document.getElementById('modalImport'));
-            const modalPageGuide = new coreui.Modal(document.getElementById('modalPageGuide'));
+            function getModalInstance(modalId) {
+                if (!window.coreui?.Modal) {
+                    console.error('CoreUI Modal belum dimuat. Periksa urutan pemuatan JavaScript CoreUI.');
+                    return null;
+                }
 
-            $('#btnPageGuide').on('click', function() {
-                modalPageGuide.show();
+                const element = document.getElementById(modalId);
+
+                if (!element) {
+                    console.error(
+                        `Elemen modal #${modalId} tidak ditemukan. Pastikan layout menampilkan stack modal.`);
+                    return null;
+                }
+
+                return window.coreui.Modal.getOrCreateInstance(element);
+            }
+
+            const modalMusyrif = getModalInstance('modalMusyrif');
+            const modalDetail = getModalInstance('modalDetailMusyrif');
+            const modalImport = getModalInstance('modalImport');
+            const modalPageGuide = getModalInstance('modalPageGuide');
+
+            $('#btnPageGuide').on('click', function(e) {
+                e.preventDefault();
+                modalPageGuide?.show();
             });
 
             let tempPath = ''; // Menyimpan path file sementara untuk import
+            let selectedGender = '';
 
             // Init DataTable
             const table = $('#musyrif-table').DataTable({
                 processing: true,
                 serverSide: true,
-                ajax: "{{ route('admin.musyrif.data') }}",
+                ajax: {
+                    url: "{{ route('admin.musyrif.data') }}",
+                    data: function(d) {
+                        d.jenis_kelamin = selectedGender;
+                    }
+                },
                 columns: [{
                         data: 'DT_RowIndex',
                         orderable: false,
@@ -972,19 +1209,49 @@
                 }
             });
 
+            // Filter Gender logic
+            $('#genderTabs').on('click', '.nav-link', function() {
+                $('#genderTabs .nav-link').removeClass('active');
+                $(this).addClass('active');
+
+                selectedGender = $(this).data('jk') || '';
+                table.ajax.reload();
+            });
+
             // ==========================================
             // 2. FUNGSI HELPER
             // ==========================================
             function resetForm() {
-                $('#formMusyrif')[0].reset();
+                const form = document.getElementById('formMusyrif');
+
+                if (form) {
+                    form.reset();
+                }
+
                 $('#musyrif_id').val('');
                 $('#modalMusyrifTitle').html('<i class="bi bi-person-badge-fill"></i> Tambah Musyrif');
-                $('#btnSaveMusyrif').text('Simpan Musyrif');
+                $('#btnSaveMusyrif').prop('disabled', false).text('Simpan Musyrif');
                 $('#keterangan').val('');
+                $('#jenis_kelamin').val('');
                 $('#create_user').prop('checked', false);
-                $('#createUserFields').addClass('d-none');
-                $('#pickUserFields').removeClass('d-none');
+                $('#createUserFields').stop(true, true).addClass('d-none').hide();
+                $('#email').val('');
+                $('#password')
+                    .val('')
+                    .attr('type', 'password')
+                    .attr('placeholder', 'Min. 8 karakter');
+                $('#eyeIcon').removeClass('bi-eye').addClass('bi-eye-slash');
+
+                $('.invalid-feedback').remove();
+                $('.form-control, .form-select').removeClass('is-invalid');
             }
+
+            $('#btnAddMusyrif').on('click', function(e) {
+                e.preventDefault();
+
+                resetForm();
+                modalMusyrif?.show();
+            });
 
             function loadPreview(index) {
                 const previewContainer = $('#tablePreview');
@@ -1059,6 +1326,7 @@
 
                         // PAKAI res.nama_kelas
                         $('#det_kelas').text(res.nama_kelas);
+                        $('#det_jenis_kelamin').text(res.jenis_kelamin_label || '-');
 
                         $('#det_halaqah').text(res.halaqah);
                         $('#det_domisili').text(res.domisili);
@@ -1077,7 +1345,7 @@
                         $('#det_email').text(res.email);
                         $('#det_alamat').text(res.alamat);
 
-                        modalDetail.show();
+                        modalDetail?.show();
                     });
             });
 
@@ -1110,6 +1378,7 @@
                         $('#musyrif_id').val(res.id);
                         $('#nama').val(res.nama);
                         $('#kode').val(res.kode);
+                        $('#jenis_kelamin').val(res.jenis_kelamin || '');
                         if (res.kelas_id) {
                             $('#kelas_id').val(res.kelas_id);
                         }
@@ -1135,35 +1404,33 @@
                             $('#createUserFields').addClass('d-none');
                         }
 
-                        modalMusyrif.show();
+                        modalMusyrif?.show();
                     });
             });
 
-            // Pastikan handler switch tetap ada untuk handle klik manual
-            $('#create_user').on('change', function() {
-                if ($(this).is(':checked')) {
-                    $('#createUserFields').removeClass('d-none').hide().fadeIn();
-                } else {
-                    $('#createUserFields').fadeOut(() => $(this).addClass('d-none'));
-                }
-            });
+            // Tampilkan atau sembunyikan field akun login.
+            // Namespace event mencegah handler terpasang dua kali.
+            $('#create_user')
+                .off('change.musyrifAccount')
+                .on('change.musyrifAccount', function() {
+                    const fields = $('#createUserFields');
 
-            $('#create_user').on('change', function() {
-                if ($(this).is(':checked')) {
-                    $('#createUserFields').removeClass('d-none').hide().fadeIn();
-                    $('#pickUserFields').fadeOut(() => $('#pickUserFields').addClass('d-none'));
-                } else {
-                    $('#createUserFields').fadeOut(() => $('#createUserFields').addClass('d-none'));
-                    $('#pickUserFields').removeClass('d-none').hide().fadeIn();
-                }
-            });
+                    if ($(this).is(':checked')) {
+                        fields.stop(true, true).removeClass('d-none').hide().fadeIn(150);
+                    } else {
+                        fields.stop(true, true).fadeOut(150, function() {
+                            fields.addClass('d-none');
+                            $('#email, #password').val('');
+                        });
+                    }
+                });
 
             // Trigger Edit dari dalam Modal Detail
             $(document).on('click', '#btnEditFromDetail', function() {
                 const id = $('#det_id_hidden').val();
                 const kelasId = $('#det_kelas_id_hidden').val();
 
-                modalDetail.hide(); // Tutup modal detail
+                modalDetail?.hide(); // Tutup modal detail
 
                 setTimeout(() => {
                     // Panggil form reset dan set title (Sama seperti logic .btnEdit)
@@ -1182,6 +1449,7 @@
                             $('#musyrif_id').val(res.id);
                             $('#nama').val(res.nama);
                             $('#kode').val(res.kode);
+                            $('#jenis_kelamin').val(res.jenis_kelamin || '');
                             if (res.kelas_id) $('#kelas_id').val(res.kelas_id);
                             $('#alamat').val(res.alamat);
                             $('#pendidikan_terakhir').val(res.pendidikan_terakhir);
@@ -1205,7 +1473,7 @@
                                 $('#createUserFields').addClass('d-none');
                             }
 
-                            modalMusyrif.show(); // Buka modal Edit
+                            modalMusyrif?.show(); // Buka modal Edit
                         });
                 }, 400); // Jeda 400ms agar animasi modal tutup selesai dulu
             });
@@ -1213,7 +1481,8 @@
             $('#formMusyrif').on('submit', function(e) {
                 e.preventDefault();
                 const id = $('#musyrif_id').val();
-                const url = id ? "{{ url('admin/musyrif') }}/" + id : "{{ route('admin.musyrif.store') }}";
+                const url = id ? "{{ url('admin/musyrif') }}/" + id :
+                    "{{ route('admin.musyrif.store') }}";
 
                 // Feedback Loading pada tombol
                 const btnSave = $('#btnSaveMusyrif');
@@ -1231,7 +1500,7 @@
                     data: $(this).serialize() +
                         `&_token={{ csrf_token() }}&create_user=${$('#create_user').is(':checked')?1:0}`,
                     success: function(res) {
-                        modalMusyrif.hide();
+                        modalMusyrif?.hide();
                         table.ajax.reload(null, false);
                         if (window.AppAlert) AppAlert.success(res.message);
                     },
@@ -1299,14 +1568,140 @@
 
             $('#btnImportMusyrif').on('click', () => modalImport.show());
 
+            const importDropzone = $('#importDropzone');
+            const importFileInput = $('#import_file');
+            const importSelectedFileWrap = $('#importSelectedFileWrap');
+            const importSelectedFileName = $('#importSelectedFileName');
+
+            function isValidImportFile(file) {
+                if (!file) return false;
+
+                const allowedExtensions = ['xlsx', 'xls', 'csv'];
+                const fileName = file.name || '';
+                const ext = fileName.split('.').pop().toLowerCase();
+
+                return allowedExtensions.includes(ext);
+            }
+
+            function setImportFile(file) {
+                if (!file) return;
+
+                if (!isValidImportFile(file)) {
+                    importFileInput.val('');
+                    importSelectedFileWrap.addClass('d-none');
+                    importSelectedFileName.text('Belum ada file');
+
+                    if (window.AppAlert) {
+                        AppAlert.error('Format file tidak valid. Gunakan file .xlsx, .xls, atau .csv.');
+                    } else {
+                        alert('Format file tidak valid. Gunakan file .xlsx, .xls, atau .csv.');
+                    }
+
+                    return;
+                }
+
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                importFileInput[0].files = dataTransfer.files;
+
+                importSelectedFileName.text(file.name);
+                importSelectedFileWrap.removeClass('d-none');
+
+                $('#importMappingArea').hide();
+                $('#importMappingBody').html('');
+                $('#previewHeader').html('');
+                $('#importPreviewBody').html(
+                    '<tr><td class="text-center py-4 text-muted">Klik "Baca Isi File", pilih sheet, lalu klik "Preview".</td></tr>'
+                );
+                $('#import_file_path').val('');
+            }
+
+            function resetImportState() {
+                $('#formImportUpload')[0].reset();
+                $('#import_file_path').val('');
+
+                importDropzone.removeClass('is-dragover');
+                importSelectedFileWrap.addClass('d-none');
+                importSelectedFileName.text('Belum ada file');
+
+                $('#importMappingArea').hide();
+                $('#importMappingBody').html('');
+                $('#previewHeader').html('');
+                $('#importPreviewBody').html(
+                    '<tr><td class="text-center py-4 text-muted">Klik "Preview" untuk melihat data sebelum diimport</td></tr>'
+                );
+            }
+
+            $('#btnChooseImportFile').on('click', function(e) {
+                e.preventDefault();
+                importFileInput.trigger('click');
+            });
+
+            importDropzone.on('click', function(e) {
+                const ignoredTargets = ['button', 'a', 'input', 'select', 'option', 'label'];
+
+                if ($(e.target).closest(ignoredTargets.join(',')).length) return;
+
+                importFileInput.trigger('click');
+            });
+
+            importFileInput.on('change', function() {
+                const file = this.files && this.files[0];
+
+                if (!file) {
+                    importSelectedFileWrap.addClass('d-none');
+                    importSelectedFileName.text('Belum ada file');
+                    return;
+                }
+
+                setImportFile(file);
+            });
+
+            importDropzone.on('dragenter dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                importDropzone.addClass('is-dragover');
+            });
+
+            importDropzone.on('dragleave dragend drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (e.type !== 'drop') {
+                    importDropzone.removeClass('is-dragover');
+                }
+            });
+
+            importDropzone.on('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                importDropzone.removeClass('is-dragover');
+
+                const originalEvent = e.originalEvent;
+                const files = originalEvent.dataTransfer && originalEvent.dataTransfer.files;
+
+                if (!files || !files.length) return;
+
+                setImportFile(files[0]);
+            });
+
             $('#formImportUpload').on('submit', function(e) {
                 e.preventDefault();
+
+                if (!importFileInput[0].files || !importFileInput[0].files.length) {
+                    return AppAlert?.error('Pilih atau drag file Excel terlebih dahulu!');
+                }
+
                 const btn = $('#btnUploadReadSheet');
+                const originalText = btn.html();
+
                 btn.prop('disabled', true).html(
-                    '<span class="spinner-border spinner-border-sm"></span> Memproses...');
+                    '<span class="spinner-border spinner-border-sm me-1"></span> Memproses...'
+                );
 
                 $.ajax({
-                    url: "{{ route('admin.musyrif.preview') }}", // Sesuaikan dengan route preview Mas
+                    url: "{{ route('admin.musyrif.preview') }}",
                     type: "POST",
                     data: new FormData(this),
                     processData: false,
@@ -1314,31 +1709,49 @@
                     success: (res) => {
                         $('#import_file_path').val(res.temp_path);
                         $('#importMappingArea').fadeIn();
-                        $('#importUploadBox').addClass('bg-light-subtle opacity-75');
 
                         const tbody = $('#importMappingBody').html('');
-                        res.sheets.forEach((name, index) => {
+                        const sheetInfo = res.sheet_info || [];
+
+                        (res.sheets || []).forEach((name, index) => {
+                            const info = sheetInfo[index] || {};
+                            const rowCount = info.rows ?? '-';
+
                             tbody.append(`
-                    <tr>
-                        <td class="ps-3 fw-bold">${name}</td>
-                        <td class="text-muted small">Baris terdeteksi</td>
-                        <td><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Ready</span></td>
-                        <td class="text-center pe-3">
-                            <div class="form-check d-inline-block">
-                                <input type="radio" name="selected_sheet" class="form-check-input sheet-radio" value="${index}" style="transform: scale(1.2);">
-                            </div>
-                        </td>
-                    </tr>
-                `);
+                                <tr>
+                                    <td class="ps-3 fw-bold">${name}</td>
+                                    <td class="text-muted small">${rowCount} baris terdeteksi</td>
+                                    <td>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                                            Ready
+                                        </span>
+                                    </td>
+                                    <td class="text-center pe-3">
+                                        <div class="form-check d-inline-block">
+                                            <input type="radio"
+                                                name="selected_sheet"
+                                                class="form-check-input sheet-radio"
+                                                value="${index}"
+                                                style="transform: scale(1.2);">
+                                        </div>
+                                    </td>
+                                </tr>
+                            `);
                         });
+
+                        $('#previewHeader').html('');
+                        $('#importPreviewBody').html(
+                            '<tr><td class="text-center py-4 text-muted">Pilih sheet, lalu klik "Preview" untuk melihat data.</td></tr>'
+                        );
+
                         if (window.AppAlert) AppAlert.success('Daftar sheet berhasil dibaca.');
                     },
                     error: (xhr) => {
-                        if (window.AppAlert) AppAlert.error(xhr.responseJSON?.message ||
-                            'Gagal membaca file.');
+                        if (window.AppAlert) {
+                            AppAlert.error(xhr.responseJSON?.message || 'Gagal membaca file.');
+                        }
                     },
-                    complete: () => btn.prop('disabled', false).html(
-                        '<i class="bi bi-search me-1"></i> Baca Isi File')
+                    complete: () => btn.prop('disabled', false).html(originalText)
                 });
             });
 
@@ -1349,6 +1762,8 @@
                     'Pilih salah satu sheet terlebih dahulu!');
 
                 const btn = $(this);
+                const originalText = btn.html();
+
                 btn.prop('disabled', true).html(
                     '<span class="spinner-border spinner-border-sm"></span>...');
 
@@ -1359,32 +1774,38 @@
                 }).done(function(res) {
                     // Render Header
                     let headHtml = '';
-                    res.headers.forEach(h => headHtml += `<th>${String(h).toUpperCase()}</th>`);
+                    res.headers.forEach(h => {
+                        headHtml +=
+                        `<th>${String(h).toUpperCase().replace(/_/g, ' ')}</th>`;
+                    });
                     $('#previewHeader').html(headHtml);
 
                     // Render Body
                     let bodyHtml = '';
-                    res.preview.forEach(row => {
-                        bodyHtml += '<tr>';
-                        res.headers.forEach(key => {
-                            bodyHtml += `<td>${row[key] ?? '-'}</td>`;
+                    if (res.preview && res.preview.length > 0) {
+                        res.preview.forEach(row => {
+                            bodyHtml += '<tr>';
+                            res.headers.forEach(key => {
+                                bodyHtml += `<td>${row[key] ?? '-'}</td>`;
+                            });
+                            bodyHtml += '</tr>';
                         });
-                        bodyHtml += '</tr>';
-                    });
+                    } else {
+                        bodyHtml =
+                            `<tr><td colspan="${res.headers.length || 1}" class="text-center py-4 text-muted">Tidak ada data pada sheet ini.</td></tr>`;
+                    }
+
                     $('#importPreviewBody').html(bodyHtml);
                     if (window.AppAlert) AppAlert.success('Preview sheet berhasil dimuat.');
-                }).always(() => btn.prop('disabled', false).html(
-                    '<i class="bi bi-eye me-1"></i> Preview'));
+                }).fail(function(xhr) {
+                    if (window.AppAlert) AppAlert.error(xhr.responseJSON?.message ||
+                        'Gagal memuat preview sheet.');
+                }).always(() => btn.prop('disabled', false).html(originalText));
             });
 
             // Tombol Reset
             $('#btnResetImport').on('click', function() {
-                $('#formImportUpload')[0].reset();
-                $('#importMappingArea').hide();
-                $('#importUploadBox').removeClass('bg-light-subtle opacity-75');
-                $('#importPreviewBody').html(
-                    '<tr><td class="text-center py-4 text-muted">Klik "Preview" untuk melihat data</td></tr>'
-                );
+                resetImportState();
             });
 
             // Tombol Final Execute
@@ -1393,8 +1814,10 @@
                 if (sheetIdx === undefined) return AppAlert?.error('Pilih sheet yang akan diimport!');
 
                 const btn = $(this);
+                const originalText = btn.html();
+
                 btn.prop('disabled', true).html(
-                    '<span class="spinner-border spinner-border-sm"></span> Mengimport...');
+                    '<span class="spinner-border spinner-border-sm me-1"></span> Mengimport...');
 
                 $.post("{{ route('admin.musyrif.execute_import') }}", {
                     _token: "{{ csrf_token() }}",
@@ -1402,13 +1825,13 @@
                     sheet_index: sheetIdx
                 }).done(res => {
                     if (window.AppAlert) AppAlert.success(res.message);
-                    setTimeout(() => location.reload(), 1500);
+                    modalImport?.hide();
+                    resetImportState();
+                    table.ajax.reload(null, false);
                 }).fail(xhr => {
                     if (window.AppAlert) AppAlert.error(xhr.responseJSON?.message ||
                         'Gagal import.');
-                    btn.prop('disabled', false).html(
-                        '<i class="bi bi-cloud-download me-1"></i> Mulai Import');
-                });
+                }).always(() => btn.prop('disabled', false).html(originalText));
             });
         });
     </script>

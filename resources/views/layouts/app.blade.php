@@ -194,6 +194,10 @@
                     @include('layouts.partials.sidebar-superadmin')
                 @break
 
+                @case('pimpinan')
+                    @include('layouts.partials.sidebar-pimpinan')
+                @break
+                
                 @case('admin')
                     @include('layouts.partials.sidebar-admin')
                 @break

@@ -762,6 +762,106 @@
             color: #fff !important;
             border-color: rgba(255, 255, 255, 0.15) !important;
         }
+
+
+        /* ============================================================
+           SYSTEM REVIEWS
+        ============================================================ */
+        .system-review-section {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .system-review-section::before {
+            content: '';
+            position: absolute;
+            top: 40px;
+            left: -130px;
+            width: 310px;
+            height: 310px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(107, 78, 255, .13), transparent 68%);
+            pointer-events: none;
+        }
+
+        .system-review-summary {
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            background:
+                linear-gradient(135deg, rgba(107, 78, 255, .08), rgba(57, 193, 204, .07)),
+                var(--card-bg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .system-review-average {
+            font-size: 2.8rem;
+            font-weight: 800;
+            line-height: 1;
+            color: var(--text-heading);
+        }
+
+        .system-review-card {
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+            padding: 1.6rem;
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            background: var(--card-bg);
+            box-shadow: var(--shadow-sm);
+            transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+        }
+
+        .system-review-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(107, 78, 255, .28);
+            box-shadow: var(--shadow-md);
+        }
+
+        .system-review-card::after {
+            content: '\201C';
+            position: absolute;
+            top: -24px;
+            right: 14px;
+            color: rgba(107, 78, 255, .08);
+            font-family: Georgia, serif;
+            font-size: 8rem;
+            font-weight: 800;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .system-review-avatar {
+            width: 46px;
+            height: 46px;
+            flex: 0 0 46px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            color: #fff;
+            background: linear-gradient(135deg, var(--islamic-purple-500), var(--islamic-tosca-500));
+            font-size: 1.05rem;
+            font-weight: 800;
+        }
+
+        .system-review-stars {
+            color: #f7b500;
+            letter-spacing: .08rem;
+        }
+
+        .system-review-text {
+            position: relative;
+            z-index: 1;
+            color: var(--text-main);
+            font-size: .92rem;
+            line-height: 1.75;
+        }
+
+        [data-coreui-theme="dark"] .system-review-card::after {
+            color: rgba(169, 155, 255, .10);
+        }
+
     </style>
 </head>
 
@@ -783,6 +883,7 @@
                     class="navbar-nav ms-lg-auto align-items-start align-items-lg-center gap-3 gap-lg-4 text-nowrap pt-3 pt-lg-0">
                     <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#home">Beranda</a></li>
                     <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#fitur">Fitur</a></li>
+                    <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#review">Review</a></li>
                     <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#harga">Paket</a></li>
                     <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#faq">Tanya Jawab</a></li>
 
@@ -1022,6 +1123,96 @@
         </div>
     </section>
 
+
+    {{-- SYSTEM REVIEW SECTION --}}
+    @if (($systemReviews ?? collect())->isNotEmpty())
+        <section id="review" class="system-review-section py-5 bg-alt">
+            <div class="container py-5">
+                <div class="row align-items-end g-4 mb-5">
+                    <div class="col-lg-8">
+                        <span class="section-label">Review Pengguna</span>
+                        <h2 class="display-6 fw-bold mb-3">
+                            Pengalaman Nyata dari
+                            <span class="text-gradient">Musyrif Pengguna</span>
+                        </h2>
+                        <p class="text-muted fs-5 mb-0" style="max-width: 720px;">
+                            Review berikut dikirim langsung dari dashboard Musyrif dan telah melalui moderasi
+                            sebelum dipublikasikan.
+                        </p>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="system-review-summary p-4">
+                            <div class="d-flex align-items-center justify-content-between gap-3">
+                                <div>
+                                    <div class="small text-muted fw-bold text-uppercase mb-1">
+                                        Rating Pengguna
+                                    </div>
+                                    <div class="system-review-average">
+                                        {{ number_format($reviewStats['average'] ?? 0, 1, ',', '.') }}
+                                    </div>
+                                </div>
+
+                                <div class="text-end">
+                                    <div class="system-review-stars fs-5 mb-1">
+                                        @for ($star = 1; $star <= 5; $star++)
+                                            <i class="bi bi-star-fill"></i>
+                                        @endfor
+                                    </div>
+                                    <div class="small text-muted">
+                                        {{ number_format($reviewStats['total'] ?? 0, 0, ',', '.') }}
+                                        review terverifikasi
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    @foreach ($systemReviews as $review)
+                        <div class="col-md-6 col-xl-4">
+                            <article class="system-review-card">
+                                <div class="system-review-stars mb-3">
+                                    @for ($star = 1; $star <= 5; $star++)
+                                        <i class="bi {{ $star <= $review->rating ? 'bi-star-fill' : 'bi-star' }}"></i>
+                                    @endfor
+                                </div>
+
+                                @if ($review->title)
+                                    <h3 class="h6 fw-bold mb-2">
+                                        {{ $review->title }}
+                                    </h3>
+                                @endif
+
+                                <p class="system-review-text mb-4">
+                                    “{{ $review->review }}”
+                                </p>
+
+                                <div class="d-flex align-items-center gap-3 mt-auto">
+                                    <span class="system-review-avatar">
+                                        {{ strtoupper(mb_substr($review->public_name, 0, 1)) }}
+                                    </span>
+
+                                    <div class="min-w-0">
+                                        <div class="fw-bold text-truncate">
+                                            {{ $review->public_name }}
+                                        </div>
+                                        <div class="small text-muted">
+                                            {{ $review->role_label }}
+                                            <span class="mx-1">•</span>
+                                            Review terverifikasi
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
     {{-- PRICING SECTION --}}
     <section id="harga" class="py-5 bg-alt">
         <div class="container py-5">
@@ -1113,7 +1304,7 @@
     </section>
 
     {{-- TESTIMONI SECTION --}}
-    <section id="testimoni" class="py-5">
+    {{-- <section id="testimoni" class="py-5">
         <div class="container py-5">
             <div class="text-center mb-5 pb-3 animate__animated animate__fadeInUp">
                 <span class="section-label">Ulasan Pengguna</span>
@@ -1191,7 +1382,7 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section> --}}
 
     {{-- FAQ SECTION --}}
     <section id="faq" class="py-5 bg-alt">

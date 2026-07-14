@@ -124,6 +124,122 @@
             pointer-events: none;
         }
 
+        /* ================= DRAG & DROP IMPORT EXCEL ================= */
+        .import-dropzone {
+            position: relative;
+            border: 2px dashed rgba(111, 66, 193, 0.35);
+            border-radius: 22px;
+            padding: 2rem;
+            background:
+                radial-gradient(circle at top right, rgba(111, 66, 193, 0.08), transparent 34%),
+                var(--cui-tertiary-bg, #f8f9fa);
+            transition:
+                border-color 0.2s ease,
+                background 0.2s ease,
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+        .import-dropzone:hover,
+        .import-dropzone.is-dragover {
+            border-color: var(--islamic-purple-600, #6f42c1);
+            background:
+                radial-gradient(circle at top right, rgba(111, 66, 193, 0.14), transparent 34%),
+                rgba(111, 66, 193, 0.04);
+            transform: translateY(-2px);
+            box-shadow: 0 16px 36px rgba(89, 53, 157, 0.12);
+        }
+
+        .import-dropzone-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--islamic-purple-700, #59359d);
+            background: rgba(111, 66, 193, 0.12);
+            font-size: 2rem;
+        }
+
+        .import-file-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .import-file-name {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            max-width: 100%;
+            padding: 0.5rem 0.9rem;
+            border-radius: 999px;
+            background: rgba(25, 135, 84, 0.12);
+            color: #198754;
+            font-size: 0.82rem;
+            font-weight: 700;
+            word-break: break-all;
+        }
+
+        .import-dropzone-note {
+            max-width: 520px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        [data-coreui-theme="dark"] .import-dropzone {
+            background:
+                radial-gradient(circle at top right, rgba(147, 108, 246, 0.12), transparent 34%),
+                var(--cui-tertiary-bg);
+            border-color: rgba(216, 198, 255, 0.28);
+        }
+
+        [data-coreui-theme="dark"] .import-dropzone-icon {
+            color: #d8c6ff;
+            background: rgba(147, 108, 246, 0.18);
+        }
+
+        /* ================= GENDER FILTER TABS ================= */
+        .gender-filter-tabs {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.35rem;
+            border-radius: 999px;
+            background: var(--cui-tertiary-bg, #f8f9fa);
+            border: 1px solid var(--cui-border-color);
+        }
+
+        .gender-filter-tabs .nav-link {
+            border: 0;
+            border-radius: 999px;
+            padding: 0.55rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--cui-secondary-color);
+            background: transparent;
+            transition: all 0.2s ease;
+        }
+
+        .gender-filter-tabs .nav-link:hover {
+            color: var(--islamic-purple-700, #59359d);
+            background: rgba(111, 66, 193, 0.08);
+        }
+
+        .gender-filter-tabs .nav-link.active {
+            color: #ffffff;
+            background: var(--islamic-purple-600, #6f42c1);
+            box-shadow: 0 10px 24px rgba(89, 53, 157, 0.22);
+        }
+
+        [data-coreui-theme="dark"] .gender-filter-tabs {
+            background: var(--cui-tertiary-bg);
+        }
+
         @keyframes pageGuidePulse {
             0% {
                 transform: scale(0.88);
@@ -249,7 +365,11 @@
             <a href="{{ url('/admin/santri/naik-kelas') }}" class="btn btn-outline-secondary px-3 rounded-pill fw-bold">
                 <i class="bi bi-arrow-up-circle"></i> Migrasi Kelas
             </a>
-            <button class="btn btn-outline-success px-3 rounded-pill fw-bold" id="btnImportSantri">
+            <a href="{{ asset('templates/template-import-santri.xlsx') }}" target="_blank" rel="noopener noreferrer"
+                class="btn btn-outline-primary px-3 rounded-pill fw-bold" title="Download template Excel import santri">
+                <i class="bi bi-file-earmark-arrow-down"></i> Download Template Excel
+            </a>
+            <button type="button" class="btn btn-outline-success px-3 rounded-pill fw-bold" id="btnImportSantri">
                 <i class="bi bi-file-earmark-excel"></i> Import Excel
             </button>
             <button class="btn text-white px-4 rounded-pill shadow-sm fw-bold"
@@ -262,6 +382,33 @@
     {{-- MAIN CARD --}}
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-0">
+            {{-- TABS FILTER GENDER --}}
+            <div class="px-3 pt-3">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                    <div>
+                        <ul class="nav gender-filter-tabs" id="genderTabs" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-jk="" type="button">
+                                    <i class="bi bi-people-fill me-1"></i> Semua
+                                </button>
+                            </li>
+
+                            <li class="nav-item">
+                                <button class="nav-link" data-jk="L" type="button">
+                                    <i class="bi bi-gender-male me-1"></i> Putra
+                                </button>
+                            </li>
+
+                            <li class="nav-item">
+                                <button class="nav-link" data-jk="P" type="button">
+                                    <i class="bi bi-gender-female me-1"></i> Putri
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
             {{-- TABS FILTER KELAS --}}
             <div class="px-3 pt-2">
                 <ul class="nav nav-tabs custom-tabs" id="kelasTabs" role="tablist">
@@ -333,8 +480,8 @@
                             <label class="form-label">Nama Lengkap</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-transparent"><i class="bi bi-person"></i></span>
-                                <input type="text" class="form-control border-start-0 ps-0" name="nama" id="nama"
-                                    required placeholder="Nama santri...">
+                                <input type="text" class="form-control border-start-0 ps-0" name="nama"
+                                    id="nama" required placeholder="Nama santri...">
                             </div>
                         </div>
                         <div class="row g-3 mb-3">
@@ -548,19 +695,66 @@
                 </div>
                 <div class="modal-body p-4">
                     <div class="bg-light rounded-4 p-4 mb-4 border border-dashed text-center">
-                        <form id="formImportUpload">
-                            @csrf
-                            <i class="bi bi-cloud-arrow-up text-primary" style="font-size: 2.5rem;"></i>
-                            <h6 class="mt-2 fw-bold">Pilih File Master Santri</h6>
-                            <input type="file" class="form-control mx-auto mt-3 mb-3" name="file" id="import_file"
-                                accept=".xlsx,.xls,.csv" required style="max-width: 400px;">
-                            <div class="d-flex justify-content-center gap-2">
-                                <button class="btn btn-primary px-4 rounded-pill" type="submit"
-                                    id="btnUploadReadSheet">Baca Sheet</button>
-                                <button class="btn btn-outline-secondary px-4 rounded-pill" type="button"
-                                    id="btnResetImport">Reset</button>
-                            </div>
-                        </form>
+                        <div class="mb-4">
+                            <form id="formImportUpload">
+                                @csrf
+
+                                <div class="import-dropzone text-center" id="importDropzone">
+                                    <input type="file" class="import-file-hidden" name="file" id="import_file"
+                                        accept=".xlsx,.xls,.csv" required>
+
+                                    <div class="import-dropzone-icon mb-3">
+                                        <i class="bi bi-cloud-arrow-up-fill"></i>
+                                    </div>
+
+                                    <h6 class="fw-bold mb-1">Drag & Drop File Excel di Sini</h6>
+
+                                    <p class="text-muted small import-dropzone-note mb-3">
+                                        Tarik file <b>.xlsx</b>, <b>.xls</b>, atau <b>.csv</b> ke area ini,
+                                        atau klik tombol di bawah untuk memilih file secara manual.
+                                    </p>
+
+                                    <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                                        <button type="button"
+                                            class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold"
+                                            id="btnChooseImportFile">
+                                            <i class="bi bi-folder2-open me-1"></i> Pilih File
+                                        </button>
+
+                                        <a href="{{ asset('templates/template-import-santri.xlsx') }}" target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="btn btn-outline-success btn-sm rounded-pill px-4 fw-bold"
+                                            title="Download template Excel import santri">
+                                            <i class="bi bi-download me-1"></i> Download Template
+                                        </a>
+                                    </div>
+
+                                    <div id="importSelectedFileWrap" class="d-none mb-3">
+                                        <span class="import-file-name">
+                                            <i class="bi bi-file-earmark-excel-fill"></i>
+                                            <span id="importSelectedFileName">Belum ada file</span>
+                                        </span>
+                                    </div>
+
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <button class="btn btn-primary px-4 rounded-pill fw-bold" type="submit"
+                                            id="btnUploadReadSheet">
+                                            <i class="bi bi-eye me-1"></i> Baca Sheet
+                                        </button>
+
+                                        <button class="btn btn-outline-secondary px-4 rounded-pill fw-bold" type="button"
+                                            id="btnResetImport">
+                                            Reset
+                                        </button>
+                                    </div>
+
+                                    <div class="small text-muted mt-3">
+                                        Maksimal gunakan template resmi agar header seperti <b>nama</b>, <b>nis</b>,
+                                        dan <b>jenis kelamin</b> terbaca dengan benar.
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     </div>
 
                     <input type="hidden" id="import_file_path">
@@ -864,6 +1058,7 @@
             });
 
             let selectedKelas = '';
+            let selectedGender = '';
 
             // === 2. DATATABLES INITIALIZATION ===
             const table = $('#santri-table').DataTable({
@@ -873,6 +1068,7 @@
                     url: "{{ route('santri.master.datatable') }}",
                     data: (d) => {
                         d.kelas_id = selectedKelas;
+                        d.jenis_kelamin = selectedGender;
                     }
                 },
                 columns: [{
@@ -925,6 +1121,16 @@
                 $('#kelasTabs .nav-link').removeClass('active');
                 $(this).addClass('active');
                 selectedKelas = $(this).data('kelas') || '';
+                table.ajax.reload();
+            });
+
+            // Filter Gender logic
+            $('#genderTabs').on('click', '.nav-link', function() {
+                $('#genderTabs .nav-link').removeClass('active');
+                $(this).addClass('active');
+
+                selectedGender = $(this).data('jk') || '';
+
                 table.ajax.reload();
             });
 
@@ -1202,8 +1408,141 @@
             // === 6. IMPORT EXCEL FUNCTIONS ===
             $('#btnImportSantri').on('click', () => modalImport.show());
 
+            const importDropzone = $('#importDropzone');
+            const importFileInput = $('#import_file');
+            const importSelectedFileWrap = $('#importSelectedFileWrap');
+            const importSelectedFileName = $('#importSelectedFileName');
+
+            function isValidImportFile(file) {
+                if (!file) return false;
+
+                const allowedExtensions = ['xlsx', 'xls', 'csv'];
+                const fileName = file.name || '';
+                const ext = fileName.split('.').pop().toLowerCase();
+
+                return allowedExtensions.includes(ext);
+            }
+
+            function setImportFile(file) {
+                if (!file) return;
+
+                if (!isValidImportFile(file)) {
+                    importFileInput.val('');
+                    importSelectedFileWrap.addClass('d-none');
+                    importSelectedFileName.text('Belum ada file');
+
+                    if (window.AppAlert) {
+                        AppAlert.error('Format file tidak valid. Gunakan file .xlsx, .xls, atau .csv.');
+                    } else {
+                        alert('Format file tidak valid. Gunakan file .xlsx, .xls, atau .csv.');
+                    }
+
+                    return;
+                }
+
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                importFileInput[0].files = dataTransfer.files;
+
+                importSelectedFileName.text(file.name);
+                importSelectedFileWrap.removeClass('d-none');
+
+                $('#importErrorBox').addClass('d-none').html('');
+            }
+
+            function resetImportState() {
+                $('#formImportUpload')[0].reset();
+                $('#import_file_path').val('');
+
+                importDropzone.removeClass('is-dragover');
+                importSelectedFileWrap.addClass('d-none');
+                importSelectedFileName.text('Belum ada file');
+
+                $('#importMappingArea').hide();
+                $('#importMappingBody').html('');
+                $('#importPreviewBody').html('');
+                $('#importErrorBox').addClass('d-none').html('');
+            }
+
+            $('#btnChooseImportFile').on('click', function(e) {
+                e.preventDefault();
+                importFileInput.trigger('click');
+            });
+
+            importDropzone.on('click', function(e) {
+                const ignoredTargets = [
+                    'button',
+                    'a',
+                    'input',
+                    'select',
+                    'option',
+                    'label'
+                ];
+
+                if ($(e.target).closest(ignoredTargets.join(',')).length) return;
+
+                importFileInput.trigger('click');
+            });
+
+            importFileInput.on('change', function() {
+                const file = this.files && this.files[0];
+
+                if (!file) {
+                    importSelectedFileWrap.addClass('d-none');
+                    importSelectedFileName.text('Belum ada file');
+                    return;
+                }
+
+                setImportFile(file);
+            });
+
+            importDropzone.on('dragenter dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                importDropzone.addClass('is-dragover');
+            });
+
+            importDropzone.on('dragleave dragend drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (e.type !== 'drop') {
+                    importDropzone.removeClass('is-dragover');
+                }
+            });
+
+            importDropzone.on('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                importDropzone.removeClass('is-dragover');
+
+                const originalEvent = e.originalEvent;
+                const files = originalEvent.dataTransfer && originalEvent.dataTransfer.files;
+
+                if (!files || !files.length) return;
+
+                setImportFile(files[0]);
+            });
+
+            $('#btnResetImport').on('click', function() {
+                resetImportState();
+            });
+
             $('#formImportUpload').on('submit', function(e) {
                 e.preventDefault();
+
+                if (!importFileInput[0].files || !importFileInput[0].files.length) {
+                    return AppAlert?.error('Pilih atau drag file Excel terlebih dahulu!');
+                }
+
+                const btn = $('#btnUploadReadSheet');
+                const originalText = btn.html();
+
+                btn.prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm me-1"></span> Membaca...'
+                );
+
                 $.ajax({
                     url: "{{ route('santri.master.import.upload') }}",
                     type: "POST",
@@ -1213,45 +1552,92 @@
                     success: (res) => {
                         $('#import_file_path').val(res.file_path);
                         $('#importMappingArea').fadeIn();
+
                         const tbody = $('#importMappingBody').html('');
+
                         res.sheets.forEach(s => {
                             const disabled = s.is_valid ? '' : 'disabled';
+
                             tbody.append(`
-                                <tr>
-                                    <td class="ps-3">
-                                        <div class="form-check">
-                                            <input type="checkbox" class="form-check-input sheet-check" data-index="${s.sheet_index}" ${disabled}>
-                                            <label class="form-check-label small fw-bold">${s.label}</label>
-                                            <div class="text-muted" style="font-size:10px">Baris: ${s.rows}</div>
-                                        </div>
-                                    </td>
-                                    <td><span class="badge ${s.is_valid ? 'bg-success' : 'bg-secondary'} px-2">${s.is_valid ? 'Valid' : 'No Name Col'}</span></td>
-                                    <td class="pe-3">
-                                        <select class="form-select form-select-sm kelas-select" data-index="${s.sheet_index}" disabled>
-                                            <option value="">-- pilih kelas --</option>
-                                            @foreach ($kelasList as $kelas)
-                                                <option value="{{ $kelas->id }}">{{ $kelas->nama_kelas }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                </tr>
-                            `);
+                    <tr>
+                        <td class="ps-3">
+                            <div class="form-check">
+                                <input type="checkbox"
+                                    class="form-check-input sheet-check"
+                                    data-index="${s.sheet_index}"
+                                    ${disabled}>
+
+                                <label class="form-check-label small fw-bold">
+                                    ${s.label}
+                                </label>
+
+                                <div class="text-muted" style="font-size:10px">
+                                    Baris: ${s.rows}
+                                    ${s.header_row ? ` | Header: Baris ${s.header_row}` : ''}
+                                </div>
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="badge ${s.is_valid ? 'bg-success' : 'bg-secondary'} px-2">
+                                ${s.is_valid ? 'Valid' : 'No Name Col'}
+                            </span>
+                        </td>
+
+                        <td class="pe-3">
+                            <select class="form-select form-select-sm kelas-select"
+                                data-index="${s.sheet_index}"
+                                disabled>
+                                <option value="">-- pilih kelas --</option>
+                                @foreach ($kelasList as $kelas)
+                                    <option value="{{ $kelas->id }}">{{ $kelas->nama_kelas }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                    </tr>
+                `);
                         });
+
+                        $('#importPreviewBody').html('');
+                        $('#importErrorBox').addClass('d-none').html('');
+
+                        AppAlert?.success('Sheet berhasil dibaca!');
+                    },
+                    error: function(xhr) {
+                        let msg = 'Gagal membaca file Excel.';
+
+                        if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                            msg = Object.values(xhr.responseJSON.errors).map(e => e[0]).join(
+                                '\n');
+                        } else if (xhr.responseJSON?.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+
+                        AppAlert?.error(msg);
+                    },
+                    complete: () => {
+                        btn.prop('disabled', false).html(originalText);
                     }
                 });
             });
 
             $(document).on('change', '.sheet-check', function() {
                 const idx = $(this).data('index');
-                $(`.kelas-select[data-index="${idx}"]`).prop('disabled', !$(this).is(':checked'));
+                const isChecked = $(this).is(':checked');
+
+                $(`.kelas-select[data-index="${idx}"]`)
+                    .prop('disabled', !isChecked)
+                    .val(isChecked ? $(`.kelas-select[data-index="${idx}"]`).val() : '');
             });
 
             $('#btnPreviewImport').on('click', function() {
                 const selections = {};
                 let hasSelection = false;
+
                 $('.sheet-check:checked').each(function() {
                     const idx = $(this).data('index');
                     const kelasId = $(`.kelas-select[data-index="${idx}"]`).val();
+
                     if (kelasId) {
                         selections[idx] = {
                             kelas_id: kelasId
@@ -1264,6 +1650,7 @@
 
                 const btn = $(this);
                 const originalText = btn.html();
+
                 btn.html('<span class="spinner-border spinner-border-sm"></span>').prop('disabled', true);
 
                 $.ajax({
@@ -1276,18 +1663,44 @@
                     },
                     success: function(res) {
                         if (res.errors?.length > 0) {
-                            $('#importErrorBox').removeClass('d-none').html('<ul>' + res.errors
-                                .map(e => `<li>${e}</li>`).join('') + '</ul>');
+                            $('#importErrorBox')
+                                .removeClass('d-none')
+                                .html('<ul class="mb-0">' + res.errors.map(e => `<li>${e}</li>`)
+                                    .join('') + '</ul>');
                         } else {
-                            $('#importErrorBox').addClass('d-none');
+                            $('#importErrorBox').addClass('d-none').html('');
                         }
+
                         const pb = $('#importPreviewBody').html('');
+
                         (res.preview || []).forEach(row => {
-                            pb.append(
-                                `<tr><td class="small">${row.sheet}</td><td class="small fw-bold text-primary">${row.kelas_nama ?? 'ID:'+row.kelas_id}</td><td>${row.nama || '-'}</td><td class="text-muted small">${row.nis || '-'}</td><td><span class="badge bg-light text-dark">${row.jenis_kelamin || '-'}</span></td></tr>`
-                            );
+                            pb.append(`
+                    <tr>
+                        <td class="small">${row.sheet}</td>
+                        <td class="small fw-bold text-primary">
+                            ${row.kelas_nama ?? 'ID:' + row.kelas_id}
+                        </td>
+                        <td>${row.nama || '-'}</td>
+                        <td class="text-muted small">${row.nis || '-'}</td>
+                        <td>
+                            <span class="badge bg-light text-dark">
+                                ${row.jenis_kelamin || '-'}
+                            </span>
+                        </td>
+                    </tr>
+                `);
                         });
-                        AppAlert.success('Preview dimuat!');
+
+                        AppAlert?.success('Preview dimuat!');
+                    },
+                    error: function(xhr) {
+                        let msg = 'Gagal memuat preview.';
+
+                        if (xhr.responseJSON?.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+
+                        AppAlert?.error(msg);
                     },
                     complete: () => btn.html(originalText).prop('disabled', false)
                 });
@@ -1295,12 +1708,28 @@
 
             $('#btnProcessImport').on('click', function() {
                 const selections = {};
+                let hasSelection = false;
+
                 $('.sheet-check:checked').each(function() {
                     const idx = $(this).data('index');
-                    selections[idx] = {
-                        kelas_id: $(`.kelas-select[data-index="${idx}"]`).val()
-                    };
+                    const kelasId = $(`.kelas-select[data-index="${idx}"]`).val();
+
+                    if (kelasId) {
+                        selections[idx] = {
+                            kelas_id: kelasId
+                        };
+                        hasSelection = true;
+                    }
                 });
+
+                if (!hasSelection) return AppAlert?.error('Pilih sheet dan kelasnya!');
+
+                const btn = $(this);
+                const originalText = btn.html();
+
+                btn.prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm me-1"></span> Import...'
+                );
 
                 $.ajax({
                     url: "{{ route('santri.master.import.process') }}",
@@ -1313,7 +1742,22 @@
                     success: (res) => {
                         modalImport.hide();
                         table.ajax.reload();
+
+                        resetImportState();
+
                         AppAlert.success(`Berhasil import ${res.inserted} santri.`);
+                    },
+                    error: function(xhr) {
+                        let msg = 'Gagal import data santri.';
+
+                        if (xhr.responseJSON?.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+
+                        AppAlert?.error(msg);
+                    },
+                    complete: () => {
+                        btn.prop('disabled', false).html(originalText);
                     }
                 });
             });

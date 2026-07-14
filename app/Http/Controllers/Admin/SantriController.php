@@ -104,6 +104,12 @@ class SantriController extends Controller
             $query->where('santris.kelas_id', $request->kelas_id);
         }
 
+        $jenisKelamin = $request->input('jenis_kelamin');
+
+        if (in_array($jenisKelamin, ['L', 'P'], true)) {
+            $query->where('santris.jenis_kelamin', $jenisKelamin);
+        }
+        
         return DataTables::of($query)
             ->addIndexColumn()
 
@@ -546,9 +552,31 @@ class SantriController extends Controller
                 if ($nama === '')
                     continue;
 
-                // Optional: NIS kalau header ada 'nis'
+                // Optional indexes
                 $nisColIndex = array_search($this->normHeader('nis'), $header, true);
-                $nis = ($nisColIndex !== false) ? trim((string) ($r[$nisColIndex] ?? '')) : null;
+
+                $jkColIndex = array_search($this->normHeader('jenis kelamin'), $header, true);
+                if ($jkColIndex === false) {
+                    $jkColIndex = array_search($this->normHeader('jenis_kelamin'), $header, true);
+                }
+                if ($jkColIndex === false) {
+                    $jkColIndex = array_search($this->normHeader('jk'), $header, true);
+                }
+
+                $nis = ($nisColIndex !== false)
+                    ? trim((string) ($r[$nisColIndex] ?? ''))
+                    : null;
+
+                $jk = null;
+                if ($jkColIndex !== false) {
+                    $rawJk = strtolower(trim((string) ($r[$jkColIndex] ?? '')));
+
+                    if (in_array($rawJk, ['l', 'laki-laki', 'laki', 'lk', 'male'], true)) {
+                        $jk = 'L';
+                    } elseif (in_array($rawJk, ['p', 'perempuan', 'pr', 'female'], true)) {
+                        $jk = 'P';
+                    }
+                }
 
                 $preview[] = [
                     'sheet' => 'Sheet ' . ($sheetIndex + 1),
@@ -556,7 +584,8 @@ class SantriController extends Controller
                     'kelas_nama' => $namaKelas,
                     'nama' => $nama,
                     'nis' => $nis ?: null,
-                    'header_row' => $headerRow + 1, // info tambahan (1-based)
+                    'jenis_kelamin' => $jk,
+                    'header_row' => $headerRow + 1,
                 ];
 
                 if (count($preview) >= 300)

@@ -5,6 +5,9 @@ use Illuminate\Support\Facades\Auth;
 
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\UserController as SuperAdminUserController;
+use App\Http\Controllers\SuperAdmin\SystemIntegrityController as SuperAdminSystemIntegrityController;
+
+use App\Http\Controllers\Pimpinan\DashboardController as PimpinanDashboardController;
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ActivityLogController as AdminActivityLogController;
@@ -16,6 +19,8 @@ use App\Http\Controllers\Admin\MusyrifController as AdminMusyrifController;
 use App\Http\Controllers\Admin\MigrasiSantriController as AdminMigrasiSantriController;
 use App\Http\Controllers\Admin\SantriMigrationBatchAuditController as AdminSantriMigrationBatchAuditController;
 use App\Http\Controllers\Admin\SantriArchiveController as AdminSantriArchiveController;
+use App\Http\Controllers\Admin\SantriPlacementBackfillController as AdminSantriPlacementBackfillController;
+use App\Http\Controllers\Admin\AcademicDocumentController as AdminAcademicDocumentController;
 
 use App\Http\Controllers\Musyrif\DashboardController as MusyrifDashboardController;
 use App\Http\Controllers\Musyrif\HafalanController as MusyrifHafalanController;
@@ -31,6 +36,9 @@ use App\Http\Controllers\KelasController;
 use App\Http\Controllers\TahunAjaranController;
 use App\Http\Controllers\SemesterController;
 use App\Http\Controllers\ProfileSettingController;
+use App\Http\Controllers\SuperAdmin\SystemReviewController as SuperAdminSystemReviewController;
+use App\Http\Controllers\Musyrif\SystemReviewController as MusyrifSystemReviewController;
+use App\Http\Controllers\LandingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,13 +50,23 @@ use App\Http\Controllers\ProfileSettingController;
 |--------------------------------------------------------------------------
 */
 
-// Cukup gunakan Route::view untuk halaman statis
-Route::view('/', 'welcome')->name('welcome');
+/*
+|--------------------------------------------------------------------------
+| LANDING PAGE
+|--------------------------------------------------------------------------
+| Mengambil review published dari tabel system_reviews.
+*/
 
-Route::post('/logout', function () {
-    Auth::logout();
+Route::get('/', [LandingController::class, 'index'])
+    ->name('welcome');
+
+Route::post('/logout', function (\Illuminate\Http\Request $request) {
+    Auth::guard('web')->logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
     return redirect()->route('login');
-})->name('logout');
+})->middleware('auth')->name('logout');
 
 Route::get('/waiting-approval', function () {
     return view('auth.waiting-approval');
@@ -59,7 +77,7 @@ Route::get('/waiting-approval', function () {
 | PROFILE SETTINGS
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'account.active'])->group(function () {
 
     Route::get(
         '/profile/settings',
@@ -81,35 +99,194 @@ Route::middleware('auth')->group(function () {
 */
 Route::prefix('superadmin')
     ->name('superadmin.')
-    ->middleware(['auth', 'role:superadmin'])
-    ->group(function () {
+    ->middleware([
+        'auth',
+        'account.active',
+        'role:superadmin',
+    ])
+    ->group(function (): void {
 
-        // 1. Dashboard
-        Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+        /*
+        |--------------------------------------------------------------------------
+        | Dashboard
+        |--------------------------------------------------------------------------
+        */
+        Route::get(
+            '/dashboard',
+            [SuperAdminDashboardController::class, 'index']
+        )->name('dashboard');
 
-        // 2. Bulk Actions (WAJIB DI ATAS ROUTE {id})
-        Route::post('/users/bulk-approve', [SuperAdminUserController::class, 'bulkApprove'])->name('users.bulk_approve');
 
-        // UBAH POST JADI DELETE DI SINI
-        Route::delete('/users/bulk-delete', [SuperAdminUserController::class, 'bulkDelete'])->name('users.bulk_delete');
 
-        // 3. Manajemen User
-        Route::get('/users', [SuperAdminUserController::class, 'index'])->name('users.index');
-        Route::get('/users/datatable', [SuperAdminUserController::class, 'getData'])->name('users.datatable');
-        Route::post('/users', [SuperAdminUserController::class, 'store'])->name('users.store');
-        Route::post('/users/approve', [SuperAdminUserController::class, 'approve'])->name('users.approve');
+        /*
+        |--------------------------------------------------------------------------
+        | Review Sistem
+        |--------------------------------------------------------------------------
+        | Review baru selalu pending. Super Admin mengatur published / hidden.
+        */
+        Route::prefix('system-reviews')
+            ->name('system-reviews.')
+            ->controller(SuperAdminSystemReviewController::class)
+            ->group(function (): void {
+                Route::get('/', 'index')
+                    ->name('index');
 
-        // 4. Route Parameter (WAJIB DI BAWAH)
-        Route::put('/users/{id}', [SuperAdminUserController::class, 'update'])->name('users.update');
-        Route::delete('/users/{id}', [SuperAdminUserController::class, 'destroy'])->name('users.destroy');
+                Route::get('/data', 'data')
+                    ->name('data');
+
+                Route::patch(
+                    '/{systemReview}/visibility',
+                    'updateVisibility'
+                )
+                    ->whereNumber('systemReview')
+                    ->name('visibility');
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | User & Profile Consistency Checker
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('system-integrity')
+            ->name('system-integrity.')
+            ->controller(SuperAdminSystemIntegrityController::class)
+            ->group(function (): void {
+                Route::get('/', 'index')->name('index');
+                Route::get('/data', 'data')->name('data');
+                Route::get('/summary', 'summary')->name('summary');
+                Route::get('/logs', 'logs')->name('logs');
+                Route::post('/repair', 'repair')->name('repair');
+                Route::post('/repair-safe', 'repairSafe')->name('repair-safe');
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Bulk User Actions
+        | Route statis wajib berada sebelum /users/{id}.
+        |--------------------------------------------------------------------------
+        */
+        Route::post(
+            '/users/bulk-approve',
+            [SuperAdminUserController::class, 'bulkApprove']
+        )->name('users.bulk_approve');
+
+        Route::patch(
+            '/users/bulk-archive',
+            [SuperAdminUserController::class, 'bulkArchive']
+        )->name('users.bulk_archive');
+
+        /*
+         * Alias kompatibilitas frontend lama.
+         * Controller Step 1B mengubah aksi ini menjadi soft archive.
+         */
+        Route::delete(
+            '/users/bulk-delete',
+            [SuperAdminUserController::class, 'bulkDelete']
+        )->name('users.bulk_delete');
+
+        /*
+        |--------------------------------------------------------------------------
+        | User Management
+        |--------------------------------------------------------------------------
+        */
+        Route::get(
+            '/users',
+            [SuperAdminUserController::class, 'index']
+        )->name('users.index');
+
+        Route::get(
+            '/users/datatable',
+            [SuperAdminUserController::class, 'getData']
+        )->name('users.datatable');
+
+        Route::post(
+            '/users',
+            [SuperAdminUserController::class, 'store']
+        )->name('users.store');
+
+        Route::post(
+            '/users/approve',
+            [SuperAdminUserController::class, 'approve']
+        )->name('users.approve');
+
+        /*
+        |--------------------------------------------------------------------------
+        | User Lifecycle
+        | Route dengan suffix spesifik diletakkan sebelum /users/{id}.
+        |--------------------------------------------------------------------------
+        */
+        Route::get(
+            '/users/{id}/lifecycle-logs',
+            [SuperAdminUserController::class, 'lifecycleLogs']
+        )
+            ->whereNumber('id')
+            ->name('users.lifecycle_logs');
+
+        Route::patch(
+            '/users/{id}/suspend',
+            [SuperAdminUserController::class, 'suspend']
+        )
+            ->whereNumber('id')
+            ->name('users.suspend');
+
+        Route::patch(
+            '/users/{id}/reactivate',
+            [SuperAdminUserController::class, 'reactivate']
+        )
+            ->whereNumber('id')
+            ->name('users.reactivate');
+
+        Route::patch(
+            '/users/{id}/reject',
+            [SuperAdminUserController::class, 'reject']
+        )
+            ->whereNumber('id')
+            ->name('users.reject');
+
+        Route::patch(
+            '/users/{id}/restore',
+            [SuperAdminUserController::class, 'restore']
+        )
+            ->whereNumber('id')
+            ->name('users.restore');
+
+        Route::put(
+            '/users/{id}',
+            [SuperAdminUserController::class, 'update']
+        )
+            ->whereNumber('id')
+            ->name('users.update');
+
+        /* Soft archive, bukan hard delete. */
+        Route::delete(
+            '/users/{id}',
+            [SuperAdminUserController::class, 'archive']
+        )
+            ->whereNumber('id')
+            ->name('users.archive');
     });
+
+
+/*
+|--------------------------------------------------------------------------
+| PIMPINAN PESANTREN
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'account.active', 'approved', 'role:pimpinan'])
+    ->prefix('pimpinan')
+    ->name('pimpinan.')
+    ->group(function (): void {
+        Route::get('/dashboard', [PimpinanDashboardController::class, 'index'])
+            ->name('dashboard');
+    });
+
 
 /*
     |--------------------------------------------------------------------------
     | ADMIN / DEPARTEMEN
     |--------------------------------------------------------------------------
     */
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|pimpinan'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'account.active', 'role:admin'])->group(function () {
 
     // Dashboard Admin
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
@@ -315,46 +492,78 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|pimpinan
         ->name('santri.migrasi.batch.show');
 
 
-    // Kelola Musyrif
-    Route::get('musyrif', [AdminMusyrifController::class, 'index'])->name('musyrif.index');
-    Route::get('musyrif/data', [AdminMusyrifController::class, 'data'])->name('musyrif.data');
-    Route::get('musyrif/{id}', [AdminMusyrifController::class, 'show'])->name('musyrif.show');
-    Route::post('musyrif', [AdminMusyrifController::class, 'store'])->name('musyrif.store');
-    Route::put('musyrif/{id}', [AdminMusyrifController::class, 'update'])->name('musyrif.update');
-    Route::delete('musyrif/{id}', [AdminMusyrifController::class, 'destroy'])->name('musyrif.destroy');
-    Route::post('musyrif/import', [AdminMusyrifController::class, 'importExcel'])->name('musyrif.import');
-    Route::get(
-        'musyrif/get-by-kelas/{kelas_id}',
-        [AdminMusyrifController::class, 'getByKelas']
-    )
-        ->whereNumber('kelas_id')
-        ->name('musyrif.by_kelas');
+    /*
+|--------------------------------------------------------------------------
+| ROUTE ADMIN - MUSYRIF
+|--------------------------------------------------------------------------
+| Tempelkan route di bawah ini DI DALAM group admin yang sudah menggunakan:
+| Route::prefix('admin')->name('admin.')->middleware(...)->group(...)
+|
+| Route statis wajib ditempatkan sebelum route dinamis musyrif/{id}.
+*/
 
-    // ==========================================
-    // ROUTE BARU UNTUK IMPORT EXCEL & PREVIEW
-    // ==========================================
+    // Halaman utama dan DataTables.
+    Route::get('musyrif', [AdminMusyrifController::class, 'index'])
+        ->name('musyrif.index');
 
-    // 1. Route untuk upload file & ambil preview (Step 1)
-    Route::post('musyrif/sheet-preview', [AdminMusyrifController::class, 'getSheetPreview'])->name('musyrif.sheet_preview');
+    Route::get('musyrif/data', [AdminMusyrifController::class, 'data'])
+        ->name('musyrif.data');
+
+    // Download template resmi import Excel.
+    Route::get('musyrif/template-import', [AdminMusyrifController::class, 'downloadImportTemplate'])
+        ->name('musyrif.template_import');
+
+    // Import Excel lama/direct.
+    Route::post('musyrif/import', [AdminMusyrifController::class, 'importExcel'])
+        ->name('musyrif.import');
+
+    // Upload, preview sheet, dan eksekusi import.
+    Route::post('musyrif/sheet-preview', [AdminMusyrifController::class, 'getSheetPreview'])
+        ->name('musyrif.sheet_preview');
+
     Route::post('musyrif/preview-import', [AdminMusyrifController::class, 'previewImport'])
         ->name('musyrif.preview');
 
-    // 2. Route untuk eksekusi import setelah pilih sheet (Step 2)
     Route::post('musyrif/execute-import', [AdminMusyrifController::class, 'executeImport'])
         ->name('musyrif.execute_import');
 
-    // Absensi Musyrif
+    // Data musyrif berdasarkan kelas.
+    Route::get('musyrif/get-by-kelas/{kelas_id}', [AdminMusyrifController::class, 'getByKelas'])
+        ->whereNumber('kelas_id')
+        ->name('musyrif.by_kelas');
+
+    // Absensi seluruh musyrif.
     Route::get('musyrif/absensi/all', [AdminMusyrifController::class, 'allAttendances'])
         ->name('musyrif.absensi.index');
 
     Route::delete('musyrif/absensi/{attendance}', [AdminMusyrifController::class, 'destroyAttendance'])
+        ->whereNumber('attendance')
         ->name('musyrif.absensi.destroy');
 
+    Route::patch('musyrif/attendances/{attendance}/status', [AdminMusyrifController::class, 'updateAttendanceStatus'])
+        ->whereNumber('attendance')
+        ->name('musyrif.attendances.update_status');
+
     Route::get('musyrif/{id}/attendances', [AdminMusyrifController::class, 'attendances'])
+        ->whereNumber('id')
         ->name('musyrif.attendances');
 
-    Route::patch('musyrif/attendances/{attendance}/status', [AdminMusyrifController::class, 'updateAttendanceStatus'])
-        ->name('musyrif.attendances.update_status');
+    // CRUD. Route dinamis diletakkan paling bawah.
+    Route::post('musyrif', [AdminMusyrifController::class, 'store'])
+        ->name('musyrif.store');
+
+    Route::get('musyrif/{id}', [AdminMusyrifController::class, 'show'])
+        ->whereNumber('id')
+        ->name('musyrif.show');
+
+    Route::put('musyrif/{id}', [AdminMusyrifController::class, 'update'])
+        ->whereNumber('id')
+        ->name('musyrif.update');
+
+    Route::delete('musyrif/{id}', [AdminMusyrifController::class, 'destroy'])
+        ->whereNumber('id')
+        ->name('musyrif.destroy');
+
 
     // Laporan Hafalan
     Route::get('laporan-hafalan', [AdminLaporanController::class, 'index'])->name('laporan.index');
@@ -461,6 +670,75 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|pimpinan
             Route::get('/{santri}/progress/tilawah/timeline', 'tilawahTimeline')
                 ->name('tilawah.timeline');
         });
+
+
+    Route::prefix('maintenance/semester-placement')
+        ->name('maintenance.semester-placement.')
+        ->middleware('role:admin')
+        ->controller(
+            AdminSantriPlacementBackfillController::class
+        )
+        ->group(function () {
+            Route::get(
+                '/preview',
+                'preview'
+            )->name('preview');
+
+            Route::post(
+                '/process',
+                'process'
+            )->name('process');
+        });
+
+
+    Route::prefix('academic-documents')
+        ->name('academic-documents.')
+        ->controller(AdminAcademicDocumentController::class)
+        ->group(function (): void {
+
+            Route::get(
+                '/',
+                'index'
+            )->name('index');
+
+            Route::get(
+                '/data',
+                'data'
+            )->name('data');
+
+            Route::post(
+                '/raport/draft',
+                'generateRaportDraft'
+            )->name('raport.draft.generate');
+
+            Route::post(
+                '/{academicDocument}/raport/regenerate',
+                'regenerateRaportDraft'
+            )
+                ->whereUuid('academicDocument')
+                ->name('raport.draft.regenerate');
+
+            Route::put(
+                '/{academicDocument}/raport/draft',
+                'updateRaportDraft'
+            )
+                ->whereUuid('academicDocument')
+                ->name('raport.draft.update');
+
+            Route::patch(
+                '/{academicDocument}/raport/cancel',
+                'cancelRaportDraft'
+            )
+                ->whereUuid('academicDocument')
+                ->name('raport.draft.cancel');
+
+            Route::get(
+                '/{academicDocument}',
+                'show'
+            )
+                ->whereUuid('academicDocument')
+                ->name('show');
+        });
 });
 
 
@@ -472,12 +750,24 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|pimpinan
 */
 Route::prefix('musyrif')
     ->name('musyrif.')
-    ->middleware(['auth', 'role:musyrif', 'approved']) // pastikan middleware 'approved' sudah ditambahkan di Kernel.php
+    ->middleware(['auth', 'account.active', 'approved', 'role:musyrif'])
     ->group(function () {
 
         // ===================== DASHBOARD =====================
         Route::get('/dashboard', [MusyrifDashboardController::class, 'index'])
             ->name('dashboard');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Review Sistem
+        |--------------------------------------------------------------------------
+        | Satu review per akun Musyrif. Unique user_id menangani double submit.
+        */
+        Route::post(
+            '/system-review',
+            [MusyrifSystemReviewController::class, 'store']
+        )->name('system-reviews.store');
 
         // ===================== ABSENSI ====================
         Route::get('/absensi', [MusyrifAttendanceController::class, 'index'])
@@ -553,7 +843,7 @@ Route::prefix('musyrif')
 // ==================== KELAS ====================
 Route::prefix('kelas')
     ->name('kelas.')
-    ->middleware(['auth', 'role:superadmin|admin'])
+    ->middleware(['auth', 'account.active', 'role:superadmin|admin'])
     ->group(function () {
         // Halaman utama pengaturan akademik
         Route::get('/', [KelasController::class, 'index'])
@@ -580,7 +870,7 @@ Route::prefix('kelas')
 // ==================== TAHUN AJARAN ====================
 Route::prefix('tahun-ajaran')
     ->name('tahun-ajaran.')
-    ->middleware(['auth', 'role:superadmin|admin'])
+    ->middleware(['auth', 'account.active', 'role:superadmin|admin'])
     ->group(function () {
         // DataTables source
         Route::get('/datatable', [TahunAjaranController::class, 'getData'])
@@ -604,67 +894,49 @@ Route::prefix('tahun-ajaran')
     });
 
 
-// ==================== SEMESTER ====================
+/*
+|--------------------------------------------------------------------------
+| SEMESTER — SHARED MASTER ROUTES
+|--------------------------------------------------------------------------
+|
+| Dipakai oleh Super Admin dan Admin.
+| Letakkan route spesifik lifecycle sebelum route dinamis /{id}.
+|
+*/
 Route::prefix('semester')
     ->name('semester.')
-    ->middleware(['auth', 'role:superadmin|admin'])
-    ->group(function () {
-        // DataTables source
-        Route::get('/datatable', [SemesterController::class, 'getData'])
+    ->middleware([
+        'auth',
+        'account.active',
+        'role:superadmin|admin',
+    ])
+    ->controller(SemesterController::class)
+    ->group(function (): void {
+        Route::get('/datatable', 'getData')
             ->name('datatable');
 
-        // CRUD via AJAX/modal
-        Route::post('/', [SemesterController::class, 'store'])
+        Route::post('/', 'store')
             ->name('store');
 
-        Route::put('/{id}', [SemesterController::class, 'update'])
+        Route::patch('/{semester}/activate', 'activate')
+            ->whereNumber('semester')
+            ->name('activate');
+
+        Route::patch('/{semester}/lock-input', 'lockInput')
+            ->whereNumber('semester')
+            ->name('lock-input');
+
+        Route::patch('/{semester}/unlock-input', 'unlockInput')
+            ->whereNumber('semester')
+            ->name('unlock-input');
+
+        Route::put('/{id}', 'update')
             ->whereNumber('id')
             ->name('update');
 
-        Route::delete('/{id}', [SemesterController::class, 'destroy'])
+        Route::delete('/{id}', 'destroy')
             ->whereNumber('id')
             ->name('destroy');
-    });
-
-/*
-|--------------------------------------------------------------------------
-| TAHUN AJARAN (MASTER)
-|--------------------------------------------------------------------------
-| Hanya SuperAdmin + Admin
-*/
-Route::prefix('tahun-ajaran')
-    ->name('tahun-ajaran.')
-    ->middleware(['auth', 'role:superadmin|admin'])
-    ->group(function () {
-        // DataTables source
-        Route::get('/datatable', [TahunAjaranController::class, 'getData'])->name('datatable');
-
-        // Sumber data untuk Dropdown `<select>` di modal Semester
-        Route::get('/options', [TahunAjaranController::class, 'getOptions'])->name('options');
-
-        // CRUD via AJAX/modal
-        Route::post('/', [TahunAjaranController::class, 'store'])->name('store');
-        Route::put('/{id}', [TahunAjaranController::class, 'update'])->name('update');
-        Route::delete('/{id}', [TahunAjaranController::class, 'destroy'])->name('destroy');
-    });
-
-/*
-|--------------------------------------------------------------------------
-| SEMESTER (MASTER)
-|--------------------------------------------------------------------------
-| Hanya SuperAdmin + Admin
-*/
-Route::prefix('semester')
-    ->name('semester.')
-    ->middleware(['auth', 'role:superadmin|admin'])
-    ->group(function () {
-        // DataTables source
-        Route::get('/datatable', [SemesterController::class, 'getData'])->name('datatable');
-
-        // CRUD via AJAX/modal
-        Route::post('/', [SemesterController::class, 'store'])->name('store');
-        Route::put('/{id}', [SemesterController::class, 'update'])->name('update');
-        Route::delete('/{id}', [SemesterController::class, 'destroy'])->name('destroy');
     });
 
 
@@ -675,7 +947,7 @@ Route::prefix('semester')
 */
 Route::prefix('santri-master')
     ->name('santri.master.')
-    ->middleware(['auth', 'role:superadmin|admin|musyrif'])
+    ->middleware(['auth', 'account.active', 'role:superadmin|admin|musyrif'])
     ->group(function () {
 
         /* | 1. RUTE STATIS (HARUS DI ATAS)
@@ -724,8 +996,9 @@ Route::prefix('santri')
     ->name('santri.')
     ->middleware([
         'auth',
-        'role:santri',
+        'account.active',
         'approved',
+        'role:santri',
     ])
     ->group(function () {
 

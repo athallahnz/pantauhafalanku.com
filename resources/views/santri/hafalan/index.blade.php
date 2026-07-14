@@ -331,6 +331,48 @@
             text-align: center;
         }
 
+        .scope-filter-card {
+            padding: 1rem 1.15rem;
+        }
+
+        .scope-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .45rem .75rem;
+            border-radius: 999px;
+            color: var(--student-purple-dark);
+            background: var(--student-purple-soft);
+            font-size: .74rem;
+            font-weight: 800;
+        }
+
+        .comparison-card {
+            height: 100%;
+            padding: 1rem;
+            border: 1px solid var(--student-border);
+            border-radius: 16px;
+            background: var(--student-surface);
+        }
+
+        .comparison-value {
+            font-size: 1.35rem;
+            font-weight: 850;
+            color: var(--student-text);
+        }
+
+        .comparison-meta {
+            margin-top: .25rem;
+            color: var(--student-muted);
+            font-size: .72rem;
+        }
+
+        .placement-context {
+            border: 1px dashed var(--student-border);
+            border-radius: 14px;
+            background: var(--student-surface-soft);
+        }
+
         @media (max-width: 767.98px) {
             .welcome-card {
                 border-radius: 18px;
@@ -387,20 +429,35 @@
             <div class="card-body p-4 p-lg-5">
                 <div class="row align-items-center g-3">
                     <div class="col">
-                        <div class="small text-white-50 fw-semibold mb-2">Dashboard Progress Santri</div>
+                        <div class="small text-white-50 fw-semibold mb-2">Dashboard Progress Saya</div>
                         <h2 class="fw-bold mb-2">Assalamu'alaikum, {{ $santri->nama }} 👋</h2>
                         <p class="mb-3 text-white-75">
-                            Kelas: <strong>{{ $santri->kelas?->nama_kelas ?? '-' }}</strong>
+                            Kelas: <strong>{{ $displayKelas }}</strong>
+
                             @if ($santri->nis)
-                                <span class="mx-2">•</span>NIS: <strong>{{ $santri->nis }}</strong>
+                                <span class="mx-2">•</span>
+                                NIS: <strong>{{ $santri->nis }}</strong>
                             @endif
-                            @if ($santri->musyrif)
-                                <span class="mx-2">•</span>Musyrif: <strong>{{ $santri->musyrif->nama }}</strong>
-                            @endif
+
+                            <span class="mx-2">•</span>
+                            Musyrif: <strong>{{ $displayMusyrif }}</strong>
                         </p>
-                        <div class="welcome-chip">
-                            <i class="bi bi-lightbulb-fill text-warning"></i>
-                            Konsistensi adalah kunci kesuksesan. Terus semangat!
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <div class="welcome-chip">
+                                <i class="bi bi-funnel-fill text-warning"></i>
+                                Scope: {{ $scopeLabel }}
+                            </div>
+
+                            <div class="welcome-chip">
+                                <i class="bi bi-database-check"></i>
+                                {{ $scope === 'semester' ? 'Progress Semester' : 'Progress Kumulatif' }}
+                            </div>
+
+                            <div class="welcome-chip">
+                                <i class="bi bi-lightbulb-fill text-warning"></i>
+                                Terus jaga konsistensi setoran dan murojaah.
+                            </div>
                         </div>
                     </div>
                     <div class="col-auto d-none d-md-block">
@@ -408,6 +465,182 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <section class="student-card scope-filter-card mb-4">
+            <form method="GET" action="{{ route('santri.dashboard') }}" class="row g-3 align-items-end"
+                id="progressScopeForm">
+
+                <div class="col-lg-4">
+                    <label class="form-label fw-semibold">
+                        Mode Progress
+                    </label>
+
+                    <select class="form-select" name="scope" id="progressScope">
+                        <option value="semester" @selected($scope === 'semester')>
+                            Per Semester
+                        </option>
+
+                        <option value="cumulative" @selected($scope === 'cumulative')>
+                            Kumulatif Seluruh Semester
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-lg-5">
+                    <label class="form-label fw-semibold">
+                        Semester Konteks
+                    </label>
+
+                    <select class="form-select" name="semester_id" id="progressSemester"
+                        {{ $semesterList->isEmpty() ? 'disabled' : '' }}>
+
+                        @forelse ($semesterList as $semester)
+                            <option value="{{ $semester->id }}" @selected((int) $semester->id === (int) $selectedSemesterId)>
+
+                                {{ \Illuminate\Support\Str::title(str_replace('_', ' ', $semester->nama)) }}
+                                —
+                                {{ \Illuminate\Support\Str::title(str_replace('_', ' ', $semester->tahunAjaran?->nama ?? '-')) }}
+
+                                @if ($semester->status === 'active' || $semester->is_active)
+                                    (Aktif)
+                                @endif
+                            </option>
+                        @empty
+                            <option value="">
+                                Belum Ada Semester
+                            </option>
+                        @endforelse
+                    </select>
+                </div>
+
+                <div class="col-lg-3 d-grid">
+                    <button type="submit" class="btn btn-primary fw-semibold">
+                        <i class="bi bi-arrow-repeat me-1"></i>
+                        Terapkan Scope
+                    </button>
+                </div>
+            </form>
+
+            <div class="placement-context p-3 mt-3">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="kpi-label">
+                            Semester Konteks
+                        </div>
+
+                        <div class="fw-bold">
+                            {{ $selectedSemester
+                                ? \Illuminate\Support\Str::title(str_replace('_', ' ', $selectedSemester->nama)) .
+                                    ' — ' .
+                                    \Illuminate\Support\Str::title(str_replace('_', ' ', $selectedSemester->tahunAjaran?->nama ?? '-'))
+                                : '-' }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="kpi-label">
+                            Kelas Semester
+                        </div>
+
+                        <div class="fw-bold">
+                            {{ $selectedPlacement?->kelas?->nama_kelas ?? '-' }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="kpi-label">
+                            Musyrif Semester
+                        </div>
+
+                        <div class="fw-bold">
+                            {{ $selectedPlacement?->musyrif?->nama ?? '-' }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
+                        <div class="kpi-label">
+                            Status Akademik
+                        </div>
+
+                        <span class="scope-badge">
+                            <i class="bi bi-bookmark-check-fill"></i>
+                            {{ \Illuminate\Support\Str::title($selectedPlacement?->status ?? 'Tidak Ada') }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        @if (!empty($warnings))
+            <div class="alert alert-warning border-0 rounded-4 shadow-sm mb-4">
+                <div class="d-flex align-items-start gap-3">
+                    <i class="bi bi-exclamation-triangle-fill fs-5 mt-1"></i>
+
+                    <div>
+                        <div class="fw-bold mb-1">
+                            Informasi Data Progress
+                        </div>
+
+                        @foreach ($warnings as $warning)
+                            <div class="small">
+                                • {{ $warning }}
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <div class="row g-3 mb-4">
+            @foreach ([
+            [
+                'label' => 'Record Hafalan',
+                'semester' => $semesterSummary['record_counts']['hafalan'],
+                'cumulative' => $cumulativeSummary['record_counts']['hafalan'],
+                'icon' => 'journal-check',
+                'color' => 'primary',
+            ],
+            [
+                'label' => 'Record Tahsin',
+                'semester' => $semesterSummary['record_counts']['tahsin'],
+                'cumulative' => $cumulativeSummary['record_counts']['tahsin'],
+                'icon' => 'book-half',
+                'color' => 'success',
+            ],
+            [
+                'label' => 'Record Tilawah',
+                'semester' => $semesterSummary['record_counts']['tilawah'],
+                'cumulative' => $cumulativeSummary['record_counts']['tilawah'],
+                'icon' => 'journal-bookmark-fill',
+                'color' => 'info',
+            ],
+        ] as $comparison)
+                <div class="col-md-4">
+                    <div class="comparison-card">
+                        <div class="d-flex align-items-start justify-content-between gap-3">
+                            <div>
+                                <div class="kpi-label">
+                                    {{ $comparison['label'] }}
+                                </div>
+
+                                <div class="comparison-value text-{{ $comparison['color'] }}">
+                                    {{ $scope === 'semester' ? $comparison['semester'] : $comparison['cumulative'] }}
+                                </div>
+
+                                <div class="comparison-meta">
+                                    Semester: {{ $comparison['semester'] }}
+                                    • Kumulatif: {{ $comparison['cumulative'] }}
+                                </div>
+                            </div>
+
+                            <div class="kpi-icon bg-{{ $comparison['color'] }}-subtle text-{{ $comparison['color'] }}">
+                                <i class="bi bi-{{ $comparison['icon'] }}"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
         </div>
 
         {{-- TABS --}}
@@ -507,7 +740,7 @@
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                         <div>
                             <h3 class="student-section-title">Overall Progress Hafalan</h3>
-                            <p class="student-section-copy">Rata-rata tahap tertinggi yang telah lulus pada seluruh 30 Juz.
+                            <p class="student-section-copy">Rata-rata tahap tertinggi pada scope {{ $scopeLabel }}.
                             </p>
                         </div>
                         <div class="text-md-end">
@@ -525,7 +758,8 @@
                     <div class="col-lg-6">
                         <section class="student-card h-100">
                             <header class="student-card-header">
-                                <h3 class="student-section-title"><i class="bi bi-list-stars me-2"></i>Progress per Juz</h3>
+                                <h3 class="student-section-title"><i class="bi bi-list-stars me-2"></i>Progress per Juz
+                                </h3>
                                 <p class="student-section-copy">Semua Juz tetap ditampilkan, termasuk yang belum dimulai.
                                 </p>
                             </header>
@@ -586,6 +820,7 @@
                                 <tr>
                                     <th>No</th>
                                     <th>Tanggal</th>
+                                    <th>Semester</th>
                                     <th>Juz</th>
                                     <th>Surah / Ayat</th>
                                     <th>Status</th>
@@ -669,7 +904,7 @@
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                         <div>
                             <h3 class="student-section-title">Overall Tahsin Summary</h3>
-                            <p class="student-section-copy">Rata-rata progres halaman pada seluruh kurikulum Tahsin.</p>
+                            <p class="student-section-copy">Rata-rata progres halaman pada scope {{ $scopeLabel }}.</p>
                         </div>
                         <div class="summary-value">{{ $overallTahsinPct ?? 0 }}%</div>
                     </div>
@@ -735,6 +970,7 @@
                                 <tr>
                                     <th>No</th>
                                     <th>Tanggal</th>
+                                    <th>Semester</th>
                                     <th>Buku/Jilid</th>
                                     <th>Halaman</th>
                                     <th>Status</th>
@@ -820,7 +1056,8 @@
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                         <div>
                             <h3 class="student-section-title text-success">Khatam Al-Qur'an (30 Juz)</h3>
-                            <p class="student-section-copy">Dihitung dari Juz tertinggi pada Tilawah berstatus hadir.</p>
+                            <p class="student-section-copy">Dihitung dari Juz tertinggi pada scope {{ $scopeLabel }}.
+                            </p>
                         </div>
                         <div class="text-md-end">
                             <div class="summary-value text-success">{{ $tilawahPct ?? 0 }}%</div>
@@ -846,6 +1083,7 @@
                                 <tr>
                                     <th>No</th>
                                     <th>Tanggal</th>
+                                    <th>Semester</th>
                                     <th>Juz & Target</th>
                                     <th>Status</th>
                                     <th>Catatan / Detail Ayat</th>
@@ -866,6 +1104,9 @@
             const hasJquery = typeof window.jQuery !== 'undefined';
             const hasDataTable = hasJquery && $.fn && typeof $.fn.DataTable !== 'undefined';
             const hasChart = typeof window.Chart !== 'undefined';
+
+            const selectedScope = @json($scope);
+            const selectedSemesterId = @json($selectedSemesterId);
 
             const chartJuzLabels = @json($progressPerJuz->pluck('juz')->map(fn($juz) => 'Juz ' . $juz)->values());
             const chartJuzData = @json($progressPerJuz->pluck('pct')->map(fn($value) => (float) $value)->values());
@@ -1043,7 +1284,11 @@
                 const tableHafalan = $('#timelineTable').DataTable({
                     ...commonTableOptions(),
                     ajax: {
-                        url: "{{ route('santri.hafalan.timeline') }}"
+                        url: "{{ route('santri.hafalan.timeline') }}",
+                        data: function(data) {
+                            data.scope = selectedScope;
+                            data.semester_id = selectedSemesterId;
+                        }
                     },
                     columns: [{
                             data: 'DT_RowIndex',
@@ -1053,6 +1298,11 @@
                         {
                             data: 'tanggal',
                             name: 'hafalans.tanggal_setoran'
+                        },
+                        {
+                            data: 'semester',
+                            orderable: false,
+                            searchable: false
                         },
                         {
                             data: 'juz',
@@ -1085,7 +1335,13 @@
 
                 const tableTahsin = $('#timelineTahsinTable').DataTable({
                     ...commonTableOptions(),
-                    ajax: "{{ route('santri.tahsin.timeline') }}",
+                    ajax: {
+                        url: "{{ route('santri.tahsin.timeline') }}",
+                        data: function(data) {
+                            data.scope = selectedScope;
+                            data.semester_id = selectedSemesterId;
+                        }
+                    },
                     columns: [{
                             data: 'DT_RowIndex',
                             orderable: false,
@@ -1094,6 +1350,11 @@
                         {
                             data: 'tanggal',
                             name: 'tanggal'
+                        },
+                        {
+                            data: 'semester',
+                            orderable: false,
+                            searchable: false
                         },
                         {
                             data: 'buku_label',
@@ -1127,7 +1388,13 @@
 
                 const tableTilawah = $('#timelineTilawahTable').DataTable({
                     ...commonTableOptions(),
-                    ajax: "{{ route('santri.tilawah.timeline') }}",
+                    ajax: {
+                        url: "{{ route('santri.tilawah.timeline') }}",
+                        data: function(data) {
+                            data.scope = selectedScope;
+                            data.semester_id = selectedSemesterId;
+                        }
+                    },
                     columns: [{
                             data: 'DT_RowIndex',
                             orderable: false,
@@ -1136,6 +1403,11 @@
                         {
                             data: 'tanggal',
                             name: 'tilawahs.tanggal'
+                        },
+                        {
+                            data: 'semester',
+                            orderable: false,
+                            searchable: false
                         },
                         {
                             data: 'target_bacaan',
@@ -1203,6 +1475,17 @@
                     button.addEventListener('click', function() {
                         setTimeout(handler, 180);
                     });
+                });
+            }
+
+            const scopeSelect = document.getElementById('progressScope');
+            const semesterSelect = document.getElementById('progressSemester');
+
+            if (scopeSelect) {
+                scopeSelect.addEventListener('change', function() {
+                    if (semesterSelect) {
+                        semesterSelect.disabled = false;
+                    }
                 });
             }
 

@@ -28,6 +28,14 @@
     </a>
 </li>
 
+<li class="nav-item mb-1">
+    <a href="{{ route('admin.academic-documents.index') }}"
+        class="nav-link {{ request()->routeIs('admin.academic-documents.*') ? 'active' : '' }}">
+        <i class="nav-icon bi bi-file-earmark-text"></i>
+        Dokumen Akademik
+    </a>
+</li>
+
 {{-- MENU MUSYRIF DROPDOWN (COLLAPSE) --}}
 <li class="nav-group {{ request()->routeIs('admin.musyrif.*', 'admin.attendances.*') ? 'show' : '' }} mb-1">
     <a class="nav-link nav-group-toggle" href="#">

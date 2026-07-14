@@ -7,6 +7,7 @@ use App\Models\Hafalan;
 use App\Models\HafalanTemplate;
 use App\Models\Musyrif;
 use App\Models\Santri;
+use App\Models\SystemReview;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -170,6 +171,30 @@ class DashboardController extends Controller
             'data' => $nilaiPerSantri->map(fn($r) => $r->avg_nilai ? round($r->avg_nilai, 1) : 0)->values(),
         ];
 
+
+        /*
+         * Review sistem:
+         * - Satu review per akun melalui unique user_id.
+         * - Prompt otomatis hanya sekali dalam satu sesi login.
+         * - Setelah review tersimpan, prompt tidak pernah muncul lagi.
+         */
+        $existingSystemReview = SystemReview::query()
+            ->where('user_id', $user->id)
+            ->first([
+                'id',
+                'rating',
+                'status',
+                'created_at',
+            ]);
+
+        $shouldPromptSystemReview =
+            !$existingSystemReview &&
+            !session()->has('system_review_prompted');
+
+        if ($shouldPromptSystemReview) {
+            session()->put('system_review_prompted', true);
+        }
+
         return view('musyrif.dashboard', compact(
             'jumlahSantri',
             'setoranHariIni',
@@ -184,7 +209,9 @@ class DashboardController extends Controller
             'chartSetoranPerSantri',
             'chartStatus',
             'chartJuz',
-            'chartNilaiPerSantri'
+            'chartNilaiPerSantri',
+            'existingSystemReview',
+            'shouldPromptSystemReview'
         ));
     }
 }

@@ -303,6 +303,23 @@ class Santri extends Model
         return $this->hasMany(Tilawah::class, 'santri_id');
     }
 
+    public function academicDocuments(): HasMany
+    {
+        return $this->hasMany(
+            AcademicDocument::class
+        );
+    }
+
+    public function raportDocuments(): HasMany
+    {
+        return $this
+            ->academicDocuments()
+            ->where(
+                'document_type',
+                AcademicDocument::TYPE_RAPORT
+            );
+    }
+
     private array $namaAliases = [
         'nama',
         'name',

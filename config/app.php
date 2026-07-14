@@ -189,4 +189,8 @@ return [
         'PDF' => Barryvdh\DomPDF\Facade\Pdf::class,
     ])->toArray(),
 
+    'allow_placement_backfill_ui' => env(
+        'ALLOW_PLACEMENT_BACKFILL_UI',
+        false
+    ),
 ];

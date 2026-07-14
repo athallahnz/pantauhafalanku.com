@@ -20,9 +20,6 @@ class MigrasiSantriController extends Controller
 {
     use HandlesSantriMigrationBatches;
 
-    /** @var array<string, bool> */
-    private array $musyrifClassValidationCache = [];
-
     /**
      * Centralized validation
      */
@@ -296,65 +293,6 @@ class MigrasiSantriController extends Controller
          */
     }
 
-    private function requiresTargetMusyrif(
-        string $tipe,
-        ?int $fromKelasId,
-        ?int $toKelasId
-    ): bool {
-        if (
-            $tipe === 'lulus'
-            || $toKelasId === null
-        ) {
-            return false;
-        }
-
-        $classChanged =
-            (int) $fromKelasId !== (int) $toKelasId;
-
-        return $classChanged
-            && in_array(
-                $tipe,
-                [
-                    'naik_kelas',
-                    'mutasi',
-                    'penempatan',
-                ],
-                true
-            );
-    }
-
-    private function validateMusyrifBelongsToClass(
-        int $musyrifId,
-        int $kelasId,
-        string $errorKey = 'to_musyrif_id'
-    ): void {
-        $cacheKey =
-            $musyrifId . ':' . $kelasId;
-
-        if (
-            !array_key_exists(
-                $cacheKey,
-                $this->musyrifClassValidationCache
-            )
-        ) {
-            $this->musyrifClassValidationCache[$cacheKey] =
-                Musyrif::query()
-                ->whereKey($musyrifId)
-                ->where('kelas_id', $kelasId)
-                ->exists();
-        }
-
-        if (
-            !$this->musyrifClassValidationCache[$cacheKey]
-        ) {
-            throw ValidationException::withMessages([
-                $errorKey => [
-                    'Musyrif yang dipilih tidak bertugas di kelas tujuan.',
-                ],
-            ]);
-        }
-    }
-
     private function resolveEffectiveMusyrifId(
         Santri $santri,
         string $tipe,
@@ -374,27 +312,11 @@ class MigrasiSantriController extends Controller
             ]);
         }
 
-        $requiresTargetMusyrif =
-            $this->requiresTargetMusyrif(
-                $tipe,
-                $santri->kelas_id,
-                $toKelasId
-            );
-
-        if (
-            $requiresTargetMusyrif
-            && $toMusyrifId === null
-        ) {
-            throw ValidationException::withMessages([
-                $errorKey => [
-                    "Musyrif tujuan untuk {$santri->nama} wajib dipilih karena santri berpindah kelas.",
-                ],
-            ]);
-        }
-
         /*
-         * Bila kelas tidak berubah, assignment kosong mempertahankan
-         * musyrif santri saat ini.
+         * Aturan khusus migrasi semester:
+         * - null berarti mempertahankan musyrif lama;
+         * - pilihan baru boleh berasal dari seluruh Master Musyrif;
+         * - kelas_id pada musyrifs tidak membatasi assignment migrasi.
          */
         $effectiveMusyrifId =
             $toMusyrifId ?? $santri->musyrif_id;
@@ -402,16 +324,10 @@ class MigrasiSantriController extends Controller
         if ($effectiveMusyrifId === null) {
             throw ValidationException::withMessages([
                 $errorKey => [
-                    "Santri {$santri->nama} belum memiliki musyrif. Pilih musyrif tujuan.",
+                    "Santri {$santri->nama} belum memiliki musyrif. Pilih musyrif melalui mapping individual.",
                 ],
             ]);
         }
-
-        $this->validateMusyrifBelongsToClass(
-            (int) $effectiveMusyrifId,
-            (int) $toKelasId,
-            $errorKey
-        );
 
         return (int) $effectiveMusyrifId;
     }
@@ -1233,14 +1149,9 @@ class MigrasiSantriController extends Controller
                     ? (int) $santri->musyrif_id
                     : null,
                 'transition_type' => $tipe,
-                'assignment_required' => $tipe !== 'lulus' && (
-                    $this->requiresTargetMusyrif(
-                        $tipe,
-                        $santri->kelas_id,
-                        $toKelasId
-                    )
-                    || $santri->musyrif_id === null
-                ),
+                'assignment_required' =>
+                $tipe !== 'lulus'
+                    && $santri->musyrif_id === null,
                 'source_snapshot' => [
                     'santri_id' => (int) $santri->id,
                     'nama' => $santri->nama,
@@ -1305,9 +1216,20 @@ class MigrasiSantriController extends Controller
 
         if ($tipe !== 'lulus' && $toKelasId !== null) {
             $targetMusyrifs = Musyrif::query()
-                ->where('kelas_id', $toKelasId)
-                ->orderBy('nama')
-                ->get(['id', 'nama', 'kode', 'kelas_id']);
+                ->leftJoin(
+                    'kelas',
+                    'kelas.id',
+                    '=',
+                    'musyrifs.kelas_id'
+                )
+                ->orderBy('musyrifs.nama')
+                ->get([
+                    'musyrifs.id',
+                    'musyrifs.nama',
+                    'musyrifs.kode',
+                    'musyrifs.kelas_id',
+                    'kelas.nama_kelas as kelas_nama',
+                ]);
         }
 
         return response()->json([
@@ -1412,7 +1334,9 @@ class MigrasiSantriController extends Controller
                 'to_kelas_id' => $item['to_kelas_id'],
                 'from_musyrif_id' => $item['from_musyrif_id'],
                 'transition_type' => $item['tipe'],
-                'assignment_required' => $item['tipe'] !== 'lulus',
+                'assignment_required' =>
+                $item['tipe'] !== 'lulus'
+                    && $item['from_musyrif_id'] === null,
                 'source_snapshot' => [
                     'santri_id' => $item['santri_id'],
                     'nama' => $item['nama'],
@@ -1461,10 +1385,20 @@ class MigrasiSantriController extends Controller
         });
 
         $targetMusyrifs = Musyrif::query()
-            ->whereIn('kelas_id', $context['target_class_ids'])
-            ->orderBy('nama')
-            ->get(['id', 'nama', 'kode', 'kelas_id'])
-            ->groupBy(fn(Musyrif $musyrif) => (int) $musyrif->kelas_id);
+            ->leftJoin(
+                'kelas',
+                'kelas.id',
+                '=',
+                'musyrifs.kelas_id'
+            )
+            ->orderBy('musyrifs.nama')
+            ->get([
+                'musyrifs.id',
+                'musyrifs.nama',
+                'musyrifs.kode',
+                'musyrifs.kelas_id',
+                'kelas.nama_kelas as kelas_nama',
+            ]);
 
         $snapshotByMapping = $snapshot->groupBy('mapping_key');
 
@@ -1476,16 +1410,12 @@ class MigrasiSantriController extends Controller
                 ->get($row['mapping_key'], collect())
                 ->values();
 
-            $targetClassId = $row['to_id'];
-
             return [
                 ...$row,
                 'count_santri' => $santriRows->count(),
                 'santris' => $santriRows,
-                'target_musyrifs' => $targetClassId !== null
-                    ? $targetMusyrifs
-                    ->get((int) $targetClassId, collect())
-                    ->values()
+                'target_musyrifs' => $row['to_id'] !== null
+                    ? $targetMusyrifs->values()
                     : collect(),
             ];
         })->values();

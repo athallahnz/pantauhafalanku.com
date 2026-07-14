@@ -147,4 +147,21 @@ class Semester extends Model
             default => 'Tidak Diketahui',
         };
     }
+
+    public function academicDocuments(): HasMany
+    {
+        return $this->hasMany(
+            AcademicDocument::class
+        );
+    }
+
+    public function raportDocuments(): HasMany
+    {
+        return $this
+            ->academicDocuments()
+            ->where(
+                'document_type',
+                AcademicDocument::TYPE_RAPORT
+            );
+    }
 }

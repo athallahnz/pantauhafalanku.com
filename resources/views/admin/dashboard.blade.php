@@ -412,8 +412,8 @@
         }
 
         /* =========================================================
-       ACTION CENTER
-       ========================================================= */
+           ACTION CENTER
+           ========================================================= */
 
         .action-center-card {
             display: flex;
@@ -543,8 +543,8 @@
         }
 
         /* =========================================================
-       TABLET
-       ========================================================= */
+           TABLET
+           ========================================================= */
 
         @media (max-width: 991.98px) {
             .action-center-card {
@@ -557,8 +557,8 @@
         }
 
         /* =========================================================
-       MOBILE
-       ========================================================= */
+           MOBILE
+           ========================================================= */
 
         @media (max-width: 575.98px) {
             .action-center-card {
@@ -771,7 +771,7 @@
 
         .quick-action-grid {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: .75rem;
         }
 
@@ -949,14 +949,14 @@
                             <span>Suara Off</span>
                         </button>
 
-                        <a href="{{ route('admin.musyrif.index') }}" class="hero-action-btn">
-                            <i class="bi bi-person-plus-fill me-1"></i>
-                            Musyrif
+                        <a href="{{ route('admin.laporan.index') }}" class="hero-action-btn">
+                            <i class="bi bi-file-earmark-bar-graph-fill me-1"></i>
+                            Laporan
                         </a>
 
-                        <a href="{{ route('admin.laporan.index') }}" class="hero-action-btn">
-                            <i class="bi bi-bar-chart-fill me-1"></i>
-                            Laporan Lengkap
+                        <a href="{{ route('admin.musyrif.absensi.index') }}" class="hero-action-btn">
+                            <i class="bi bi-geo-alt-fill me-1"></i>
+                            Absensi
                         </a>
                     </div>
                 </div>
@@ -965,41 +965,63 @@
 
         {{-- QUICK ACTIONS --}}
         <section class="dash-card p-3 p-lg-4 mb-4">
-            <div class="mb-3">
-                <div class="section-kicker">Quick Actions</div>
-                <h2 class="section-title">Akses operasional</h2>
+            <div class="d-flex flex-column flex-lg-row justify-content-between gap-2 mb-3">
+                <div>
+                    <div class="section-kicker">Quick Actions</div>
+                    <h2 class="section-title">Aksi prioritas kepala departemen</h2>
+                    <p class="section-copy">
+                        Disusun dari menu sidebar yang paling sering dibutuhkan untuk monitoring, evaluasi, dan tindak
+                        lanjut.
+                    </p>
+                </div>
             </div>
 
             <div class="quick-action-grid">
-                <a href="{{ route('admin.musyrif.index') }}" class="quick-action">
-                    <span class="quick-action-icon"><i class="bi bi-person-badge-fill"></i></span>
-                    <span>
-                        <span class="quick-action-title d-block">Kelola Musyrif</span>
-                        <span class="quick-action-copy d-block">Data dan penugasan musyrif</span>
-                    </span>
-                </a>
-
                 <a href="{{ route('admin.laporan.index') }}" class="quick-action">
                     <span class="quick-action-icon"><i class="bi bi-file-earmark-bar-graph-fill"></i></span>
                     <span>
-                        <span class="quick-action-title d-block">Laporan Lengkap</span>
-                        <span class="quick-action-copy d-block">Analisis semester dan export</span>
+                        <span class="quick-action-title d-block">Laporan & Export</span>
+                        <span class="quick-action-copy d-block">Rekap santri, kelas, musyrif</span>
+                    </span>
+                </a>
+
+                <a href="{{ route('santri.master.index') }}" class="quick-action">
+                    <span class="quick-action-icon"><i class="bi bi-people-fill"></i></span>
+                    <span>
+                        <span class="quick-action-title d-block">Progress Santri</span>
+                        <span class="quick-action-copy d-block">Cari santri dan cek detail</span>
+                    </span>
+                </a>
+
+                <a href="{{ route('admin.musyrif.absensi.index') }}" class="quick-action">
+                    <span class="quick-action-icon"><i class="bi bi-geo-alt-fill"></i></span>
+                    <span>
+                        <span class="quick-action-title d-block">Absensi Musyrif</span>
+                        <span class="quick-action-copy d-block">Validasi pagi, sore, suspect</span>
+                    </span>
+                </a>
+
+                <a href="{{ route('santri.master.violation.report') }}" class="quick-action">
+                    <span class="quick-action-icon"><i class="bi bi-exclamation-triangle-fill"></i></span>
+                    <span>
+                        <span class="quick-action-title d-block">Analisis Alpha</span>
+                        <span class="quick-action-copy d-block">Santri risiko dan pelanggaran</span>
                     </span>
                 </a>
 
                 <a href="{{ route('admin.santri.migrasi.page') }}" class="quick-action">
                     <span class="quick-action-icon"><i class="bi bi-arrow-up-circle-fill"></i></span>
                     <span>
-                        <span class="quick-action-title d-block">Migrasi Kelas</span>
-                        <span class="quick-action-copy d-block">Proses kenaikan kelas santri</span>
+                        <span class="quick-action-title d-block">Migrasi Semester</span>
+                        <span class="quick-action-copy d-block">Placement kelas dan musyrif</span>
                     </span>
                 </a>
 
-                <a href="{{ route('admin.settings.institution') }}" class="quick-action">
-                    <span class="quick-action-icon"><i class="bi bi-building-gear"></i></span>
+                <a href="{{ route('kelas.index') }}" class="quick-action">
+                    <span class="quick-action-icon"><i class="bi bi-easel2-fill"></i></span>
                     <span>
-                        <span class="quick-action-title d-block">Profil Lembaga</span>
-                        <span class="quick-action-copy d-block">Identitas dan konfigurasi sistem</span>
+                        <span class="quick-action-title d-block">Data Akademik</span>
+                        <span class="quick-action-copy d-block">Kelas, semester, referensi</span>
                     </span>
                 </a>
             </div>
@@ -1059,7 +1081,8 @@
             <div>
                 <div class="section-kicker">Operasional Hari Ini</div>
                 <h2 class="section-title">Kondisi departemen saat ini</h2>
-                <p class="section-copy">KPI ini selalu menggunakan data hari ini, terlepas dari rentang grafik yang dipilih.
+                <p class="section-copy">KPI ini selalu menggunakan data hari ini, terlepas dari rentang grafik yang
+                    dipilih.
                 </p>
             </div>
             <span class="small text-muted">
@@ -1107,11 +1130,32 @@
                     style="--metric-color: var(--dash-success); --metric-soft: var(--dash-success-soft);">
                     <div class="d-flex justify-content-between gap-3">
                         <div>
-                            <div class="metric-label">Setoran Hafalan</div>
-                            <div class="metric-value count-up" data-target="{{ $setoranHariIni }}">0</div>
-                            <div class="metric-note">Status lulus dan ulang</div>
+                            <div class="metric-label">Setoran Harian</div>
+                            <div class="metric-value count-up"
+                                data-target="{{ $hafalanHariIni['jumlah_setoran_harian'] ?? 0 }}">0</div>
+                            <div class="metric-note">
+                                Tahap harian–T3 · total setor {{ number_format($setoranHariIni, 0, ',', '.') }}
+                            </div>
                         </div>
                         <div class="metric-icon"><i class="bi bi-journal-check"></i></div>
+                    </div>
+                </article>
+            </div>
+
+            <div class="col-xl col-md-4 col-sm-6">
+                <article class="dash-card dash-card-hover metric-card"
+                    style="--metric-color: var(--dash-info); --metric-soft: var(--dash-info-soft);">
+                    <div class="d-flex justify-content-between gap-3">
+                        <div>
+                            <div class="metric-label">Ujian Lulus</div>
+                            <div class="metric-value count-up" data-target="{{ $hafalanHariIni['jumlah_ujian'] ?? 0 }}">0
+                            </div>
+                            <div class="metric-note">
+                                Juz lulus ujian akhir · percobaan
+                                {{ number_format($hafalanHariIni['total_setoran_ujian'] ?? 0, 0, ',', '.') }}
+                            </div>
+                        </div>
+                        <div class="metric-icon"><i class="bi bi-award-fill"></i></div>
                     </div>
                 </article>
             </div>
@@ -1205,9 +1249,25 @@
                                 </div>
                                 <div class="col-6">
                                     <div class="semester-stat">
-                                        <div class="semester-stat-label">Setoran</div>
+                                        <div class="semester-stat-label">Setoran Harian</div>
                                         <div class="semester-stat-value">
-                                            {{ number_format($setoranSemester, 0, ',', '.') }}</div>
+                                            {{ number_format($hafalanSemester['jumlah_setoran_harian'] ?? 0, 0, ',', '.') }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="semester-stat">
+                                        <div class="semester-stat-label">Ujian Lulus</div>
+                                        <div class="semester-stat-value">
+                                            {{ number_format($hafalanSemester['jumlah_ujian'] ?? 0, 0, ',', '.') }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="semester-stat">
+                                        <div class="semester-stat-label">Nilai Ujian</div>
+                                        <div class="semester-stat-value">
+                                            {{ $hafalanSemester['rata_nilai_ujian'] !== null ? number_format($hafalanSemester['rata_nilai_ujian'], 1, ',', '.') : '-' }}
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-6">

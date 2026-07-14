@@ -132,6 +132,111 @@
         [data-coreui-theme="dark"] .card-header-custom {
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
+    
+
+        /* ================= SYSTEM REVIEW PROMPT ================= */
+        .system-review-card {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(111, 66, 193, .14);
+            border-radius: 20px;
+            background:
+                radial-gradient(circle at 94% 8%, rgba(111, 66, 193, .12), transparent 32%),
+                var(--cui-card-bg, #fff);
+            box-shadow: var(--card-shadow);
+        }
+
+        .system-review-card::after {
+            content: '';
+            position: absolute;
+            right: -38px;
+            bottom: -58px;
+            width: 145px;
+            height: 145px;
+            border: 24px solid rgba(111, 66, 193, .055);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .system-review-icon {
+            width: 48px;
+            height: 48px;
+            flex: 0 0 48px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            color: var(--islamic-purple-600);
+            background: rgba(111, 66, 193, .11);
+            font-size: 1.2rem;
+        }
+
+        .review-modal-content {
+            overflow: hidden;
+            border: 0;
+            border-radius: 22px;
+        }
+
+        .review-modal-hero {
+            position: relative;
+            overflow: hidden;
+            color: #fff;
+            background:
+                radial-gradient(circle at 92% 8%, rgba(255, 255, 255, .20), transparent 26%),
+                linear-gradient(135deg, var(--islamic-purple-700, #59359d), var(--islamic-purple-600, #6f42c1));
+        }
+
+        .review-modal-hero::after {
+            content: '';
+            position: absolute;
+            right: -45px;
+            bottom: -78px;
+            width: 160px;
+            height: 160px;
+            border: 25px solid rgba(255, 255, 255, .07);
+            border-radius: 50%;
+        }
+
+        .review-star-group {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            gap: .28rem;
+        }
+
+        .review-star-group input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .review-star-group label {
+            cursor: pointer;
+            color: #d9dde5;
+            font-size: 2rem;
+            line-height: 1;
+            transition: transform .15s ease, color .15s ease;
+        }
+
+        .review-star-group label:hover,
+        .review-star-group label:hover ~ label,
+        .review-star-group input:checked ~ label {
+            color: #ffc107;
+            transform: translateY(-2px);
+        }
+
+        .review-character-count {
+            color: var(--cui-secondary-color);
+            font-size: .72rem;
+        }
+
+        [data-coreui-theme="dark"] .system-review-card {
+            border-color: rgba(169, 155, 255, .18);
+            background:
+                radial-gradient(circle at 94% 8%, rgba(169, 155, 255, .13), transparent 32%),
+                var(--cui-card-bg, #2a2a35);
+        }
+
     </style>
 
     {{-- HEADER DASHBOARD --}}
@@ -422,7 +527,176 @@
             </div>
         </div>
     </div>
+
+    {{-- ================== SYSTEM REVIEW CTA ================== --}}
+    <div class="system-review-card p-3 p-md-4 mt-4 mb-4">
+        <div class="position-relative d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3"
+            style="z-index: 1;">
+            <div class="d-flex align-items-start gap-3">
+                <span class="system-review-icon">
+                    <i class="bi bi-chat-square-heart-fill"></i>
+                </span>
+
+                <div>
+                    @if ($existingSystemReview)
+                        <div class="fw-bold mb-1">Terima kasih atas review Anda</div>
+                        <div class="small text-muted">
+                            Review berbintang {{ $existingSystemReview->rating }} sudah tersimpan dan saat ini berstatus
+                            <span class="fw-bold">{{ ucfirst($existingSystemReview->status) }}</span>.
+                        </div>
+                    @else
+                        <div class="fw-bold mb-1">Bagaimana pengalaman Anda menggunakan sistem?</div>
+                        <div class="small text-muted">
+                            Masukan dari Musyrif membantu pengembangan fitur dan kemudahan penggunaan Pantau Hafalanku.
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            @unless ($existingSystemReview)
+                <button type="button" class="btn text-white rounded-pill px-4 fw-bold flex-shrink-0"
+                    id="btnOpenSystemReview"
+                    style="background: var(--islamic-purple-600);">
+                    <i class="bi bi-star-fill me-1"></i>
+                    Berikan Review
+                </button>
+            @else
+                <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2 flex-shrink-0">
+                    <i class="bi bi-check-circle-fill me-1"></i>
+                    Review Terkirim
+                </span>
+            @endunless
+        </div>
+    </div>
+
 @endsection
+
+
+@push('modals')
+    @unless ($existingSystemReview)
+        <div class="modal fade" id="systemReviewModal" tabindex="-1" aria-hidden="true"
+            data-coreui-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+                <form class="modal-content review-modal-content shadow-lg" id="systemReviewForm" novalidate>
+                    @csrf
+
+                    <div class="modal-header review-modal-hero border-0 px-4 py-4">
+                        <div class="position-relative" style="z-index: 1;">
+                            <div class="small text-white-50 fw-bold text-uppercase mb-1">
+                                Review Sistem
+                            </div>
+                            <h5 class="modal-title fw-bold text-white mb-1">
+                                Bagikan Pengalaman Anda
+                            </h5>
+                            <p class="small text-white-50 mb-0">
+                                Review tidak langsung tampil publik sebelum disetujui Super Admin.
+                            </p>
+                        </div>
+
+                        <button type="button" class="btn-close btn-close-white position-relative"
+                            style="z-index: 1;" data-coreui-dismiss="modal"
+                            aria-label="Tutup"></button>
+                    </div>
+
+                    <div class="modal-body p-4">
+                        <div class="alert alert-info border-0 rounded-4 small">
+                            Satu akun Musyrif hanya dapat mengirim satu review. Pastikan isi review sudah sesuai
+                            sebelum dikirim.
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                Rating Sistem <span class="text-danger">*</span>
+                            </label>
+
+                            <div class="review-star-group" aria-label="Pilih rating">
+                                @for ($rating = 5; $rating >= 1; $rating--)
+                                    <input type="radio" name="rating" value="{{ $rating }}"
+                                        id="systemReviewRating{{ $rating }}" required>
+                                    <label for="systemReviewRating{{ $rating }}"
+                                        title="{{ $rating }} bintang">
+                                        <i class="bi bi-star-fill"></i>
+                                    </label>
+                                @endfor
+                            </div>
+
+                            <div class="invalid-feedback d-block d-none" id="systemReviewRatingError"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="systemReviewTitle" class="form-label fw-bold">
+                                Judul Singkat
+                                <span class="text-muted small">(opsional)</span>
+                            </label>
+                            <input type="text" class="form-control" name="title"
+                                id="systemReviewTitle" maxlength="120"
+                                placeholder="Contoh: Sangat membantu input setoran">
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between gap-3">
+                                <label for="systemReviewText" class="form-label fw-bold">
+                                    Review <span class="text-danger">*</span>
+                                </label>
+                                <span class="review-character-count">
+                                    <span id="systemReviewCharacterCount">0</span>/1200
+                                </span>
+                            </div>
+
+                            <textarea class="form-control" name="review" id="systemReviewText"
+                                rows="5" minlength="20" maxlength="1200" required
+                                placeholder="Ceritakan fitur yang membantu, kemudahan penggunaan, atau saran pengembangan..."></textarea>
+                            <div class="invalid-feedback" id="systemReviewTextError"></div>
+                        </div>
+
+                        <div class="rounded-4 border p-3 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox"
+                                    name="show_name" id="systemReviewShowName"
+                                    value="1" checked>
+                                <label class="form-check-label fw-semibold"
+                                    for="systemReviewShowName">
+                                    Tampilkan nama saya apabila review dipublikasikan
+                                </label>
+                            </div>
+                            <div class="small text-muted mt-1">
+                                Jika dinonaktifkan, nama publik ditampilkan sebagai “Musyrif Pengguna Sistem”.
+                            </div>
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                name="consent_publication"
+                                id="systemReviewConsent" value="1" required>
+                            <label class="form-check-label small"
+                                for="systemReviewConsent">
+                                Saya menyetujui review ini dapat ditampilkan pada landing page setelah melalui
+                                moderasi Super Admin.
+                            </label>
+                            <div class="invalid-feedback" id="systemReviewConsentError"></div>
+                        </div>
+
+                        <div class="alert alert-danger border-0 rounded-4 small mt-3 d-none"
+                            id="systemReviewGeneralError"></div>
+                    </div>
+
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                        <button type="button" class="btn btn-light rounded-pill px-4"
+                            data-coreui-dismiss="modal">
+                            Nanti
+                        </button>
+                        <button type="submit" class="btn text-white rounded-pill px-4 fw-bold"
+                            id="btnSubmitSystemReview"
+                            style="background: var(--islamic-purple-600);">
+                            <i class="bi bi-send-fill me-1"></i>
+                            Kirim Review
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endunless
+@endpush
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -606,3 +880,157 @@
         });
     </script>
 @endpush
+
+
+@push('scripts')
+    @unless ($existingSystemReview)
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const modalElement = document.getElementById('systemReviewModal');
+                const form = document.getElementById('systemReviewForm');
+                const openButton = document.getElementById('btnOpenSystemReview');
+                const reviewText = document.getElementById('systemReviewText');
+                const characterCount = document.getElementById('systemReviewCharacterCount');
+                const submitButton = document.getElementById('btnSubmitSystemReview');
+                const generalError = document.getElementById('systemReviewGeneralError');
+
+                if (!modalElement || !form) {
+                    return;
+                }
+
+                const modal = coreui.Modal.getOrCreateInstance(modalElement);
+
+                function clearReviewErrors() {
+                    form.querySelectorAll('.is-invalid').forEach(function(element) {
+                        element.classList.remove('is-invalid');
+                    });
+
+                    form.querySelectorAll('.invalid-feedback').forEach(function(element) {
+                        element.textContent = '';
+                    });
+
+                    document.getElementById('systemReviewRatingError')?.classList.add('d-none');
+                    generalError?.classList.add('d-none');
+                    if (generalError) {
+                        generalError.textContent = '';
+                    }
+                }
+
+                function showValidationErrors(errors) {
+                    Object.entries(errors || {}).forEach(function([field, messages]) {
+                        const message = Array.isArray(messages)
+                            ? messages[0]
+                            : messages;
+
+                        if (field === 'rating') {
+                            const ratingError = document.getElementById('systemReviewRatingError');
+                            if (ratingError) {
+                                ratingError.textContent = message;
+                                ratingError.classList.remove('d-none');
+                            }
+                            return;
+                        }
+
+                        const input = form.querySelector(`[name="${field}"]`);
+                        if (input) {
+                            input.classList.add('is-invalid');
+                        }
+
+                        const errorTarget = document.getElementById(
+                            field === 'review'
+                                ? 'systemReviewTextError'
+                                : field === 'consent_publication'
+                                    ? 'systemReviewConsentError'
+                                    : ''
+                        );
+
+                        if (errorTarget) {
+                            errorTarget.textContent = message;
+                        }
+                    });
+                }
+
+                openButton?.addEventListener('click', function() {
+                    clearReviewErrors();
+                    modal.show();
+                });
+
+                reviewText?.addEventListener('input', function() {
+                    characterCount.textContent = String(this.value.length);
+                });
+
+                form.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    clearReviewErrors();
+
+                    const originalHtml = submitButton.innerHTML;
+                    submitButton.disabled = true;
+                    submitButton.innerHTML =
+                        '<span class="spinner-border spinner-border-sm me-1"></span> Mengirim...';
+
+                    try {
+                        const response = await fetch(
+                            @json(route('musyrif.system-reviews.store')),
+                            {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'X-CSRF-TOKEN': document.querySelector(
+                                        'meta[name="csrf-token"]'
+                                    )?.getAttribute('content') ?? ''
+                                },
+                                body: new FormData(form)
+                            }
+                        );
+
+                        const payload = await response.json().catch(function() {
+                            return {};
+                        });
+
+                        if (response.status === 422) {
+                            showValidationErrors(payload.errors);
+                            return;
+                        }
+
+                        if (!response.ok) {
+                            throw new Error(
+                                payload.message || 'Review gagal dikirim.'
+                            );
+                        }
+
+                        modal.hide();
+
+                        if (window.AppAlert?.success) {
+                            await AppAlert.success(payload.message);
+                        } else if (window.Swal) {
+                            await Swal.fire({
+                                icon: 'success',
+                                title: 'Review Terkirim',
+                                text: payload.message
+                            });
+                        } else {
+                            window.alert(payload.message);
+                        }
+
+                        window.location.reload();
+                    } catch (error) {
+                        generalError.textContent =
+                            error.message || 'Review gagal dikirim.';
+                        generalError.classList.remove('d-none');
+                    } finally {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalHtml;
+                    }
+                });
+
+                @if ($shouldPromptSystemReview)
+                    window.setTimeout(function() {
+                        modal.show();
+                    }, 850);
+                @endif
+            });
+        </script>
+    @endunless
+@endpush
+

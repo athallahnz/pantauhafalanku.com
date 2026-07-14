@@ -188,6 +188,49 @@
             padding: .55rem .75rem;
         }
 
+
+        .placement-backfill-card {
+            border: 1px solid rgba(111, 66, 193, .18);
+            border-radius: 1rem;
+            background: rgba(111, 66, 193, .055);
+        }
+
+        .placement-backfill-stat {
+            height: 100%;
+            border: 1px solid var(--cui-border-color);
+            border-radius: .9rem;
+            background: var(--cui-card-bg, var(--cui-body-bg));
+        }
+
+        .placement-backfill-stat-label {
+            color: var(--cui-secondary-color);
+            font-size: .74rem;
+            font-weight: 700;
+            letter-spacing: .03em;
+            text-transform: uppercase;
+        }
+
+        .placement-backfill-stat-value {
+            margin-top: .3rem;
+            font-size: 1.45rem;
+            font-weight: 800;
+        }
+
+        .placement-backfill-progress {
+            height: 12px;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .placement-backfill-warning-list {
+            margin: 0;
+            padding-left: 1.1rem;
+        }
+
+        .placement-backfill-warning-list li+li {
+            margin-top: .35rem;
+        }
+
         .dataTables_wrapper>.row:first-child {
             align-items: center;
             padding: 1rem 1.25rem .65rem;
@@ -478,10 +521,25 @@
                             </div>
                         </div>
 
-                        <button type="button" class="btn academic-add-button rounded-pill px-3" id="btnAddSemester">
-                            <i class="bi bi-plus-lg me-1"></i>
-                            Tambah Semester Draft
-                        </button>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            @if (
+                                \Illuminate\Support\Facades\Route::has('admin.maintenance.semester-placement.preview') &&
+                                    \Illuminate\Support\Facades\Route::has('admin.maintenance.semester-placement.process'))
+                                <button type="button" class="btn btn-outline-primary rounded-pill px-3"
+                                    id="btnOpenPlacementBackfill" data-coreui-toggle="modal"
+                                    data-coreui-target="#placementBackfillModal">
+
+                                    <i class="bi bi-database-fill-gear me-1"></i>
+                                    Backfill Placement
+                                </button>
+                            @endif
+
+                            <button type="button" class="btn academic-add-button rounded-pill px-3" id="btnAddSemester">
+
+                                <i class="bi bi-plus-lg me-1"></i>
+                                Tambah Semester Draft
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -680,7 +738,7 @@
                         </span>
 
                         <div>
-                            <h5 class="modal-title fw-bold mb-0" id="modalSemesterTitle">
+                            <h5 class="modal-title fw-bold mb-0 text-body-secondary" id="modalSemesterTitle">
                                 Tambah Semester Draft
                             </h5>
                             <small class="text-body-secondary">
@@ -763,6 +821,154 @@
             </form>
         </div>
     </div>
+
+
+    {{-- ==================== MODAL BACKFILL PLACEMENT ==================== --}}
+    @if (
+        \Illuminate\Support\Facades\Route::has('admin.maintenance.semester-placement.preview') &&
+            \Illuminate\Support\Facades\Route::has('admin.maintenance.semester-placement.process'))
+        <div class="modal fade academic-modal" id="placementBackfillModal" tabindex="-1"
+            aria-labelledby="placementBackfillModalLabel" aria-hidden="true" data-coreui-backdrop="static"
+            data-coreui-keyboard="false">
+
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header px-4 py-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="modal-title-icon">
+                                <i class="bi bi-database-fill-gear"></i>
+                            </span>
+
+                            <div>
+                                <h5 class="modal-title fw-bold mb-0 text-body-secondary" id="placementBackfillModalLabel">
+                                    Backfill Placement Semester
+                                </h5>
+
+                                <small class="text-body-secondary">
+                                    Membuat placement santri yang belum tersedia pada semester aktif.
+                                </small>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-close" id="btnClosePlacementBackfill"
+                            data-coreui-dismiss="modal" aria-label="Tutup">
+                        </button>
+                    </div>
+
+                    <div class="modal-body p-4">
+                        <div class="placement-backfill-card p-3 mb-4">
+                            <div class="d-flex align-items-start gap-3">
+                                <span class="academic-stat-icon flex-shrink-0">
+                                    <i class="bi bi-shield-check"></i>
+                                </span>
+
+                                <div>
+                                    <div class="fw-bold mb-1">
+                                        Proses Aman dan Idempotent
+                                    </div>
+
+                                    <div class="small text-body-secondary">
+                                        Sistem hanya membuat placement yang belum tersedia.
+                                        Placement yang sudah ada tidak ditimpa dan histori semester lama tidak diubah.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <div class="placement-backfill-stat p-3">
+                                    <div class="placement-backfill-stat-label">
+                                        Semester Aktif
+                                    </div>
+
+                                    <div class="fw-bold mt-2" id="backfillSemesterLabel">
+                                        Memuat data...
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-6 col-md-3">
+                                <div class="placement-backfill-stat p-3">
+                                    <div class="placement-backfill-stat-label">Total Santri</div>
+                                    <div class="placement-backfill-stat-value" id="backfillTotal">0</div>
+                                </div>
+                            </div>
+
+                            <div class="col-6 col-md-3">
+                                <div class="placement-backfill-stat p-3">
+                                    <div class="placement-backfill-stat-label">Belum Ada</div>
+                                    <div class="placement-backfill-stat-value text-warning" id="backfillMissing">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <div class="placement-backfill-stat p-3">
+                                    <div class="placement-backfill-stat-label">Placement Sudah Ada</div>
+                                    <div class="placement-backfill-stat-value text-success" id="backfillExisting">0</div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="placement-backfill-stat p-3">
+                                    <div class="placement-backfill-stat-label">Data Tidak Sinkron</div>
+                                    <div class="placement-backfill-stat-value text-danger" id="backfillMismatch">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning border-0 rounded-4 d-none" id="backfillWarningBox">
+                            <div class="fw-bold mb-2">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                Pemeriksaan Data
+                            </div>
+                            <ul class="placement-backfill-warning-list small" id="backfillWarningList"></ul>
+                        </div>
+
+                        <div class="mt-4 d-none" id="backfillProgressContainer">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-semibold">Progress Backfill</span>
+                                <span class="fw-bold" id="backfillProgressText">0%</span>
+                            </div>
+
+                            <div class="progress placement-backfill-progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                    id="backfillProgressBar" role="progressbar" style="width: 0%;" aria-valuemin="0"
+                                    aria-valuemax="100" aria-valuenow="0">
+                                </div>
+                            </div>
+
+                            <div class="small text-body-secondary mt-2" id="backfillProcessInfo">
+                                Menunggu proses...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer px-4 py-3">
+                        <button type="button" class="btn btn-light rounded-pill px-3" id="btnDismissPlacementBackfill"
+                            data-coreui-dismiss="modal">
+                            Tutup
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-3"
+                            id="btnRefreshBackfillPreview">
+                            <i class="bi bi-arrow-clockwise me-1"></i>
+                            Periksa Ulang
+                        </button>
+
+                        <button type="button" class="btn academic-add-button rounded-pill px-4"
+                            id="btnRunPlacementBackfill" disabled>
+                            <i class="bi bi-play-fill me-1"></i>
+                            Jalankan Backfill
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
 @endpush
 
 @push('scripts')
@@ -786,8 +992,10 @@
             |--------------------------------------------------------------------------
             |
             | Kelas dan Tahun Ajaran mempertahankan route lama.
-            | Semester menggunakan group Admin:
-            | /admin/semester dan admin.semester.*
+            | Semester menggunakan route bersama:
+            | /semester dan semester.*
+            |
+            | Route ini dapat diakses Super Admin dan Admin.
             |
             */
             const endpoints = {
@@ -798,8 +1006,18 @@
                 tahunAjaranDatatable: @json(route('tahun-ajaran.datatable')),
                 tahunAjaranOptions: @json(route('tahun-ajaran.options')),
 
-                semester: @json(route('admin.semester.store')),
-                semesterDatatable: @json(route('admin.semester.datatable'))
+                semester: @json(route('semester.store')),
+                semesterDatatable: @json(route('semester.datatable')),
+
+                placementBackfillPreview: @json(
+                    \Illuminate\Support\Facades\Route::has('admin.maintenance.semester-placement.preview')
+                        ? route('admin.maintenance.semester-placement.preview')
+                        : null),
+
+                placementBackfillProcess: @json(
+                    \Illuminate\Support\Facades\Route::has('admin.maintenance.semester-placement.process')
+                        ? route('admin.maintenance.semester-placement.process')
+                        : null)
             };
 
             const modalKelas = coreui.Modal.getOrCreateInstance(
@@ -812,6 +1030,101 @@
 
             const modalSemester = coreui.Modal.getOrCreateInstance(
                 document.getElementById('modalSemester')
+            );
+
+            const placementBackfillElement =
+                document.getElementById(
+                    'placementBackfillModal'
+                );
+
+            const placementBackfillModal =
+                placementBackfillElement ?
+                coreui.Modal.getOrCreateInstance(
+                    placementBackfillElement
+                ) :
+                null;
+
+            /*
+            |--------------------------------------------------------------------------
+            | Deep Link dari Dashboard Laporan
+            |--------------------------------------------------------------------------
+            |
+            | Contoh:
+            | /kelas?tab=semester&action=backfill
+            |
+            | Membuka tab Semester lalu modal Backfill Placement secara otomatis.
+            |
+            */
+            const academicPageQuery =
+                new URLSearchParams(
+                    window.location.search
+                );
+
+            function openAcademicActionFromQuery() {
+                const requestedTab =
+                    academicPageQuery.get('tab');
+
+                const requestedAction =
+                    academicPageQuery.get('action');
+
+                if (
+                    requestedTab !== 'semester' &&
+                    requestedAction !== 'backfill'
+                ) {
+                    return;
+                }
+
+                const semesterTabElement =
+                    document.getElementById(
+                        'semester-tab'
+                    );
+
+                const showBackfillModal =
+                    function() {
+                        if (
+                            requestedAction ===
+                            'backfill' &&
+                            placementBackfillModal
+                        ) {
+                            window.setTimeout(
+                                function() {
+                                    placementBackfillModal
+                                        .show();
+                                },
+                                120
+                            );
+                        }
+                    };
+
+                if (
+                    semesterTabElement &&
+                    !semesterTabElement
+                    .classList
+                    .contains('active')
+                ) {
+                    semesterTabElement
+                        .addEventListener(
+                            'shown.coreui.tab',
+                            showBackfillModal, {
+                                once: true
+                            }
+                        );
+
+                    coreui.Tab
+                        .getOrCreateInstance(
+                            semesterTabElement
+                        )
+                        .show();
+
+                    return;
+                }
+
+                showBackfillModal();
+            }
+
+            window.setTimeout(
+                openAcademicActionFromQuery,
+                120
             );
 
             const dataTableDefaults = {
@@ -956,7 +1269,29 @@
             */
             const tableSemester = $('#semester-table').DataTable({
                 ...dataTableDefaults,
-                ajax: endpoints.semesterDatatable,
+                ajax: {
+                    url: endpoints.semesterDatatable,
+                    error: function(xhr, textStatus, errorThrown) {
+                        console.error('Semester DataTable Ajax Error', {
+                            status: xhr.status,
+                            textStatus: textStatus,
+                            errorThrown: errorThrown,
+                            response: xhr.responseText
+                        });
+
+                        const message =
+                            xhr.responseJSON?.message ??
+                            (xhr.status === 403 ?
+                                'Akses endpoint Semester ditolak. Periksa middleware role pada route semester.' :
+                                xhr.status === 404 ?
+                                'Endpoint DataTable Semester tidak ditemukan.' :
+                                xhr.status === 500 ?
+                                'Terjadi kesalahan server saat memuat Semester. Periksa storage/logs/laravel.log.' :
+                                'Data Semester gagal dimuat.');
+
+                        notifyError(message);
+                    }
+                },
                 columns: [{
                         data: 'DT_RowIndex',
                         orderable: false,
@@ -1405,6 +1740,319 @@
 
             /*
             |--------------------------------------------------------------------------
+            | Backfill Placement Semester
+            |--------------------------------------------------------------------------
+            */
+            const backfillState = {
+                preview: null,
+                running: false
+            };
+
+            function hasPlacementBackfillEndpoint() {
+                return Boolean(
+                    endpoints.placementBackfillPreview &&
+                    endpoints.placementBackfillProcess
+                );
+            }
+
+            function setPlacementBackfillLoading(loading) {
+                [
+                    '#btnRunPlacementBackfill',
+                    '#btnRefreshBackfillPreview',
+                    '#btnClosePlacementBackfill',
+                    '#btnDismissPlacementBackfill'
+                ].forEach(function(selector) {
+                    $(selector).prop('disabled', loading);
+                });
+
+                if (!loading) {
+                    const missing = Number(
+                        backfillState.preview?.summary?.missing ??
+                        0
+                    );
+
+                    $('#btnRunPlacementBackfill')
+                        .prop('disabled', missing <= 0);
+                }
+            }
+
+            function resetPlacementBackfillProgress() {
+                $('#backfillProgressContainer').addClass('d-none');
+                $('#backfillProgressBar')
+                    .css('width', '0%')
+                    .attr('aria-valuenow', '0');
+                $('#backfillProgressText').text('0%');
+                $('#backfillProcessInfo').text('Menunggu proses...');
+            }
+
+            function renderPlacementBackfillWarnings(summary) {
+                const warnings = [];
+                const missing = Number(summary?.missing ?? 0);
+                const mismatch = Number(summary?.mismatch ?? 0);
+
+                if (missing === 0) {
+                    warnings.push(
+                        'Seluruh santri aktif sudah mempunyai placement pada semester aktif.'
+                    );
+                }
+
+                if (mismatch > 0) {
+                    warnings.push(
+                        `${mismatch} placement existing berbeda dengan kelas atau musyrif pada tabel santris. Backfill tidak akan menimpa data tersebut.`
+                    );
+                }
+
+                const warningBox = $('#backfillWarningBox');
+                const warningList = $('#backfillWarningList');
+                warningList.empty();
+
+                if (warnings.length === 0) {
+                    warningBox.addClass('d-none');
+                    return;
+                }
+
+                warnings.forEach(function(message) {
+                    $('<li>', {
+                        text: message
+                    }).appendTo(warningList);
+                });
+
+                warningBox.removeClass('d-none');
+            }
+
+            async function parsePlacementBackfillResponse(response) {
+                const contentType = response.headers.get('content-type') || '';
+                const payload = contentType.includes('application/json') ?
+                    await response.json() : {
+                        message: await response.text()
+                    };
+
+                if (!response.ok) {
+                    const validationMessage = Object
+                        .values(payload.errors || {})
+                        .flat()
+                        .at(0);
+
+                    throw new Error(
+                        validationMessage ||
+                        payload.message ||
+                        'Request gagal diproses.'
+                    );
+                }
+
+                return payload;
+            }
+
+            async function loadPlacementBackfillPreview() {
+                if (!hasPlacementBackfillEndpoint() || backfillState.running) {
+                    return;
+                }
+
+                setPlacementBackfillLoading(true);
+                resetPlacementBackfillProgress();
+                $('#backfillSemesterLabel').text('Memuat data...');
+
+                try {
+                    const response = await fetch(
+                        endpoints.placementBackfillPreview, {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            credentials: 'same-origin'
+                        }
+                    );
+
+                    const json = await parsePlacementBackfillResponse(response);
+                    backfillState.preview = json;
+
+                    const semesterName = json.semester?.nama ?? '-';
+                    const academicYear = json.semester?.tahun_ajaran ?? '-';
+
+                    $('#backfillSemesterLabel')
+                        .text(`${semesterName} — ${academicYear}`);
+                    $('#backfillTotal')
+                        .text(Number(json.summary?.total_santri ?? 0));
+                    $('#backfillExisting')
+                        .text(Number(json.summary?.existing ?? 0));
+                    $('#backfillMissing')
+                        .text(Number(json.summary?.missing ?? 0));
+                    $('#backfillMismatch')
+                        .text(Number(json.summary?.mismatch ?? 0));
+
+                    renderPlacementBackfillWarnings(json.summary);
+                } catch (error) {
+                    backfillState.preview = null;
+                    notifyError(
+                        error.message ||
+                        'Preview backfill gagal dimuat.'
+                    );
+                } finally {
+                    setPlacementBackfillLoading(false);
+                }
+            }
+
+            async function confirmPlacementBackfill(missingTotal) {
+                const message =
+                    `Sistem akan membuat <b>${missingTotal}</b> placement yang belum tersedia pada semester aktif.<br><br>` +
+                    'Placement existing tidak akan ditimpa.';
+
+                if (window.AppAlert?.warning) {
+                    const result = await AppAlert.warning(
+                        message,
+                        'Jalankan Backfill Placement?'
+                    );
+
+                    return Boolean(result?.isConfirmed);
+                }
+
+                if (window.Swal) {
+                    const result = await Swal.fire({
+                        icon: 'warning',
+                        title: 'Jalankan Backfill Placement?',
+                        html: message,
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Jalankan',
+                        cancelButtonText: 'Batal',
+                        confirmButtonColor: '#6f42c1',
+                        allowOutsideClick: false
+                    });
+
+                    return Boolean(result.isConfirmed);
+                }
+
+                return window.confirm(
+                    `Jalankan backfill untuk ${missingTotal} santri?`
+                );
+            }
+
+            async function runPlacementBackfill() {
+                if (
+                    backfillState.running ||
+                    !backfillState.preview ||
+                    !hasPlacementBackfillEndpoint()
+                ) {
+                    return;
+                }
+
+                const missingTotal = Number(
+                    backfillState.preview?.summary?.missing ??
+                    0
+                );
+
+                if (missingTotal <= 0) {
+                    notifySuccess('Tidak ada placement yang perlu dibuat.');
+                    return;
+                }
+
+                const confirmed = await confirmPlacementBackfill(missingTotal);
+                if (!confirmed) {
+                    return;
+                }
+
+                backfillState.running = true;
+                setPlacementBackfillLoading(true);
+                $('#backfillProgressContainer').removeClass('d-none');
+
+                let lastId = 0;
+                let createdTotal = 0;
+                let skippedTotal = 0;
+                let processedTotal = 0;
+
+                try {
+                    while (true) {
+                        const response = await fetch(
+                            endpoints.placementBackfillProcess, {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                credentials: 'same-origin',
+                                body: JSON.stringify({
+                                    last_id: lastId
+                                })
+                            }
+                        );
+
+                        const json = await parsePlacementBackfillResponse(response);
+
+                        createdTotal += Number(json.created ?? 0);
+                        skippedTotal += Number(json.skipped ?? 0);
+                        processedTotal += Number(json.processed ?? 0);
+                        lastId = Number(json.next_last_id ?? lastId);
+
+                        const percentage = Math.min(
+                            100,
+                            Math.round((createdTotal / missingTotal) * 100)
+                        );
+
+                        $('#backfillProgressBar')
+                            .css('width', `${percentage}%`)
+                            .attr('aria-valuenow', String(percentage));
+                        $('#backfillProgressText').text(`${percentage}%`);
+                        $('#backfillProcessInfo').text(
+                            `${createdTotal} placement dibuat, ` +
+                            `${skippedTotal} dilewati, ` +
+                            `${processedTotal} record diproses.`
+                        );
+
+                        if (json.done) {
+                            break;
+                        }
+
+                        await new Promise(function(resolve) {
+                            window.setTimeout(resolve, 150);
+                        });
+                    }
+
+                    $('#backfillProgressBar')
+                        .css('width', '100%')
+                        .attr('aria-valuenow', '100');
+                    $('#backfillProgressText').text('100%');
+
+                    notifySuccess(
+                        `${createdTotal} placement berhasil dibuat.`
+                    );
+
+                    await loadPlacementBackfillPreview();
+                } catch (error) {
+                    notifyError(
+                        error.message ||
+                        'Proses backfill gagal.'
+                    );
+                } finally {
+                    backfillState.running = false;
+                    setPlacementBackfillLoading(false);
+                }
+            }
+
+            placementBackfillElement?.addEventListener(
+                'shown.coreui.modal',
+                function() {
+                    loadPlacementBackfillPreview();
+                }
+            );
+
+            $('#btnRefreshBackfillPreview').on(
+                'click',
+                function() {
+                    loadPlacementBackfillPreview();
+                }
+            );
+
+            $('#btnRunPlacementBackfill').on(
+                'click',
+                function() {
+                    runPlacementBackfill();
+                }
+            );
+
+            /*
+            |--------------------------------------------------------------------------
             | Generic AJAX Form
             |--------------------------------------------------------------------------
             */
@@ -1743,8 +2391,7 @@
                         $('<div>', {
                             class: 'invalid-feedback dynamic-error',
                             text: Array.isArray(messages) ?
-                                messages[0] :
-                                messages
+                                messages[0] : messages
                         }).insertAfter($field);
                     });
 

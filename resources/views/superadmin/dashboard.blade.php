@@ -3,278 +3,758 @@
 @section('title', 'Dashboard Super Admin')
 
 @section('content')
+    @php
+        $integrity = $integritySummary ?? [
+            'status' => 'warning',
+            'total' => 0,
+            'critical' => 0,
+            'warning' => 0,
+            'safe_auto_repair' => 0,
+            'active_semester_label' => null,
+        ];
+
+        $integrityClass = match ($integrity['status'] ?? 'warning') {
+            'critical' => 'danger',
+            'healthy' => 'success',
+            default => 'warning',
+        };
+
+        $integrityLabel = match ($integrity['status'] ?? 'warning') {
+            'critical' => 'Kritis',
+            'healthy' => 'Sehat',
+            default => 'Perlu Perhatian',
+        };
+
+        $integrityIcon = match ($integrity['status'] ?? 'warning') {
+            'critical' => 'bi-shield-fill-exclamation',
+            'healthy' => 'bi-shield-check',
+            default => 'bi-shield-fill-check',
+        };
+    @endphp
+
     <style>
-        /* ================= KONSISTENSI TEMA PURPLE ================= */
-        :root {
-            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        :root,
+        [data-coreui-theme="light"] {
+            --dashboard-surface: #ffffff;
+            --dashboard-soft: #f7f8fc;
+            --dashboard-muted-surface: #eef1f7;
+            --dashboard-text: #202436;
+            --dashboard-heading: #171a2a;
+            --dashboard-muted: #707586;
+            --dashboard-border: rgba(23, 26, 42, .09);
+            --dashboard-border-strong: rgba(23, 26, 42, .16);
+            --dashboard-purple: var(--islamic-purple-600, #6b4eff);
+            --dashboard-purple-dark: var(--islamic-purple-700, #5638d8);
+            --dashboard-purple-soft: rgba(107, 78, 255, .11);
+            --dashboard-tosca: var(--islamic-tosca-600, #13a3b3);
+            --dashboard-tosca-soft: rgba(19, 163, 179, .11);
+            --dashboard-success: #198754;
+            --dashboard-success-soft: rgba(25, 135, 84, .11);
+            --dashboard-warning: #c98000;
+            --dashboard-warning-soft: rgba(255, 193, 7, .16);
+            --dashboard-danger: #dc3545;
+            --dashboard-danger-soft: rgba(220, 53, 69, .11);
+            --dashboard-info: #0d6efd;
+            --dashboard-info-soft: rgba(13, 110, 253, .10);
+            --dashboard-shadow-sm: 0 8px 26px rgba(27, 32, 56, .06);
+            --dashboard-shadow-md: 0 17px 46px rgba(27, 32, 56, .11);
         }
 
-        .kpi-card {
-            border-radius: 20px;
-            background: #ffffff;
-            box-shadow: var(--card-shadow);
-            transition: var(--transition-smooth);
-            border: 1px solid rgba(0, 0, 0, 0.02) !important;
+        [data-coreui-theme="dark"] {
+            color-scheme: dark;
+            --dashboard-surface: #20212b;
+            --dashboard-soft: #282a35;
+            --dashboard-muted-surface: #30323f;
+            --dashboard-text: #e8eaf1;
+            --dashboard-heading: #ffffff;
+            --dashboard-muted: #a8adbc;
+            --dashboard-border: rgba(255, 255, 255, .08);
+            --dashboard-border-strong: rgba(255, 255, 255, .15);
+            --dashboard-purple: #aa9cff;
+            --dashboard-purple-dark: #8b79ff;
+            --dashboard-purple-soft: rgba(132, 112, 255, .20);
+            --dashboard-tosca: #64d5df;
+            --dashboard-tosca-soft: rgba(56, 189, 201, .18);
+            --dashboard-success: #5fd39a;
+            --dashboard-success-soft: rgba(38, 179, 112, .18);
+            --dashboard-warning: #ffd166;
+            --dashboard-warning-soft: rgba(255, 193, 7, .18);
+            --dashboard-danger: #ff8190;
+            --dashboard-danger-soft: rgba(255, 92, 108, .18);
+            --dashboard-info: #73a7ff;
+            --dashboard-info-soft: rgba(86, 142, 255, .18);
+            --dashboard-shadow-sm: 0 12px 32px rgba(0, 0, 0, .24);
+            --dashboard-shadow-md: 0 20px 52px rgba(0, 0, 0, .34);
+        }
+
+        .min-w-0 {
+            min-width: 0;
+        }
+
+        .superadmin-dashboard {
+            position: relative;
+            isolation: isolate;
+            color: var(--dashboard-text);
+            padding-bottom: 2rem;
+        }
+
+        .superadmin-dashboard::before {
+            content: '';
+            position: absolute;
+            inset: -1.5rem -1.5rem auto;
+            height: 340px;
+            z-index: -1;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 8% 4%, rgba(107, 78, 255, .09), transparent 34%),
+                radial-gradient(circle at 88% 6%, rgba(19, 163, 179, .07), transparent 31%);
+            mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
+        }
+
+        .dashboard-card {
+            border: 1px solid var(--dashboard-border);
+            border-radius: 21px;
+            background: var(--dashboard-surface);
+            box-shadow: var(--dashboard-shadow-sm);
+        }
+
+        /* HERO */
+        .dashboard-hero {
+            position: relative;
             overflow: hidden;
+            padding: clamp(1.45rem, 3vw, 2.2rem);
+            border-radius: 27px;
+            color: #fff;
+            background:
+                radial-gradient(circle at 88% 10%, rgba(255, 255, 255, .20), transparent 28%),
+                linear-gradient(135deg, #433280 0%, #1599aa 100%);
+            box-shadow: 0 20px 48px rgba(72, 58, 171, .22);
+        }
+
+        .dashboard-hero::after {
+            content: '';
+            position: absolute;
+            right: -92px;
+            bottom: -128px;
+            width: 260px;
+            height: 260px;
+            border: 1px solid rgba(255, 255, 255, .14);
+            border-radius: 50%;
+            box-shadow:
+                0 0 0 36px rgba(255, 255, 255, .04),
+                0 0 0 76px rgba(255, 255, 255, .025);
+        }
+
+        .dashboard-hero>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .dashboard-hero-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.45fr) minmax(280px, .72fr);
+            gap: clamp(1.25rem, 3vw, 2.4rem);
+            align-items: center;
+        }
+
+        .dashboard-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            padding: .45rem .75rem;
+            border: 1px solid rgba(255, 255, 255, .2);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .12);
             backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            background: rgba(255, 255, 255, 0.7) !important;
-            /* Semi transparan putih */
+            font-size: .68rem;
+            font-weight: 850;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+        }
+
+        .dashboard-hero-title {
+            margin: .9rem 0 .45rem;
+            font-size: clamp(1.6rem, 3vw, 2.35rem);
+            line-height: 1.12;
+            font-weight: 860;
+            letter-spacing: -.035em;
+        }
+
+        .dashboard-hero-copy {
+            max-width: 740px;
+            margin: 0;
+            color: rgba(255, 255, 255, .78);
+            font-size: .9rem;
+            line-height: 1.65;
+        }
+
+        .dashboard-hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .55rem;
+            margin-top: 1rem;
+        }
+
+        .dashboard-hero-meta-item {
+            display: inline-flex;
+            align-items: center;
+            gap: .42rem;
+            padding: .48rem .7rem;
+            border: 1px solid rgba(255, 255, 255, .15);
+            border-radius: 11px;
+            background: rgba(255, 255, 255, .09);
+            color: rgba(255, 255, 255, .82);
+            font-size: .71rem;
+            backdrop-filter: blur(7px);
+        }
+
+        .dashboard-command-panel {
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, .17);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, .11);
+            backdrop-filter: blur(12px);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .11);
+        }
+
+        .dashboard-command-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .6rem;
+        }
+
+        .dashboard-command-actions .btn {
+            min-height: 43px;
+            border-radius: 12px;
+            font-size: .76rem;
+            font-weight: 850;
+        }
+
+        /* KPI */
+        .kpi-card {
+            position: relative;
+            overflow: hidden;
+            min-height: 148px;
             height: 100%;
+            border: 1px solid var(--dashboard-border) !important;
+            border-radius: 20px;
+            background: var(--dashboard-surface) !important;
+            box-shadow: var(--dashboard-shadow-sm);
+            transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
         }
 
         .kpi-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(111, 66, 193, 0.1);
+            transform: translateY(-4px);
+            border-color: var(--dashboard-border-strong) !important;
+            box-shadow: var(--dashboard-shadow-md);
         }
 
-        .kpi-label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #6c757d;
-            margin-bottom: 8px;
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            inset: 0 0 auto;
+            height: 3px;
+            background: var(--kpi-color, var(--dashboard-purple));
         }
 
-        .kpi-value {
-            font-size: 2rem;
-            font-weight: 800;
-            color: var(--islamic-purple-700);
-            line-height: 1;
+        .kpi-card::after {
+            content: '';
+            position: absolute;
+            top: -34px;
+            right: -28px;
+            width: 98px;
+            height: 98px;
+            border-radius: 50%;
+            background: var(--kpi-soft, var(--dashboard-purple-soft));
         }
 
-        .kpi-sub {
-            font-size: 0.8rem;
-            font-weight: 500;
-            margin-top: 5px;
+        .kpi-card .card-body {
+            position: relative;
+            z-index: 1;
         }
 
         .kpi-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 14px;
-            display: flex;
+            width: 43px;
+            height: 43px;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
-            transition: var(--transition-smooth);
+            border-radius: 13px;
+            color: var(--kpi-color, var(--dashboard-purple));
+            background: var(--kpi-soft, var(--dashboard-purple-soft));
+            font-size: 1.08rem;
         }
 
-        .kpi-card:hover .kpi-icon {
-            transform: scale(1.1) rotate(-5deg);
+        .kpi-label {
+            color: var(--dashboard-muted);
+            font-size: .64rem;
+            font-weight: 850;
+            letter-spacing: .075em;
+            line-height: 1.35;
+            text-transform: uppercase;
         }
 
-        .kpi-progress {
-            height: 8px;
-            background: #f0f2f5;
-            border-radius: 10px;
-            margin-top: 15px;
+        .kpi-value {
+            margin-top: .62rem;
+            color: var(--dashboard-heading);
+            font-size: 1.9rem;
+            font-weight: 880;
+            line-height: 1;
+            letter-spacing: -.04em;
         }
 
-        .kpi-progress-bar {
-            border-radius: 10px;
-            transition: width 1.5s cubic-bezier(0.1, 0.5, 0.5, 1);
+        .kpi-sub {
+            margin-top: .38rem;
+            color: var(--dashboard-muted);
+            font-size: .66rem;
         }
 
-        .card-header-custom {
-            background: transparent;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            padding: 1.25rem 1.5rem;
-            font-weight: 700;
-            color: var(--islamic-purple-700);
+        /* INTEGRITY */
+        .integrity-overview {
+            overflow: hidden;
+        }
+
+        .integrity-overview-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr);
+            gap: 1rem;
+            align-items: center;
+            padding: 1.15rem 1.25rem;
+        }
+
+        .integrity-overview-icon {
+            width: 52px;
+            height: 52px;
+            flex: 0 0 52px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            font-size: 1.25rem;
+        }
+
+        .integrity-mini-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .65rem;
+        }
+
+        .integrity-mini-stat {
+            padding: .72rem;
+            border: 1px solid var(--dashboard-border);
+            border-radius: 13px;
+            background: var(--dashboard-soft);
+            text-align: center;
+        }
+
+        .integrity-mini-stat-value {
+            color: var(--dashboard-heading);
+            font-size: 1.05rem;
+            font-weight: 850;
+        }
+
+        .integrity-mini-stat-label {
+            margin-top: .18rem;
+            color: var(--dashboard-muted);
+            font-size: .6rem;
+            font-weight: 780;
+            text-transform: uppercase;
+        }
+
+        /* CONTENT CARDS */
+        .dashboard-section-card {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .dashboard-section-head {
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1rem 1.15rem;
+            border-bottom: 1px solid var(--dashboard-border);
+            background:
+                linear-gradient(135deg, rgba(107, 78, 255, .035), rgba(19, 163, 179, .022)),
+                var(--dashboard-surface);
         }
 
-        /* Warna Aksen Super Admin */
-        .accent-pending {
-            border-bottom: 4px solid #dc3545 !important;
+        .dashboard-section-kicker {
+            margin-bottom: .22rem;
+            color: var(--dashboard-purple);
+            font-size: .63rem;
+            font-weight: 850;
+            letter-spacing: .09em;
+            text-transform: uppercase;
         }
 
-        .accent-user {
-            border-bottom: 4px solid #6b4eff !important;
+        .dashboard-section-title {
+            margin: 0;
+            color: var(--dashboard-heading);
+            font-size: .96rem;
+            font-weight: 850;
         }
 
-        .accent-dept {
-            border-bottom: 4px solid #13a3b3 !important;
+        .dashboard-section-copy {
+            margin: .2rem 0 0;
+            color: var(--dashboard-muted);
+            font-size: .71rem;
         }
 
-        .accent-kelas {
-            border-bottom: 4px solid #ffc107 !important;
+        .dashboard-chart-wrap {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            padding: .75rem;
         }
 
-        .accent-santri {
-            border-bottom: 4px solid #0dcaf0 !important;
+        #dashboard-users-table {
+            color: var(--dashboard-text);
         }
 
-        .text-adaptive-purple {
-            color: var(--islamic-purple-700);
-            transition: color 0.3s ease;
+        #dashboard-users-table> :not(caption)>*>* {
+            padding-top: .85rem;
+            padding-bottom: .85rem;
+            border-bottom-color: var(--dashboard-border);
         }
 
-        /* ================= FIX DARK THEME UNTUK KPI CARDS ================= */
-        [data-coreui-theme="dark"] .kpi-card {
-            background: rgba(42, 42, 53, 0.6) !important;
-            /* Semi transparan gelap */
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        #dashboard-users-table thead th {
+            color: var(--dashboard-muted);
+            background: var(--dashboard-soft);
+            font-size: .63rem;
+            font-weight: 850;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            white-space: nowrap;
         }
 
-        [data-coreui-theme="dark"] .kpi-value,
-        [data-coreui-theme="dark"] .text-adaptive-purple {
-            color: #ffffff !important;
+        #dashboard-users-table tbody tr:hover {
+            background: var(--dashboard-purple-soft);
         }
 
-        [data-coreui-theme="dark"] .kpi-label {
-            color: #a0a0a0;
+        .dashboard-section-card .dataTables_wrapper .row:last-child {
+            padding: .75rem 1rem .9rem;
+            margin: 0;
+            border-top: 1px solid var(--dashboard-border);
         }
 
-        [data-coreui-theme="dark"] .kpi-sub.text-muted {
-            color: #8a8a8a !important;
+        .dashboard-section-card .page-link {
+            border-color: var(--dashboard-border);
+            color: var(--dashboard-text);
+            background: var(--dashboard-surface);
         }
 
-        [data-coreui-theme="dark"] .kpi-icon.bg-primary-subtle,
-        [data-coreui-theme="dark"] .bg-light-subtle {
-            background-color: rgba(255, 255, 255, 0.05) !important;
+        .dashboard-section-card .page-item.active .page-link {
+            border-color: var(--dashboard-purple);
+            color: #fff;
+            background: var(--dashboard-purple);
         }
 
-        [data-coreui-theme="dark"] .card-header-custom {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        /* QUICK ACTIONS */
+        .quick-action-card {
+            display: flex;
+            align-items: center;
+            gap: .8rem;
+            height: 100%;
+            padding: .95rem;
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            color: inherit;
+            background: var(--dashboard-soft);
+            text-decoration: none;
+            transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+        }
+
+        .quick-action-card:hover {
+            color: inherit;
+            transform: translateY(-2px);
+            border-color: var(--dashboard-border-strong);
+            box-shadow: var(--dashboard-shadow-sm);
+        }
+
+        .quick-action-icon {
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 13px;
+            color: var(--action-color, var(--dashboard-purple));
+            background: var(--action-soft, var(--dashboard-purple-soft));
+            font-size: 1.05rem;
+        }
+
+        @media (max-width: 991.98px) {
+
+            .dashboard-hero-grid,
+            .integrity-overview-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .dashboard-hero {
+                padding: 1.15rem;
+                border-radius: 20px;
+            }
+
+            .dashboard-command-actions,
+            .integrity-mini-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-card {
+                min-height: 134px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .kpi-card,
+            .quick-action-card {
+                transition: none;
+            }
         }
     </style>
 
-    {{-- HEADER TITLE --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h4 class="mb-0 fw-bold text-adaptive-purple">Dashboard Super Admin</h4>
-            <span class="text-muted small">Ringkasan sistem dan statistik pengguna terdaftar</span>
-        </div>
-    </div>
+    <div class="superadmin-dashboard">
+        <section class="dashboard-hero mb-4">
+            <div class="dashboard-hero-grid">
+                <div>
+                    <span class="dashboard-eyebrow">
+                        <i class="bi bi-command"></i>
+                        System Administration Command Center
+                    </span>
 
-    <div class="row g-3 mb-4 row-cols-1 row-cols-md-3 row-cols-lg-5">
-        {{-- 1. PENDING (With Button) --}}
-        <div class="col">
-            <div class="card kpi-card accent-pending">
-                <div class="card-body p-3 d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="kpi-icon" style="background: #ffebeb; color: #dc3545;">
-                                <i class="bi bi-person-exclamation"></i>
-                            </div>
-                            <span class="badge bg-danger">Pending</span>
-                        </div>
-                        <div class="kpi-label">Butuh Validasi</div>
-                        <div class="kpi-value count-up text-danger" data-target="{{ $totalPending }}">0</div>
+                    <h3 class="dashboard-hero-title">
+                        Selamat datang, {{ auth()->user()->name }}
+                    </h3>
+
+                    <p class="dashboard-hero-copy">
+                        Pantau user, approval, struktur akademik, dan integritas data dari satu dashboard.
+                        Prioritaskan peringatan sistem sebelum melakukan perubahan administratif besar.
+                    </p>
+
+                    <div class="dashboard-hero-meta">
+                        <span class="dashboard-hero-meta-item">
+                            <i class="bi bi-calendar3"></i>
+                            {{ now()->translatedFormat('l, d F Y') }}
+                        </span>
+                        <span class="dashboard-hero-meta-item">
+                            <i class="bi bi-people-fill"></i>
+                            {{ number_format($totalUser, 0, ',', '.') }} user terdaftar
+                        </span>
+                        @if (!empty($integrity['active_semester_label']))
+                            <span class="dashboard-hero-meta-item">
+                                <i class="bi bi-calendar2-check"></i>
+                                Semester {{ $integrity['active_semester_label'] }}
+                            </span>
+                        @endif
                     </div>
-                    <div class="mt-3">
+                </div>
+
+                <aside class="dashboard-command-panel">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span
+                            class="d-inline-flex align-items-center justify-content-center rounded-4 bg-white bg-opacity-10"
+                            style="width: 48px; height: 48px;">
+                            <i class="bi {{ $integrityIcon }} fs-4"></i>
+                        </span>
+                        <div>
+                            <div class="small text-white-50 fw-bold text-uppercase">System Status</div>
+                            <div class="fw-bold">Integritas {{ $integrityLabel }}</div>
+                        </div>
+                    </div>
+
+                    <p class="small text-white-50 mb-3">
+                        {{ number_format($integrity['total'] ?? 0, 0, ',', '.') }} temuan terdeteksi,
+                        termasuk {{ number_format($integrity['critical'] ?? 0, 0, ',', '.') }} temuan kritis.
+                    </p>
+
+                    <div class="dashboard-command-actions">
+                        <a href="{{ route('superadmin.users.index') }}" class="btn btn-light">
+                            <i class="bi bi-people-fill me-1"></i>
+                            Kelola User
+                        </a>
+                        <a href="{{ route('superadmin.system-integrity.index') }}" class="btn btn-warning">
+                            <i class="bi bi-database-check me-1"></i>
+                            Cek Integritas
+                        </a>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <div class="row g-3 mb-4 row-cols-2 row-cols-md-3 row-cols-xl-5">
+            <div class="col">
+                <div class="card kpi-card accent-pending" style="--kpi-color: #dc3545; --kpi-soft: rgba(220, 53, 69, .11);">
+                    <div class="card-body p-3 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div class="kpi-label">Butuh Validasi</div>
+                            <span class="kpi-icon">
+                                <i class="bi bi-person-exclamation"></i>
+                            </span>
+                        </div>
+                        <div class="kpi-value count-up text-danger" data-target="{{ $totalPending }}">0</div>
+                        <div class="kpi-sub">Akun menunggu approval</div>
                         <a href="{{ route('superadmin.users.index') }}"
-                            class="btn btn-sm btn-danger w-100 rounded-pill py-1 fw-bold" style="font-size: 0.75rem;">
-                            Check User
+                            class="btn btn-sm btn-outline-danger rounded-pill fw-bold mt-auto">
+                            Review User
                         </a>
                     </div>
                 </div>
             </div>
-        </div>
 
-        {{-- 2. TOTAL USER --}}
-        <div class="col">
-            <div class="card kpi-card accent-user">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="kpi-icon" style="background: #f3f0ff; color: #6b4eff;">
-                            <i class="bi bi-people-fill"></i>
+            <div class="col">
+                <div class="card kpi-card accent-user" style="--kpi-color: #6b4eff; --kpi-soft: rgba(107, 78, 255, .11);">
+                    <div class="card-body p-3 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div class="kpi-label">Total User</div>
+                            <span class="kpi-icon">
+                                <i class="bi bi-people-fill"></i>
+                            </span>
                         </div>
+                        <div class="kpi-value count-up" data-target="{{ $totalUser }}">0</div>
+                        <div class="kpi-sub">Seluruh akun sistem</div>
                     </div>
-                    <div class="kpi-label">Total User</div>
-                    <div class="kpi-value count-up" style="color: #6b4eff;" data-target="{{ $totalUser }}">0</div>
-                    <div class="kpi-sub text-muted mt-2" style="font-size: 0.65rem;">Seluruh akun sistem</div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="card kpi-card accent-dept" style="--kpi-color: #13a3b3; --kpi-soft: rgba(19, 163, 179, .11);">
+                    <div class="card-body p-3 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div class="kpi-label">Admin Departemen</div>
+                            <span class="kpi-icon">
+                                <i class="bi bi-diagram-3-fill"></i>
+                            </span>
+                        </div>
+                        <div class="kpi-value count-up" data-target="{{ $totalDepartemen }}">0</div>
+                        <div class="kpi-sub">Pengelola operasional</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="card kpi-card accent-kelas" style="--kpi-color: #d98b00; --kpi-soft: rgba(255, 193, 7, .16);">
+                    <div class="card-body p-3 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div class="kpi-label">Jumlah Kelas</div>
+                            <span class="kpi-icon">
+                                <i class="bi bi-easel-fill"></i>
+                            </span>
+                        </div>
+                        <div class="kpi-value count-up" data-target="{{ $totalKelas }}">0</div>
+                        <div class="kpi-sub">Kelompok belajar terdaftar</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="card kpi-card accent-santri" style="--kpi-color: #0d6efd; --kpi-soft: rgba(13, 110, 253, .10);">
+                    <div class="card-body p-3 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div class="kpi-label">Total Santri</div>
+                            <span class="kpi-icon">
+                                <i class="bi bi-mortarboard-fill"></i>
+                            </span>
+                        </div>
+                        <div class="kpi-value count-up" data-target="{{ $totalSantri }}">0</div>
+                        <div class="kpi-sub">Santri pada basis data</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        {{-- 3. DEPARTEMEN --}}
-        <div class="col">
-            <div class="card kpi-card accent-dept">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="kpi-icon" style="background: #e6f7f8; color: #13a3b3;">
-                            <i class="bi bi-diagram-3-fill"></i>
+        <section class="dashboard-card integrity-overview mb-4">
+            <div class="integrity-overview-grid">
+                <div class="d-flex align-items-start gap-3">
+                    <span
+                        class="integrity-overview-icon bg-{{ $integrityClass }} bg-opacity-10 text-{{ $integrityClass }}">
+                        <i class="bi {{ $integrityIcon }}"></i>
+                    </span>
+
+                    <div class="min-w-0">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                            <h5 class="mb-0 fw-bold">Integritas User & Profil</h5>
+                            <span class="badge bg-{{ $integrityClass }} rounded-pill px-3">
+                                {{ $integrityLabel }}
+                            </span>
                         </div>
+                        <p class="small text-muted mb-3">
+                            Sinkronisasi akun, role, profil Musyrif/Santri, semester aktif, dan placement.
+                        </p>
+                        <a href="{{ route('superadmin.system-integrity.index') }}"
+                            class="btn btn-sm btn-outline-{{ $integrityClass }} rounded-pill px-3 fw-bold">
+                            Buka Consistency Checker
+                            <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
                     </div>
-                    <div class="kpi-label">Admin Dept</div>
-                    <div class="kpi-value count-up" style="color: #13a3b3;" data-target="{{ $totalDepartemen }}">0</div>
-                    <div class="kpi-sub text-muted mt-2" style="font-size: 0.65rem;">Pengelola sistem</div>
+                </div>
+
+                <div class="integrity-mini-stats">
+                    <div class="integrity-mini-stat">
+                        <div class="integrity-mini-stat-value">
+                            {{ number_format($integrity['total'] ?? 0, 0, ',', '.') }}
+                        </div>
+                        <div class="integrity-mini-stat-label">Total Temuan</div>
+                    </div>
+                    <div class="integrity-mini-stat">
+                        <div class="integrity-mini-stat-value text-danger">
+                            {{ number_format($integrity['critical'] ?? 0, 0, ',', '.') }}
+                        </div>
+                        <div class="integrity-mini-stat-label">Kritis</div>
+                    </div>
+                    <div class="integrity-mini-stat">
+                        <div class="integrity-mini-stat-value text-success">
+                            {{ number_format($integrity['safe_auto_repair'] ?? 0, 0, ',', '.') }}
+                        </div>
+                        <div class="integrity-mini-stat-label">Safe Repair</div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        {{-- 4. KELAS --}}
-        <div class="col">
-            <div class="card kpi-card accent-kelas">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="kpi-icon" style="background: #fff8e6; color: #ffc107;">
-                            <i class="bi bi-easel-fill"></i>
+        <div class="row g-4 mb-4">
+            <div class="col-xl-5">
+                <section class="dashboard-card dashboard-section-card">
+                    <div class="dashboard-section-head">
+                        <div>
+                            <div class="dashboard-section-kicker">Access Distribution</div>
+                            <h4 class="dashboard-section-title">Komposisi User per Role</h4>
+                            <p class="dashboard-section-copy">Distribusi seluruh user berdasarkan hak akses.</p>
                         </div>
+                        <span class="kpi-icon"
+                            style="--kpi-color: var(--dashboard-tosca); --kpi-soft: var(--dashboard-tosca-soft);">
+                            <i class="bi bi-pie-chart-fill"></i>
+                        </span>
                     </div>
-                    <div class="kpi-label">Jumlah Kelas</div>
-                    <div class="kpi-value count-up text-warning" data-target="{{ $totalKelas }}">0</div>
-                    <div class="kpi-sub text-muted mt-2" style="font-size: 0.65rem;">Kelompok belajar</div>
-                </div>
-            </div>
-        </div>
-
-        {{-- 5. SANTRI --}}
-        <div class="col">
-            <div class="card kpi-card accent-santri">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="kpi-icon" style="background: #e7faff; color: #0dcaf0;">
-                            <i class="bi bi-mortarboard-fill"></i>
-                        </div>
-                    </div>
-                    <div class="kpi-label">Total Santri</div>
-                    <div class="kpi-value count-up text-info" data-target="{{ $totalSantri }}">0</div>
-                    <div class="kpi-sub text-muted mt-2" style="font-size: 0.65rem;">Siswa aktif</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-3">
-        {{-- CHART STATISTIK USER PER ROLE --}}
-        <div class="col-lg-5">
-            <div class="card border-0 shadow-sm rounded-4 mb-4 h-100">
-                <div class="card-header bg-transparent py-3 fw-semibold">
-                    <i class="bi bi-pie-chart-fill me-2" style="color: var(--islamic-tosca-500);"></i> Statistik User per
-                    Role
-                </div>
-                <div class="card-body d-flex align-items-center justify-content-center">
-                    <div style="position: relative; height: 250px; width: 100%;">
+                    <div class="dashboard-chart-wrap">
                         <canvas id="userRoleChart"></canvas>
                     </div>
-                </div>
+                </section>
             </div>
-        </div>
 
-        {{-- TABEL USER RINGKAS --}}
-        <div class="col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4 mb-4 h-100">
-                <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center fw-semibold">
-                    <div><i class="bi bi-table me-2" style="color: var(--islamic-tosca-500);"></i> User Terdaftar</div>
-                    <a href="{{ route('superadmin.users.index') }}"
-                        class="btn btn-sm text-white px-3 rounded-pill shadow-sm"
-                        style="background: var(--islamic-purple-600);">
-                        Kelola User <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
-                </div>
-                <div class="card-body p-0">
+            <div class="col-xl-7">
+                <section class="dashboard-card dashboard-section-card">
+                    <div class="dashboard-section-head">
+                        <div>
+                            <div class="dashboard-section-kicker">Account Directory</div>
+                            <h4 class="dashboard-section-title">User Terdaftar</h4>
+                            <p class="dashboard-section-copy">Daftar ringkas akun terbaru pada sistem.</p>
+                        </div>
+                        <a href="{{ route('superadmin.users.index') }}"
+                            class="btn btn-sm text-white px-3 rounded-pill fw-bold"
+                            style="background: var(--dashboard-purple);">
+                            Kelola User
+                            <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+
                     <div class="table-responsive">
-                        <table id="dashboard-users-table" class="table table-striped table-hover align-middle w-100 mb-0">
-                            <thead class="table-light">
+                        <table id="dashboard-users-table" class="table table-hover align-middle w-100 mb-0">
+                            <thead>
                                 <tr>
                                     <th class="ps-4">No.</th>
                                     <th>Nama</th>
@@ -287,26 +767,73 @@
                             </tbody>
                         </table>
                     </div>
+                </section>
+            </div>
+        </div>
+
+        <section class="dashboard-card p-3 p-md-4">
+            <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                <div>
+                    <div class="dashboard-section-kicker">Administrative Tools</div>
+                    <h4 class="dashboard-section-title">Quick Actions</h4>
+                    <p class="dashboard-section-copy">Akses fungsi Super Admin yang paling sering digunakan.</p>
+                </div>
+                <i class="bi bi-lightning-charge-fill fs-4 text-warning"></i>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-6 col-xl-3">
+                    <a href="{{ route('superadmin.users.index') }}" class="quick-action-card">
+                        <span class="quick-action-icon">
+                            <i class="bi bi-person-plus-fill"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <div class="fw-bold small">Kelola User</div>
+                            <div class="small text-muted">Approval dan lifecycle</div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <a href="{{ route('superadmin.system-integrity.index') }}" class="quick-action-card"
+                        style="--action-color: var(--dashboard-success); --action-soft: var(--dashboard-success-soft);">
+                        <span class="quick-action-icon">
+                            <i class="bi bi-database-check"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <div class="fw-bold small">Integritas Sistem</div>
+                            <div class="small text-muted">Scan dan safe repair</div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <a href="{{ route('kelas.index') }}" class="quick-action-card"
+                        style="--action-color: var(--dashboard-warning); --action-soft: var(--dashboard-warning-soft);">
+                        <span class="quick-action-icon">
+                            <i class="bi bi-easel-fill"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <div class="fw-bold small">Master Kelas</div>
+                            <div class="small text-muted">Struktur akademik</div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <a href="{{ route('profile.settings') }}" class="quick-action-card"
+                        style="--action-color: var(--dashboard-info); --action-soft: var(--dashboard-info-soft);">
+                        <span class="quick-action-icon">
+                            <i class="bi bi-shield-lock-fill"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <div class="fw-bold small">Profil & Keamanan</div>
+                            <div class="small text-muted">Kredensial akun</div>
+                        </div>
+                    </a>
                 </div>
             </div>
-        </div>
-    </div>
-
-    {{-- RINGKASAN SISTEM --}}
-    <div class="card border-0 shadow-sm rounded-4 mt-2">
-        <div class="card-body p-4 d-flex align-items-center gap-3">
-            <div class="flex-shrink-0 text-white rounded-circle d-flex align-items-center justify-content-center"
-                style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--islamic-purple-500), var(--islamic-tosca-500));">
-                <i class="bi bi-info-circle fs-4"></i>
-            </div>
-            <div>
-                <h6 class="fw-bold mb-1">Ringkasan Sistem</h6>
-                <p class="mb-0 text-muted small">
-                    Halaman ini menampilkan ringkasan global pengguna sistem hafalan santri. Ke depan bisa ditambah
-                    ringkasan hafalan santri, jumlah musyrif aktif, dan distribusi kelas.
-                </p>
-            </div>
-        </div>
+        </section>
     </div>
 @endsection
 
@@ -346,13 +873,18 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    cutout: '70%',
+                    cutout: '72%',
+                    animation: {
+                        duration: 900,
+                        easing: 'easeOutQuart'
+                    },
                     plugins: {
                         legend: {
                             position: 'bottom',
                             labels: {
                                 usePointStyle: true,
-                                padding: 20,
+                                pointStyle: 'circle',
+                                padding: 18,
                                 font: {
                                     family: "'Inter', sans-serif",
                                     size: 12

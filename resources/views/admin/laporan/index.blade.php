@@ -586,6 +586,545 @@
             line-height: 1.45;
         }
 
+        .juz-chart-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: .42rem;
+            margin-top: .7rem;
+            padding: .45rem .7rem;
+            border: 1px solid rgba(25, 135, 84, .18);
+            border-radius: 999px;
+            color: var(--report-success);
+            background: rgba(25, 135, 84, .08);
+            font-size: .7rem;
+            font-weight: 800;
+        }
+
+        .juz-detail-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .75rem;
+            margin-bottom: 1rem;
+        }
+
+        .juz-detail-stat {
+            position: relative;
+            overflow: hidden;
+            padding: .95rem 1rem;
+            border: 1px solid var(--report-border);
+            border-radius: 16px;
+            background:
+                linear-gradient(135deg, rgba(107, 78, 255, .055), rgba(19, 163, 179, .035)),
+                var(--report-surface-muted);
+        }
+
+        .juz-detail-stat__label {
+            margin-bottom: .32rem;
+            color: var(--report-text-muted);
+            font-size: .65rem;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            font-weight: 850;
+        }
+
+        .juz-detail-stat__value {
+            color: var(--report-text);
+            font-size: 1.35rem;
+            line-height: 1;
+            font-weight: 850;
+            letter-spacing: -.025em;
+        }
+
+        .juz-class-card {
+            overflow: hidden;
+            border: 1px solid var(--report-border) !important;
+            border-radius: 18px;
+            background: var(--report-surface);
+            box-shadow: var(--report-shadow-sm);
+        }
+
+        .juz-class-card+.juz-class-card {
+            margin-top: .9rem;
+        }
+
+        .juz-class-card__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            padding: .9rem 1rem;
+            border-bottom: 1px solid var(--report-border);
+            background:
+                linear-gradient(135deg, rgba(107, 78, 255, .08), rgba(19, 163, 179, .045)),
+                var(--report-surface-muted);
+        }
+
+        .juz-class-card__title {
+            margin: 0;
+            font-size: .9rem;
+            font-weight: 850;
+            color: var(--report-text);
+        }
+
+        .juz-class-total {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .38rem .65rem;
+            border-radius: 999px;
+            color: #fff;
+            background: linear-gradient(135deg, var(--report-purple), var(--report-tosca));
+            font-size: .68rem;
+            font-weight: 850;
+            white-space: nowrap;
+        }
+
+        .juz-student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
+            gap: .7rem;
+            padding: .95rem;
+        }
+
+        .juz-student-card {
+            display: flex;
+            align-items: flex-start;
+            gap: .75rem;
+            min-height: 86px;
+            padding: .78rem;
+            border: 1px solid var(--report-border);
+            border-radius: 15px;
+            background: var(--report-surface-elevated);
+            transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+        }
+
+        .juz-student-card:hover {
+            transform: translateY(-2px);
+            border-color: color-mix(in srgb, var(--report-purple) 24%, var(--report-border));
+            box-shadow: var(--report-shadow-sm);
+        }
+
+        .juz-student-avatar {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            color: var(--report-purple);
+            background: var(--report-purple-soft);
+            font-size: .9rem;
+            font-weight: 850;
+        }
+
+        .juz-student-name {
+            color: var(--report-text);
+            font-size: .82rem;
+            line-height: 1.32;
+            font-weight: 850;
+        }
+
+        .juz-student-meta {
+            margin-top: .28rem;
+            color: var(--report-text-muted);
+            font-size: .68rem;
+            line-height: 1.48;
+        }
+
+        .juz-detail-empty {
+            padding: 2rem 1rem;
+            border: 1px dashed var(--report-border-strong);
+            border-radius: 18px;
+            color: var(--report-text-muted);
+            background: var(--report-surface-muted);
+            text-align: center;
+        }
+
+        .kelas-juz-report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: .78rem;
+        }
+
+        .kelas-juz-report-card {
+            position: relative;
+            overflow: hidden;
+            min-height: 132px;
+            padding: .9rem;
+            border: 1px solid var(--report-border);
+            border-radius: 18px;
+            background:
+                radial-gradient(circle at 82% 15%, rgba(255, 255, 255, .18), transparent 23%),
+                linear-gradient(135deg, rgba(107, 78, 255, .052), rgba(19, 163, 179, .035)),
+                var(--report-surface-elevated);
+            box-shadow: var(--report-shadow-sm);
+            cursor: pointer;
+            transition:
+                transform .22s ease,
+                border-color .22s ease,
+                box-shadow .22s ease,
+                filter .22s ease;
+        }
+
+        .kelas-juz-report-card:hover {
+            transform: translateY(-3px);
+            border-color: color-mix(in srgb, var(--report-purple) 28%, var(--report-border));
+            box-shadow: var(--report-shadow-hover);
+        }
+
+        .kelas-juz-report-card::after {
+            content: '';
+            position: absolute;
+            right: -28px;
+            bottom: -38px;
+            width: 92px;
+            height: 92px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--report-purple), var(--report-tosca));
+            opacity: .08;
+            pointer-events: none;
+        }
+
+        .kelas-juz-report-card.is-unlocked {
+            border-color: color-mix(in srgb, var(--report-success) 22%, var(--report-border));
+        }
+
+        .kelas-juz-report-card.is-no-pass {
+            background:
+                linear-gradient(135deg, rgba(217, 154, 0, .07), rgba(107, 78, 255, .026)),
+                var(--report-surface-elevated);
+        }
+
+        .kelas-juz-report-card.is-locked {
+            isolation: isolate;
+            border-color: color-mix(in srgb, var(--report-text-soft) 35%, var(--report-border));
+            background:
+                linear-gradient(135deg, rgba(108, 117, 125, .12), rgba(108, 117, 125, .04)),
+                var(--report-surface-muted);
+            box-shadow: none;
+            cursor: not-allowed;
+            filter: grayscale(.9) saturate(.45);
+        }
+
+        .kelas-juz-report-card.is-locked:hover {
+            transform: none;
+            border-color: color-mix(in srgb, var(--report-text-soft) 35%, var(--report-border));
+            box-shadow: none;
+        }
+
+        .kelas-juz-report-card.is-locked::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            background: rgba(108, 117, 125, .34);
+            backdrop-filter: grayscale(1) blur(.6px);
+            pointer-events: none;
+        }
+
+        .kelas-juz-report-card.is-locked::after {
+            width: 118px;
+            height: 118px;
+            right: -35px;
+            bottom: -48px;
+            background: linear-gradient(135deg, #6c757d, #343a40);
+            opacity: .12;
+        }
+
+        .kelas-juz-report-card__juz {
+            position: relative;
+            z-index: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: .38rem;
+            padding: .35rem .6rem;
+            border-radius: 999px;
+            color: var(--report-purple);
+            background: var(--report-purple-soft);
+            font-size: .68rem;
+            font-weight: 850;
+        }
+
+        .kelas-juz-report-card.is-locked .kelas-juz-report-card__juz {
+            color: var(--report-text-muted);
+            background: rgba(108, 117, 125, .13);
+        }
+
+        .kelas-juz-report-card__lock-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .kelas-juz-report-card__lock-icon {
+            width: 58px;
+            height: 58px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, .22);
+            border-radius: 18px;
+            color: #ffffff;
+            background: rgba(52, 58, 64, .72);
+            font-size: 1.85rem;
+            box-shadow: 0 14px 32px rgba(15, 23, 42, .22);
+        }
+
+        .kelas-juz-report-card.is-shaking .kelas-juz-report-card__lock-icon {
+            animation: lockShake .42s cubic-bezier(.36, .07, .19, .97) both;
+        }
+
+        @keyframes lockShake {
+            10%, 90% { transform: translateX(-1px) rotate(-2deg); }
+            20%, 80% { transform: translateX(2px) rotate(2deg); }
+            30%, 50%, 70% { transform: translateX(-4px) rotate(-4deg); }
+            40%, 60% { transform: translateX(4px) rotate(4deg); }
+        }
+
+        .kelas-juz-report-card__value {
+            position: relative;
+            z-index: 1;
+            margin-top: .78rem;
+            color: var(--report-text);
+            font-size: 1.85rem;
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: -.04em;
+        }
+
+        .kelas-juz-report-card__label {
+            position: relative;
+            z-index: 1;
+            margin-top: .35rem;
+            color: var(--report-text-muted);
+            font-size: .7rem;
+            font-weight: 750;
+        }
+
+        .btn-kelas-juz-report {
+            border: 0;
+            color: #fff !important;
+            background: linear-gradient(135deg, var(--report-purple), var(--report-tosca));
+            box-shadow: 0 6px 14px rgba(107, 78, 255, .18);
+            white-space: nowrap;
+        }
+
+        .btn-kelas-juz-report:hover {
+            filter: brightness(1.04);
+            transform: translateY(-1px);
+        }
+
+        .progress-detail-summary {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: .75rem;
+            margin-bottom: 1rem;
+        }
+
+        .progress-detail-stat {
+            position: relative;
+            overflow: hidden;
+            padding: .9rem .95rem;
+            border: 1px solid var(--report-border);
+            border-radius: 16px;
+            background:
+                linear-gradient(135deg, rgba(107, 78, 255, .055), rgba(19, 163, 179, .035)),
+                var(--report-surface-muted);
+        }
+
+        .progress-detail-stat::before {
+            content: '';
+            position: absolute;
+            inset: 0 0 auto;
+            height: 3px;
+            background: linear-gradient(90deg, var(--report-purple), var(--report-tosca));
+            opacity: .78;
+        }
+
+        .progress-detail-stat__label {
+            margin-bottom: .35rem;
+            color: var(--report-text-muted);
+            font-size: .63rem;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            font-weight: 850;
+        }
+
+        .progress-detail-stat__value {
+            color: var(--report-text);
+            font-size: 1.15rem;
+            line-height: 1.15;
+            font-weight: 850;
+            letter-spacing: -.025em;
+        }
+
+        .progress-stage-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .28rem;
+            padding: .32rem .55rem;
+            border-radius: 999px;
+            font-size: .67rem;
+            font-weight: 850;
+            white-space: nowrap;
+        }
+
+        .progress-stage-badge.is-harian {
+            color: var(--report-purple);
+            background: var(--report-purple-soft);
+        }
+
+        .progress-stage-badge.is-ujian {
+            color: var(--report-success);
+            background: rgba(25, 135, 84, .10);
+        }
+
+        .progress-stage-badge.is-lainnya {
+            color: var(--report-text-muted);
+            background: var(--report-surface-muted);
+            border: 1px solid var(--report-border);
+        }
+
+        .musyrif-rekap-hint {
+            display: flex;
+            align-items: flex-start;
+            gap: .7rem;
+            margin-bottom: .9rem;
+            padding: .85rem 1rem;
+            border: 1px solid rgba(13, 202, 240, .18);
+            border-radius: 16px;
+            color: var(--report-info-text);
+            background: var(--report-info-bg);
+            font-size: .78rem;
+            line-height: 1.55;
+        }
+
+        .musyrif-rekap-hint i {
+            margin-top: .1rem;
+            color: var(--report-tosca);
+            font-size: 1rem;
+        }
+
+        .musyrif-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: .75rem;
+            margin-bottom: 1rem;
+        }
+
+        .musyrif-detail-stat {
+            position: relative;
+            overflow: hidden;
+            min-height: 96px;
+            padding: .9rem .95rem;
+            border: 1px solid var(--report-border);
+            border-radius: 16px;
+            background:
+                linear-gradient(135deg, rgba(107, 78, 255, .055), rgba(19, 163, 179, .035)),
+                var(--report-surface-muted);
+        }
+
+        .musyrif-detail-stat::before {
+            content: '';
+            position: absolute;
+            inset: 0 0 auto;
+            height: 3px;
+            background: linear-gradient(90deg, var(--report-purple), var(--report-tosca));
+            opacity: .8;
+        }
+
+        .musyrif-detail-stat__label {
+            margin-bottom: .35rem;
+            color: var(--report-text-muted);
+            font-size: .62rem;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            font-weight: 850;
+        }
+
+        .musyrif-detail-stat__value {
+            color: var(--report-text);
+            font-size: 1.28rem;
+            line-height: 1.1;
+            letter-spacing: -.025em;
+            font-weight: 900;
+        }
+
+        .musyrif-student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(265px, 1fr));
+            gap: .72rem;
+            padding: .95rem;
+        }
+
+        .musyrif-student-card {
+            display: flex;
+            align-items: flex-start;
+            gap: .75rem;
+            min-height: 132px;
+            padding: .82rem;
+            border: 1px solid var(--report-border);
+            border-radius: 16px;
+            background: var(--report-surface-elevated);
+            transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+        }
+
+        .musyrif-student-card:hover {
+            transform: translateY(-2px);
+            border-color: color-mix(in srgb, var(--report-purple) 24%, var(--report-border));
+            box-shadow: var(--report-shadow-sm);
+        }
+
+        .musyrif-student-card.is-success {
+            border-color: color-mix(in srgb, var(--report-success) 22%, var(--report-border));
+        }
+
+        .musyrif-student-card.is-primary {
+            border-color: color-mix(in srgb, var(--report-purple) 22%, var(--report-border));
+        }
+
+        .musyrif-student-card.is-secondary {
+            opacity: .82;
+        }
+
+        .musyrif-student-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .35rem;
+            margin-top: .55rem;
+        }
+
+        .musyrif-mini-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .28rem;
+            padding: .28rem .5rem;
+            border-radius: 999px;
+            color: var(--report-text);
+            background: var(--report-surface-muted);
+            border: 1px solid var(--report-border);
+            font-size: .66rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .musyrif-mini-pill.is-ujian {
+            color: var(--report-success);
+            background: rgba(25, 135, 84, .09);
+            border-color: rgba(25, 135, 84, .18);
+        }
+
+        .musyrif-mini-pill.is-warning {
+            color: var(--report-warning);
+            background: rgba(217, 154, 0, .09);
+            border-color: rgba(217, 154, 0, .18);
+        }
+
         .nav-pills {
             gap: .32rem;
             padding: .28rem;
@@ -942,6 +1481,10 @@
         }
 
         @media (max-width: 991.98px) {
+            .musyrif-detail-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
             .report-hero {
                 align-items: flex-start;
             }
@@ -961,6 +1504,21 @@
         }
 
         @media (max-width: 767.98px) {
+            .juz-detail-summary,
+            .progress-detail-summary,
+            .musyrif-detail-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .juz-class-card__header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .juz-student-grid {
+                grid-template-columns: 1fr;
+            }
+
             .report-page::before {
                 inset-inline: -.75rem;
             }
@@ -1138,18 +1696,36 @@
         </section>
 
         <div class="alert alert-warning border-0 rounded-4 shadow-sm d-none" id="placementIntegrityAlert" role="alert">
-            <div class="d-flex align-items-start gap-3">
-                <i class="bi bi-exclamation-triangle-fill fs-5 mt-1"></i>
 
-                <div>
-                    <div class="fw-bold mb-1">
-                        Pemeriksaan Integritas Data Semester
-                    </div>
+            <div class="d-flex flex-column flex-md-row align-items-md-center gap-3">
+                <div class="d-flex align-items-start gap-3 flex-grow-1 min-w-0">
+                    <i class="bi bi-exclamation-triangle-fill fs-5 mt-1 flex-shrink-0"></i>
 
-                    <div class="small" id="placementIntegrityMessage">
-                        -
+                    <div class="min-w-0">
+                        <div class="fw-bold mb-1">
+                            Pemeriksaan Integritas Data Semester
+                        </div>
+
+                        <div class="small" id="placementIntegrityMessage">
+                            -
+                        </div>
                     </div>
                 </div>
+
+                @if (\Illuminate\Support\Facades\Route::has('kelas.index'))
+                    <div class="d-none flex-shrink-0" id="placementIntegrityAction">
+
+                        <a href="{{ route('kelas.index', [
+                            'tab' => 'semester',
+                            'action' => 'backfill',
+                        ]) }}"
+                            class="btn btn-sm btn-dark rounded-pill px-3 text-nowrap">
+
+                            <i class="bi bi-database-fill-gear me-1"></i>
+                            Buka Backfill Placement
+                        </a>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -1610,6 +2186,62 @@
             </div>
         </div>
 
+        {{-- GRAFIK PROGRESS SETORAN PER JUZ --}}
+        <div class="card report-card mb-4">
+            <div
+                class="card-header bg-transparent border-0 px-4 pt-4 pb-0 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <div class="fw-bold text-white"><i class="bi bi-bar-chart-steps text-warning me-2"></i>Progress Setoran per Juz
+                    </div>
+                    <div class="chart-card-subtitle text-white">Jumlah santri yang sudah memiliki progress setoran
+                        harian/tahap pada setiap Juz. Klik batang chart untuk melihat detail santri per kelas.
+                    </div>
+                    <div class="juz-chart-hint">
+                        <i class="bi bi-cursor-fill"></i>
+                        Klik bar chart untuk membuka detail progress setoran
+                    </div>
+                </div>
+                <ul class="nav nav-pills nav-pills-sm flex-nowrap overflow-auto" id="juzSetoranTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active text-nowrap" id="juz-setoran-all-tab" data-coreui-toggle="tab"
+                            data-coreui-target="#juz-setoran-all" type="button" role="tab">Semua Kelas</button>
+                    </li>
+                    @foreach ($kelasList as $kelas)
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link text-nowrap" id="juz-setoran-kelas-{{ $kelas->id }}-tab"
+                                data-coreui-toggle="tab" data-coreui-target="#juz-setoran-kelas-{{ $kelas->id }}"
+                                type="button" role="tab" title="{{ $kelas->nama_kelas }}">
+                                {{ \Illuminate\Support\Str::limit($kelas->nama_kelas, 15) }}
+                            </button>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-info border-0 rounded-4 small mb-3">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    Grafik ini menghitung santri unik yang memiliki setoran <b>Harian, Tahap 1, Tahap 2, atau Tahap 3</b> pada Juz tersebut.
+                    Data <b>Ujian Akhir</b> tetap dipisahkan pada grafik Kelulusan Ujian Akhir per Juz.
+                </div>
+                <div class="tab-content" id="juzSetoranTabContent">
+                    <div class="tab-pane fade show active" id="juz-setoran-all" role="tabpanel">
+                        <div class="text-center text-muted py-5 d-none" id="noteJuzSetoranAll">
+                            <i class="bi bi-info-circle me-1"></i>Belum ada progress setoran pada periode ini.
+                        </div>
+                        <div class="chart-box-sm"><canvas id="chartJuzSetoranAll"></canvas></div>
+                    </div>
+                    @foreach ($kelasList as $kelas)
+                        <div class="tab-pane fade" id="juz-setoran-kelas-{{ $kelas->id }}" role="tabpanel">
+                            <div class="text-center text-muted py-5 d-none" id="noteJuzSetoranKelas_{{ $kelas->id }}">
+                                <i class="bi bi-info-circle me-1"></i>Belum ada progress setoran di kelas ini.
+                            </div>
+                            <div class="chart-box-sm"><canvas id="chartJuzSetoranKelas_{{ $kelas->id }}"></canvas></div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
         {{-- GRAFIK JUZ LULUS --}}
         <div class="card report-card mb-4">
             <div
@@ -1619,7 +2251,11 @@
                         Akhir per Juz
                     </div>
                     <div class="chart-card-subtitle text-white">Jumlah santri yang berhasil menyelesaikan ujian akhir
-                        setiap Juz.
+                        setiap Juz. Klik batang chart untuk melihat detail santri per kelas.
+                    </div>
+                    <div class="juz-chart-hint">
+                        <i class="bi bi-cursor-fill"></i>
+                        Klik bar chart untuk membuka daftar santri
                     </div>
                 </div>
                 <ul class="nav nav-pills nav-pills-sm flex-nowrap overflow-auto" id="juzTabs" role="tablist">
@@ -1709,14 +2345,15 @@
                                     <tr>
                                         <th>No.</th>
                                         <th>Kelas</th>
-                                        <th>Santri</th>
+                                        <th>Nama Santri</th>
                                         <th>Musyrif</th>
-                                        <th>Jumlah Setoran</th>
-                                        <th>Hadir Tidak Setor</th>
+                                        <th>Jumlah Setoran<br><small class="text-muted">Harian</small></th>
+                                        <th>Jumlah Ujian<br><small class="text-muted">Juz</small></th>
+                                        <th>HTS</th>
                                         <th>Sakit</th>
                                         <th>Izin</th>
                                         <th>Alpha</th>
-                                        <th>Rata-rata Nilai</th>
+                                        <th>Rata2 Nilai<br><small class="text-muted">Ujian</small></th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -1744,8 +2381,14 @@
                                         <th>No.</th>
                                         <th>Kelas</th>
                                         <th>Jumlah Santri</th>
-                                        <th>Jumlah Setoran</th>
-                                        <th>Rata-rata Nilai</th>
+                                        <th>Setoran Harian</th>
+                                        <th>Ujian / Juz</th>
+                                        <th>HTS</th>
+                                        <th>Sakit</th>
+                                        <th>Izin</th>
+                                        <th>Alpha</th>
+                                        <th>Rata2 Nilai Ujian</th>
+                                        <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -1764,6 +2407,15 @@
                                 <i class="bi bi-file-earmark-pdf-fill me-1"></i>PDF
                             </button>
                         </div>
+                        <div class="musyrif-rekap-hint">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>
+                                Rekap musyrif sekarang dipisah antara <b>setoran harian/tahap</b> dan
+                                <b>ujian akhir</b>. Cakupan ujian menunjukkan berapa santri binaan yang sudah
+                                memiliki minimal satu Juz lulus ujian akhir pada periode terpilih.
+                            </div>
+                        </div>
+
                         <div class="table-responsive">
                             <table class="table table-bordered table-striped align-middle w-100 text-nowrap"
                                 id="table-rekap-musyrif">
@@ -1771,9 +2423,17 @@
                                     <tr>
                                         <th>No.</th>
                                         <th>Musyrif</th>
-                                        <th>Jumlah Santri Binaan</th>
-                                        <th>Jumlah Setoran</th>
-                                        <th>Rata-rata Nilai</th>
+                                        <th>Santri Binaan</th>
+                                        <th>Santri Aktif</th>
+                                        <th>Setoran Harian</th>
+                                        <th>Ujian / Juz</th>
+                                        <th>Cakupan Ujian</th>
+                                        <th>HTS</th>
+                                        <th>Sakit</th>
+                                        <th>Izin</th>
+                                        <th>Alpha</th>
+                                        <th>Rata2 Nilai Ujian</th>
+                                        <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -1829,28 +2489,74 @@
 
 @push('modals')
     <div class="modal fade" id="modalRiwayatSantri" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header modal-header-accent text-white">
                     <div>
-                        <h5 class="modal-title mb-0">Riwayat Hafalan: <span id="detail_nama_santri"></span></h5>
+                        <h5 class="modal-title mb-0">
+                            <i class="bi bi-journal-check me-2"></i>
+                            Detail Progress Hafalan: <span id="detail_nama_santri"></span>
+                        </h5>
                         <small class="opacity-75" id="detail_periode_santri"></small>
                     </div>
                     <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal"
                         aria-label="Tutup"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-3">
-                        Kelas: <strong id="detail_kelas_santri"></strong>
-                        <span class="mx-2">|</span>
-                        Musyrif: <strong id="detail_musyrif_santri"></strong>
-                    </p>
+                    <div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-3">
+                        <div>
+                            <div class="small text-muted text-uppercase fw-bold mb-1" style="letter-spacing:.07em;">
+                                Placement Semester
+                            </div>
+                            <div>
+                                Kelas: <strong id="detail_kelas_santri"></strong>
+                                <span class="mx-2">|</span>
+                                Musyrif: <strong id="detail_musyrif_santri"></strong>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="badge rounded-pill bg-secondary-subtle text-secondary border"
+                                id="detail_status_evaluasi">-</span>
+                        </div>
+                    </div>
+
+                    <div class="progress-detail-summary">
+                        <div class="progress-detail-stat">
+                            <div class="progress-detail-stat__label">Setoran Harian</div>
+                            <div class="progress-detail-stat__value" id="detail_jumlah_harian">0</div>
+                        </div>
+                        <div class="progress-detail-stat">
+                            <div class="progress-detail-stat__label">Ujian / Juz</div>
+                            <div class="progress-detail-stat__value" id="detail_jumlah_ujian">0</div>
+                        </div>
+                        <div class="progress-detail-stat">
+                            <div class="progress-detail-stat__label">Rata2 Sementara</div>
+                            <div class="progress-detail-stat__value" id="detail_rata_sementara">-</div>
+                            <div class="small text-muted mt-1">Maksimal 70</div>
+                        </div>
+                        <div class="progress-detail-stat">
+                            <div class="progress-detail-stat__label">Rata2 Ujian</div>
+                            <div class="progress-detail-stat__value" id="detail_rata_ujian">-</div>
+                        </div>
+                        <div class="progress-detail-stat">
+                            <div class="progress-detail-stat__label">Nilai Ujian Terakhir</div>
+                            <div class="progress-detail-stat__value" id="detail_nilai_ujian_terakhir">-</div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info border-0 rounded-4 small mb-3">
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                        Nilai harian, tahap 1, tahap 2, dan tahap 3 dihitung sebagai <b>nilai sementara</b>
+                        dengan batas maksimal 70. Nilai final diambil dari <b>ujian akhir</b>.
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-sm table-striped table-bordered align-middle" id="table-riwayat-santri">
                             <thead>
                                 <tr>
                                     <th>Tanggal</th>
-                                    <th>Materi</th>
+                                    <th>Tahap</th>
+                                    <th>Juz / Materi</th>
                                     <th>Status</th>
                                     <th>Nilai</th>
                                     <th>Catatan</th>
@@ -1859,6 +2565,182 @@
                             <tbody></tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalDetailMusyrifProgress" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header modal-header-accent text-white">
+                    <div>
+                        <h5 class="modal-title mb-0">
+                            <i class="bi bi-people-fill me-2"></i>
+                            Detail Progress Musyrif: <span id="musyrifDetailTitle">-</span>
+                        </h5>
+                        <small class="opacity-75" id="musyrifDetailPeriod">-</small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal"
+                        aria-label="Tutup"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="musyrif-detail-grid">
+                        <div class="musyrif-detail-stat">
+                            <div class="musyrif-detail-stat__label">Santri Binaan</div>
+                            <div class="musyrif-detail-stat__value" id="musyrifDetailTotalSantri">0</div>
+                        </div>
+                        <div class="musyrif-detail-stat">
+                            <div class="musyrif-detail-stat__label">Santri Aktif</div>
+                            <div class="musyrif-detail-stat__value" id="musyrifDetailAktif">0</div>
+                        </div>
+                        <div class="musyrif-detail-stat">
+                            <div class="musyrif-detail-stat__label">Setoran Harian</div>
+                            <div class="musyrif-detail-stat__value" id="musyrifDetailHarian">0</div>
+                        </div>
+                        <div class="musyrif-detail-stat">
+                            <div class="musyrif-detail-stat__label">Ujian / Juz</div>
+                            <div class="musyrif-detail-stat__value" id="musyrifDetailUjian">0</div>
+                        </div>
+                        <div class="musyrif-detail-stat">
+                            <div class="musyrif-detail-stat__label">Cakupan Ujian</div>
+                            <div class="musyrif-detail-stat__value" id="musyrifDetailCoverage">0%</div>
+                        </div>
+                        <div class="musyrif-detail-stat">
+                            <div class="musyrif-detail-stat__label">Rata2 Ujian</div>
+                            <div class="musyrif-detail-stat__value" id="musyrifDetailNilaiUjian">-</div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info border-0 rounded-4 small mb-3">
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                        Detail ini memakai perhitungan yang sama dengan laporan: <b>setoran harian</b>
+                        berasal dari tahap harian sampai tahap 3, sedangkan <b>ujian/juz</b> hanya dari
+                        tahap ujian akhir yang lulus.
+                    </div>
+
+                    <div id="musyrifDetailLoading" class="text-center py-5 d-none">
+                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                        <div class="fw-bold">Memuat detail santri binaan...</div>
+                        <div class="small text-muted">Mohon tunggu sebentar.</div>
+                    </div>
+
+                    <div id="musyrifDetailContent"></div>
+                </div>
+
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-coreui-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i> Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalJuzDetail" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header modal-header-accent text-white">
+                    <div>
+                        <h5 class="modal-title mb-0">
+                            <i class="bi bi-award-fill me-2" id="juzDetailIcon"></i>
+                            <span id="juzDetailHeading">Detail Kelulusan Ujian Akhir</span>: <span id="juzDetailTitle">Juz -</span>
+                        </h5>
+                        <small class="opacity-75" id="juzDetailPeriod">-</small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal"
+                        aria-label="Tutup"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="juz-detail-summary">
+                        <div class="juz-detail-stat">
+                            <div class="juz-detail-stat__label">Total Santri</div>
+                            <div class="juz-detail-stat__value" id="juzDetailTotal">0</div>
+                        </div>
+
+                        <div class="juz-detail-stat">
+                            <div class="juz-detail-stat__label">Jumlah Kelas</div>
+                            <div class="juz-detail-stat__value" id="juzDetailKelasCount">0</div>
+                        </div>
+
+                        <div class="juz-detail-stat">
+                            <div class="juz-detail-stat__label">Semester</div>
+                            <div class="juz-detail-stat__value fs-6 lh-sm" id="juzDetailSemester">-</div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info border-0 rounded-4 small mb-3">
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                        <span id="juzDetailInfoText">Daftar dikelompokkan per kelas berdasarkan placement semester yang sedang dipilih.</span>
+                    </div>
+
+                    <div id="juzDetailLoading" class="text-center py-5 d-none">
+                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                        <div class="fw-bold">Memuat detail santri...</div>
+                        <div class="small text-muted">Mohon tunggu sebentar.</div>
+                    </div>
+
+                    <div id="juzDetailContent"></div>
+                </div>
+
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-coreui-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i> Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="modalKelasJuzReport" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header modal-header-accent text-white">
+                    <div>
+                        <h5 class="modal-title mb-0">
+                            <i class="bi bi-grid-3x3-gap-fill me-2"></i>
+                            Raport Kelulusan Juz: <span id="kelasJuzReportTitle">-</span>
+                        </h5>
+                        <small class="opacity-75" id="kelasJuzReportPeriod">-</small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal"
+                        aria-label="Tutup"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="juz-detail-summary">
+                        <div class="juz-detail-stat">
+                            <div class="juz-detail-stat__label">Santri Lulus Ujian</div>
+                            <div class="juz-detail-stat__value" id="kelasJuzReportSantri">0</div>
+                        </div>
+
+                        <div class="juz-detail-stat">
+                            <div class="juz-detail-stat__label">Total Kelulusan Juz</div>
+                            <div class="juz-detail-stat__value" id="kelasJuzReportTotalJuz">0</div>
+                        </div>
+
+                        <div class="juz-detail-stat">
+                            <div class="juz-detail-stat__label">Semester</div>
+                            <div class="juz-detail-stat__value fs-6 lh-sm" id="kelasJuzReportSemester">-</div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info border-0 rounded-4 small mb-3">
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                        Setiap card menunjukkan jumlah santri yang sudah <b>lulus ujian akhir</b> pada Juz tersebut.
+                        Card abu-abu dengan ikon gembok berarti Juz tersebut <b>belum pernah diujiankan</b> pada kelas dan filter aktif.
+                    </div>
+
+                    <div id="kelasJuzReportLoading" class="text-center py-5 d-none">
+                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                        <div class="fw-bold">Memuat raport Juz per kelas...</div>
+                        <div class="small text-muted">Mohon tunggu sebentar.</div>
+                    </div>
+
+                    <div id="kelasJuzReportContent" class="kelas-juz-report-grid"></div>
                 </div>
             </div>
         </div>
@@ -1945,6 +2827,15 @@
                 });
             }
 
+            function escapeHtml(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
             function setProgress(id, value) {
                 document.getElementById(id)?.style.setProperty('width', `${Math.min(100, Number(value || 0))}%`);
             }
@@ -2012,7 +2903,11 @@
                         name: 'musyrif'
                     },
                     {
-                        data: 'total_setor',
+                        data: 'jumlah_setoran_harian',
+                        searchable: false
+                    },
+                    {
+                        data: 'jumlah_ujian',
                         searchable: false
                     },
                     {
@@ -2032,7 +2927,7 @@
                         searchable: false
                     },
                     {
-                        data: 'rata_nilai',
+                        data: 'rata_nilai_ujian',
                         searchable: false
                     },
                     {
@@ -2071,18 +2966,44 @@
                         searchable: false
                     },
                     {
-                        data: 'total_setor',
+                        data: 'jumlah_setoran_harian',
                         searchable: false
                     },
                     {
-                        data: 'rata_nilai',
+                        data: 'jumlah_ujian',
+                        searchable: false
+                    },
+                    {
+                        data: 'hadir_tidak_setor',
+                        searchable: false
+                    },
+                    {
+                        data: 'sakit',
+                        searchable: false
+                    },
+                    {
+                        data: 'izin',
+                        searchable: false
+                    },
+                    {
+                        data: 'alpha',
+                        searchable: false
+                    },
+                    {
+                        data: 'rata_nilai_ujian',
+                        searchable: false
+                    },
+                    {
+                        data: 'aksi',
+                        orderable: false,
                         searchable: false
                     }
                 ],
                 order: [
                     [1, 'asc']
                 ],
-                language: dataTableLanguage('Cari kelas...')
+                language: dataTableLanguage('Cari kelas...'),
+                drawCallback: initializeTooltips
             });
 
             const tableMusyrif = $('#table-rekap-musyrif').DataTable({
@@ -2092,7 +3013,12 @@
                 autoWidth: false,
                 ajax: {
                     url: '{{ route('admin.laporan.rekap-musyrif') }}',
-                    data: appendReportFilters
+                    data: appendReportFilters,
+                    error: function(xhr) {
+                        if (xhr.status === 422) {
+                            showError(Object.values(xhr.responseJSON?.errors || {}).flat().join('\n'));
+                        }
+                    }
                 },
                 columns: [{
                         data: 'DT_RowIndex',
@@ -2108,18 +3034,54 @@
                         searchable: false
                     },
                     {
-                        data: 'total_setor',
+                        data: 'santri_aktif',
+                        orderable: false,
                         searchable: false
                     },
                     {
-                        data: 'rata_nilai',
+                        data: 'jumlah_setoran_harian',
+                        searchable: false
+                    },
+                    {
+                        data: 'jumlah_ujian',
+                        searchable: false
+                    },
+                    {
+                        data: 'coverage_ujian',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'hadir_tidak_setor',
+                        searchable: false
+                    },
+                    {
+                        data: 'sakit',
+                        searchable: false
+                    },
+                    {
+                        data: 'izin',
+                        searchable: false
+                    },
+                    {
+                        data: 'alpha',
+                        searchable: false
+                    },
+                    {
+                        data: 'rata_nilai_ujian',
+                        searchable: false
+                    },
+                    {
+                        data: 'aksi',
+                        orderable: false,
                         searchable: false
                     }
                 ],
                 order: [
                     [1, 'asc']
                 ],
-                language: dataTableLanguage('Cari musyrif...')
+                language: dataTableLanguage('Cari musyrif...'),
+                drawCallback: initializeTooltips
             });
 
             const tableAbsensi = $('#table-absensi-musyrif').DataTable({
@@ -2458,13 +3420,47 @@
                                 `${response.semester.is_active ? 'Semester Aktif' : 'Semester Terpilih'} • Placement Historis`
                             );
 
+                        const placementSource =
+                            response.data_source || {};
+
                         const placementWarnings =
-                            response.data_source?.warnings || [];
+                            placementSource.warnings || [];
+
+                        /*
+                         * Quick action hanya relevan untuk semester aktif.
+                         * Halaman Backfill Placement memang memproses semester aktif,
+                         * sehingga semester historis tidak diarahkan ke aksi yang salah.
+                         */
+                        const shouldOfferPlacementBackfill =
+                            Boolean(
+                                response.semester?.is_active
+                            ) &&
+                            (
+                                Number(
+                                    placementSource
+                                    .placement_count ??
+                                    0
+                                ) === 0 ||
+                                Number(
+                                    placementSource
+                                    .unplaced_progress_count ??
+                                    0
+                                ) > 0
+                            );
+
+                        $('#placementIntegrityAction')
+                            .toggleClass(
+                                'd-none',
+                                !shouldOfferPlacementBackfill
+                            );
 
                         if (placementWarnings.length > 0) {
                             $('#placementIntegrityMessage').html(
                                 placementWarnings
-                                .map(message => `<div>• ${String(message)}</div>`)
+                                .map(
+                                    message =>
+                                    `<div>• ${String(message)}</div>`
+                                )
                                 .join('')
                             );
 
@@ -2476,6 +3472,9 @@
 
                             $('#placementIntegrityMessage')
                                 .text('-');
+
+                            $('#placementIntegrityAction')
+                                .addClass('d-none');
                         }
 
                         animateCounter(document.getElementById('kpi_total_santri'), response.kpi
@@ -2569,6 +3568,7 @@
                         chartMusyrif.update();
                     });
 
+                renderActiveJuzSetoranChart();
                 renderActiveJuzChart();
             }
 
@@ -2582,9 +3582,10 @@
                 return (values || []).every(value => Number(value) === 0);
             }
 
-            async function fetchJuzData(kelasId = null) {
+            async function fetchJuzData(kelasId = null, metric = 'lulus') {
                 const params = new URLSearchParams(getReportFilters());
                 if (kelasId) params.set('kelas_id', kelasId);
+                if (metric === 'setoran') params.set('setoran', '1');
 
                 const response = await fetch(
                     `{{ route('admin.laporan.chart.juz-lulus') }}?${params.toString()}`, {
@@ -2593,19 +3594,350 @@
                         }
                     });
 
-                if (!response.ok) throw new Error('Gagal mengambil data grafik Juz.');
+                if (!response.ok) {
+                    throw new Error(metric === 'setoran'
+                        ? 'Gagal mengambil data progress setoran per Juz.'
+                        : 'Gagal mengambil data grafik Juz.');
+                }
+
                 return response.json();
             }
 
-            async function renderBarJuz(canvasId, kelasId = null, labelTitle = '') {
+            function getReportModalInstance(modalId) {
+                const element = document.getElementById(modalId);
+                if (!element || !window.coreui?.Modal) return null;
+
+                return coreui.Modal.getOrCreateInstance(element);
+            }
+
+            function waitReportModalHidden(modalId, fallbackMs = 280) {
+                const element = document.getElementById(modalId);
+
+                return new Promise(resolve => {
+                    if (!element || !element.classList.contains('show')) {
+                        resolve();
+                        return;
+                    }
+
+                    let resolved = false;
+                    const done = () => {
+                        if (resolved) return;
+                        resolved = true;
+                        element.removeEventListener('hidden.coreui.modal', done);
+                        element.removeEventListener('hidden.bs.modal', done);
+                        resolve();
+                    };
+
+                    element.addEventListener('hidden.coreui.modal', done, { once: true });
+                    element.addEventListener('hidden.bs.modal', done, { once: true });
+
+                    getReportModalInstance(modalId)?.hide();
+                    setTimeout(done, fallbackMs);
+                });
+            }
+
+            function cleanupReportModalBackdrops() {
+                setTimeout(() => {
+                    if (document.querySelectorAll('.modal.show').length > 0) return;
+
+                    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('overflow');
+                    document.body.style.removeProperty('padding-right');
+                }, 120);
+            }
+
+            ['modalJuzDetail', 'modalKelasJuzReport'].forEach(modalId => {
+                const element = document.getElementById(modalId);
+                if (!element) return;
+
+                element.addEventListener('hidden.coreui.modal', cleanupReportModalBackdrops);
+                element.addEventListener('hidden.bs.modal', cleanupReportModalBackdrops);
+            });
+
+            function renderKelasJuzReportLoading(kelasName) {
+                $('#kelasJuzReportTitle').text(kelasName || '-');
+                $('#kelasJuzReportPeriod').text('Memuat data raport Juz...');
+                $('#kelasJuzReportSantri').text('0');
+                $('#kelasJuzReportTotalJuz').text('0');
+                $('#kelasJuzReportSemester').text('-');
+                $('#kelasJuzReportContent').html('');
+                $('#kelasJuzReportLoading').removeClass('d-none');
+
+                getReportModalInstance('modalKelasJuzReport')?.show();
+            }
+
+            function renderKelasJuzReport(payload) {
+                const labels = payload.labels || [];
+                const values = payload.data || [];
+                const testedValues = payload.tested_data || [];
+
+                $('#kelasJuzReportTitle').text(payload.kelas_label || 'Kelas terpilih');
+                $('#kelasJuzReportPeriod').text(payload.period_label || '-');
+                $('#kelasJuzReportSantri').text(formatNumber(payload.total_santri_lulus_ujian || 0));
+                $('#kelasJuzReportTotalJuz').text(formatNumber(payload.total_juz_lulus || 0));
+                $('#kelasJuzReportSemester').text(payload.semester_label || '-');
+
+                if (!labels.length) {
+                    $('#kelasJuzReportContent').html(`
+                        <div class="juz-detail-empty" style="grid-column: 1 / -1;">
+                            <i class="bi bi-info-circle fs-4 d-block mb-2"></i>
+                            Belum ada data raport Juz pada filter aktif.
+                        </div>
+                    `);
+                    return;
+                }
+
+                const cards = labels.map(function(label, index) {
+                    const count = Number(values[index] || 0);
+                    const testedCount = Number(testedValues[index] || 0);
+                    const juzNumber = index + 1;
+                    const isLocked = testedCount <= 0;
+                    const stateClass = isLocked ? ' is-locked' : (count > 0 ? ' is-unlocked' : ' is-no-pass');
+                    const titleText = isLocked
+                        ? `${label} belum pernah diujiankan pada kelas ini.`
+                        : (count > 0
+                            ? `Klik untuk melihat detail santri ${label}`
+                            : `${label} sudah pernah diujiankan, tetapi belum ada santri yang lulus.`);
+
+                    if (isLocked) {
+                        return `
+                            <button type="button"
+                                class="kelas-juz-report-card${stateClass} text-start border-0"
+                                data-juz="${juzNumber}"
+                                data-kelas-id="${escapeHtml(payload.kelas_id || '')}"
+                                data-locked="1"
+                                aria-disabled="true"
+                                title="${escapeHtml(titleText)}">
+                                <span class="kelas-juz-report-card__juz">
+                                    <i class="bi bi-bookmark-dash-fill"></i>
+                                    ${escapeHtml(label)}
+                                </span>
+                                <div class="kelas-juz-report-card__value">0</div>
+                                <div class="kelas-juz-report-card__label">Belum diujiankan</div>
+                                <div class="kelas-juz-report-card__lock-layer" aria-hidden="true">
+                                    <span class="kelas-juz-report-card__lock-icon">
+                                        <i class="bi bi-lock-fill"></i>
+                                    </span>
+                                </div>
+                            </button>
+                        `;
+                    }
+
+                    return `
+                        <button type="button"
+                            class="kelas-juz-report-card${stateClass} text-start border-0"
+                            data-juz="${juzNumber}"
+                            data-kelas-id="${escapeHtml(payload.kelas_id || '')}"
+                            data-locked="0"
+                            title="${escapeHtml(titleText)}">
+                            <span class="kelas-juz-report-card__juz">
+                                <i class="bi bi-bookmark-check-fill"></i>
+                                ${escapeHtml(label)}
+                            </span>
+                            <div class="kelas-juz-report-card__value">${formatNumber(count)}</div>
+                            <div class="kelas-juz-report-card__label">
+                                ${count > 0 ? 'santri lulus ujian akhir' : 'sudah diujiankan, belum ada lulus'}
+                            </div>
+                        </button>
+                    `;
+                }).join('');
+
+                $('#kelasJuzReportContent').html(cards);
+            }
+
+            async function openKelasJuzReport(kelasId, kelasName) {
+                if (!kelasId) return;
+
+                try {
+                    renderKelasJuzReportLoading(kelasName);
+                    const payload = await fetchJuzData(kelasId);
+                    renderKelasJuzReport(payload);
+                } catch (error) {
+                    console.error(error);
+                    $('#kelasJuzReportContent').html(`
+                        <div class="juz-detail-empty text-danger" style="grid-column: 1 / -1;">
+                            <i class="bi bi-exclamation-triangle-fill fs-4 d-block mb-2"></i>
+                            Gagal memuat raport Juz kelas. Silakan coba lagi.
+                        </div>
+                    `);
+                    showError(error.message || 'Gagal memuat raport Juz kelas.');
+                } finally {
+                    $('#kelasJuzReportLoading').addClass('d-none');
+                }
+            }
+
+            async function fetchJuzDetail(juz, kelasId = null, metric = 'lulus') {
+                const params = new URLSearchParams(getReportFilters());
+                params.set('detail', '1');
+                params.set('juz', juz);
+                if (kelasId) params.set('kelas_id', kelasId);
+                if (metric === 'setoran') params.set('setoran', '1');
+
+                const response = await fetch(
+                    `{{ route('admin.laporan.chart.juz-lulus') }}?${params.toString()}`, {
+                        headers: {
+                            Accept: 'application/json'
+                        }
+                    });
+
+                if (!response.ok) {
+                    throw new Error(metric === 'setoran'
+                        ? 'Gagal mengambil detail progress setoran Juz.'
+                        : 'Gagal mengambil detail kelulusan Juz.');
+                }
+
+                return response.json();
+            }
+
+            function renderJuzDetailLoading(juz, metric = 'lulus') {
+                const isSetoran = metric === 'setoran';
+
+                $('#juzDetailHeading').text(isSetoran ? 'Detail Progress Setoran' : 'Detail Kelulusan Ujian Akhir');
+                $('#juzDetailIcon')
+                    .removeClass('bi-award-fill bi-bar-chart-steps')
+                    .addClass(isSetoran ? 'bi-bar-chart-steps' : 'bi-award-fill');
+                $('#juzDetailTitle').text(isSetoran ? `Progress Setoran: Juz ${juz}` : `Juz ${juz}`);
+                $('#juzDetailInfoText').text(isSetoran
+                    ? 'Daftar santri yang memiliki progress setoran harian/tahap pada Juz ini, dikelompokkan berdasarkan placement semester.'
+                    : 'Daftar dikelompokkan per kelas berdasarkan placement semester yang sedang dipilih.');
+                $('#juzDetailPeriod').text('Memuat data detail...');
+                $('#juzDetailTotal').text('0');
+                $('#juzDetailKelasCount').text('0');
+                $('#juzDetailSemester').text('-');
+                $('#juzDetailContent').html('');
+                $('#juzDetailLoading').removeClass('d-none');
+
+                getReportModalInstance('modalJuzDetail')?.show();
+            }
+
+            function renderJuzDetail(payload) {
+                const mode = payload.mode || 'lulus';
+                const isSetoran = mode === 'setoran';
+                const detailHeading = payload.detail_heading || (isSetoran ? 'Detail Progress Setoran' : 'Detail Kelulusan Ujian Akhir');
+                const detailTitle = payload.detail_title || payload.title || `Juz ${payload.juz || '-'}`;
+                const dateLabel = payload.date_label || (isSetoran ? 'Setoran terakhir' : 'Lulus');
+
+                $('#juzDetailHeading').text(detailHeading);
+                $('#juzDetailIcon')
+                    .removeClass('bi-award-fill bi-bar-chart-steps')
+                    .addClass(isSetoran ? 'bi-bar-chart-steps' : 'bi-award-fill');
+                $('#juzDetailTitle').text(detailTitle);
+                $('#juzDetailInfoText').text(isSetoran
+                    ? 'Daftar santri yang memiliki progress setoran harian/tahap pada Juz ini, dikelompokkan berdasarkan placement semester.'
+                    : 'Daftar dikelompokkan per kelas berdasarkan placement semester yang sedang dipilih.');
+                $('#juzDetailPeriod').text(payload.period_label || '-');
+                $('#juzDetailTotal').text(formatNumber(payload.total || 0));
+                $('#juzDetailKelasCount').text(formatNumber(payload.kelas_count || 0));
+                $('#juzDetailSemester').text(payload.semester_label || '-');
+
+                const groups = payload.groups || [];
+
+                if (!groups.length) {
+                    $('#juzDetailContent').html(`
+                        <div class="juz-detail-empty">
+                            <i class="bi bi-info-circle fs-4 d-block mb-2"></i>
+                            ${escapeHtml(payload.empty_message || `Belum ada data ${detailTitle} pada filter aktif.`)}
+                        </div>
+                    `);
+                    return;
+                }
+
+                let html = '';
+
+                groups.forEach(function(group) {
+                    const students = group.santri || [];
+                    const studentCards = students.map(function(item) {
+                        const setoranMeta = isSetoran ? `
+                            <div><i class="bi bi-flag-fill me-1"></i>Tahap tertinggi: ${escapeHtml(item.tahap_label || '-')}</div>
+                            <div><i class="bi bi-journal-check me-1"></i>Jumlah setoran: ${formatNumber(item.jumlah_setoran || 0)}</div>
+                            <div><i class="bi bi-speedometer2 me-1"></i>Nilai sementara: ${escapeHtml(item.nilai_sementara || '-')}</div>
+                        ` : '';
+
+                        const tanggalText = isSetoran
+                            ? (item.tanggal_terakhir || item.tanggal_lulus || '-')
+                            : (item.tanggal_lulus || '-');
+
+                        return `
+                            <div class="juz-student-card">
+                                <div class="juz-student-avatar">${escapeHtml(item.no || '')}</div>
+                                <div class="min-w-0 flex-grow-1">
+                                    <div class="juz-student-name text-truncate" title="${escapeHtml(item.nama || '-')}">
+                                        ${escapeHtml(item.nama || '-')}
+                                    </div>
+                                    <div class="juz-student-meta">
+                                        <div><i class="bi bi-credit-card-2-front me-1"></i>NIS: ${escapeHtml(item.nis || '-')}</div>
+                                        <div><i class="bi bi-person-badge me-1"></i>${escapeHtml(item.musyrif || '-')}</div>
+                                        ${setoranMeta}
+                                        <div><i class="bi bi-calendar-check me-1"></i>${escapeHtml(dateLabel)}: ${escapeHtml(tanggalText)}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    html += `
+                        <section class="juz-class-card">
+                            <div class="juz-class-card__header">
+                                <h6 class="juz-class-card__title">
+                                    <i class="bi bi-collection-fill me-1 text-primary"></i>
+                                    ${escapeHtml(group.kelas_nama || 'Tanpa Kelas')}
+                                </h6>
+                                <span class="juz-class-total">
+                                    <i class="bi bi-people-fill"></i>
+                                    ${formatNumber(group.total || 0)} santri
+                                </span>
+                            </div>
+                            <div class="juz-student-grid">
+                                ${studentCards}
+                            </div>
+                        </section>
+                    `;
+                });
+
+                $('#juzDetailContent').html(html);
+            }
+
+            async function openJuzDetail(juz, kelasId = null, metric = 'lulus') {
+                if (!juz) return;
+
+                try {
+                    // CoreUI/Bootstrap tidak stabil jika 2 modal dibuka bertumpuk.
+                    // Saat detail Juz dibuka dari modal Raport Kelas, tutup dulu modal parent
+                    // agar tombol close/backdrop modal detail tetap normal.
+                    await waitReportModalHidden('modalKelasJuzReport');
+
+                    renderJuzDetailLoading(juz, metric);
+                    const payload = await fetchJuzDetail(juz, kelasId, metric);
+                    renderJuzDetail(payload);
+                } catch (error) {
+                    console.error(error);
+                    $('#juzDetailContent').html(`
+                        <div class="juz-detail-empty text-danger">
+                            <i class="bi bi-exclamation-triangle-fill fs-4 d-block mb-2"></i>
+                            ${metric === 'setoran' ? 'Gagal memuat detail progress setoran Juz.' : 'Gagal memuat detail kelulusan Juz.'} Silakan coba lagi.
+                        </div>
+                    `);
+                    showError(error.message || (metric === 'setoran'
+                        ? 'Gagal memuat detail progress setoran Juz.'
+                        : 'Gagal memuat detail kelulusan Juz.'));
+                } finally {
+                    $('#juzDetailLoading').addClass('d-none');
+                }
+            }
+
+            async function renderBarJuz(canvasId, kelasId = null, labelTitle = '', metric = 'lulus') {
                 const canvas = document.getElementById(canvasId);
                 if (!canvas) return;
 
-                const noteId = kelasId ? `noteJuzKelas_${kelasId}` : 'noteJuzAll';
+                const isSetoran = metric === 'setoran';
+                const noteId = isSetoran
+                    ? (kelasId ? `noteJuzSetoranKelas_${kelasId}` : 'noteJuzSetoranAll')
+                    : (kelasId ? `noteJuzKelas_${kelasId}` : 'noteJuzAll');
                 const noteElement = document.getElementById(noteId);
 
                 try {
-                    const json = await fetchJuzData(kelasId);
+                    const json = await fetchJuzData(kelasId, metric);
 
                     if (isAllZero(json.data)) {
                         canvas.classList.add('d-none');
@@ -2618,6 +3950,54 @@
                     canvas.classList.remove('d-none');
                     destroyJuzChart(canvasId);
 
+                    const options = barChartOptions();
+
+                    options.onHover = function(event, activeElements) {
+                        if (event?.native?.target) {
+                            event.native.target.style.cursor = activeElements.length ? 'pointer' : 'default';
+                        }
+                    };
+
+                    options.onClick = function(event, activeElements, chartInstance) {
+                        if (!activeElements.length) return;
+
+                        const index = activeElements[0].index;
+                        const label = String(chartInstance.data.labels[index] || '');
+                        const value = Number(chartInstance.data.datasets[0].data[index] || 0);
+                        const match = label.match(/(\d+)/);
+                        const juz = match ? Number(match[1]) : null;
+
+                        if (!juz || value <= 0) {
+                            showError(isSetoran
+                                ? 'Belum ada progress setoran pada Juz ini.'
+                                : 'Belum ada santri yang lulus pada Juz ini.');
+                            return;
+                        }
+
+                        openJuzDetail(juz, kelasId, metric);
+                    };
+
+                    options.plugins.tooltip.callbacks = {
+                        afterBody: function(items) {
+                            const item = items?.[0];
+                            const value = Number(item?.parsed?.y || 0);
+                            if (value <= 0) {
+                                return isSetoran ? 'Belum ada progress setoran.' : 'Belum ada santri lulus.';
+                            }
+
+                            if (isSetoran) {
+                                const index = item.dataIndex;
+                                const setoranCount = Number(json.setoran_data?.[index] || 0);
+                                return [
+                                    `Total record setoran: ${formatNumber(setoranCount)}`,
+                                    'Klik batang untuk melihat detail progress.'
+                                ];
+                            }
+
+                            return 'Klik batang untuk melihat daftar santri.';
+                        }
+                    };
+
                     const chart = new Chart(canvas, {
                         type: 'bar',
                         data: {
@@ -2625,11 +4005,11 @@
                             datasets: [{
                                 label: labelTitle,
                                 data: json.data || [],
-                                backgroundColor: '#198754',
+                                backgroundColor: isSetoran ? '#d99a00' : '#198754',
                                 borderRadius: 5
                             }]
                         },
-                        options: barChartOptions()
+                        options: options
                     });
 
                     chartCache.set(canvasId, chart);
@@ -2638,13 +4018,34 @@
                 }
             }
 
+            function renderActiveJuzSetoranChart() {
+                const activeTab = document.querySelector('#juzSetoranTabs .nav-link.active');
+                if (!activeTab) return;
+
+                const target = activeTab.getAttribute('data-coreui-target');
+                if (target === '#juz-setoran-all') {
+                    renderBarJuz('chartJuzSetoranAll', null, 'Santri Progress Setoran', 'setoran');
+                    return;
+                }
+
+                const match = target?.match(/juz-setoran-kelas-(\d+)/);
+                if (!match) return;
+
+                renderBarJuz(
+                    `chartJuzSetoranKelas_${match[1]}`,
+                    match[1],
+                    `Santri Progress Setoran (${activeTab.title || 'Kelas'})`,
+                    'setoran'
+                );
+            }
+
             function renderActiveJuzChart() {
                 const activeTab = document.querySelector('#juzTabs .nav-link.active');
                 if (!activeTab) return;
 
                 const target = activeTab.getAttribute('data-coreui-target');
                 if (target === '#juz-all') {
-                    renderBarJuz('chartJuzAll', null, 'Santri Lulus Ujian Akhir');
+                    renderBarJuz('chartJuzAll', null, 'Santri Lulus Ujian Akhir', 'lulus');
                     return;
                 }
 
@@ -2654,7 +4055,8 @@
                 renderBarJuz(
                     `chartJuzKelas_${match[1]}`,
                     match[1],
-                    `Santri Lulus Ujian Akhir (${activeTab.title || 'Kelas'})`
+                    `Santri Lulus Ujian Akhir (${activeTab.title || 'Kelas'})`,
+                    'lulus'
                 );
             }
 
@@ -2689,6 +4091,10 @@
                 tableAbsensi.ajax.reload(null, true);
             });
 
+            document.querySelectorAll('#juzSetoranTabs [data-coreui-toggle="tab"]').forEach(function(button) {
+                button.addEventListener('shown.coreui.tab', renderActiveJuzSetoranChart);
+            });
+
             document.querySelectorAll('#juzTabs [data-coreui-toggle="tab"]').forEach(function(button) {
                 button.addEventListener('shown.coreui.tab', renderActiveJuzChart);
             });
@@ -2709,6 +4115,217 @@
                 });
             });
 
+            function formatNullableDecimal(value) {
+                if (value === null || value === undefined || value === '') return '-';
+
+                return Number(value).toLocaleString('id-ID', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 2
+                });
+            }
+
+            function setEvaluationBadge(text, tone) {
+                const toneClass = {
+                    success: 'bg-success-subtle text-success border-success-subtle',
+                    danger: 'bg-danger-subtle text-danger border-danger-subtle',
+                    warning: 'bg-warning-subtle text-warning border-warning-subtle',
+                    secondary: 'bg-secondary-subtle text-secondary border-secondary-subtle'
+                } [tone || 'secondary'] || 'bg-secondary-subtle text-secondary border-secondary-subtle';
+
+                $('#detail_status_evaluasi')
+                    .removeClass()
+                    .addClass(`badge rounded-pill border ${toneClass}`)
+                    .text(text || '-');
+            }
+
+            function renderMusyrifStudentCard(student) {
+                const statusTone = student.status_tone || 'secondary';
+                const avatarText = String(student.nama || '?')
+                    .trim()
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map(part => part.charAt(0).toUpperCase())
+                    .join('') || '?';
+
+                const nilaiSementara = student.rata_nilai_sementara === null || student.rata_nilai_sementara === undefined ?
+                    '-' : formatDecimal(student.rata_nilai_sementara);
+                const nilaiUjian = student.rata_nilai_ujian === null || student.rata_nilai_ujian === undefined ?
+                    '-' : formatDecimal(student.rata_nilai_ujian);
+
+                return `
+                    <div class="musyrif-student-card is-${escapeHtml(statusTone)}">
+                        <div class="juz-student-avatar">${escapeHtml(avatarText)}</div>
+                        <div class="min-w-0 flex-grow-1">
+                            <div class="d-flex align-items-start justify-content-between gap-2">
+                                <div class="min-w-0">
+                                    <div class="juz-student-name">${escapeHtml(student.nama || '-')}</div>
+                                    <div class="juz-student-meta">NIS: ${escapeHtml(student.nis || '-')}</div>
+                                </div>
+                                <span class="badge rounded-pill bg-${escapeHtml(statusTone)}-subtle text-${escapeHtml(statusTone)} border">
+                                    ${escapeHtml(student.status_label || '-')}
+                                </span>
+                            </div>
+                            <div class="musyrif-student-metrics">
+                                <span class="musyrif-mini-pill">
+                                    <i class="bi bi-journal-check"></i> Harian ${formatNumber(student.jumlah_setoran_harian || 0)}
+                                </span>
+                                <span class="musyrif-mini-pill is-ujian">
+                                    <i class="bi bi-award-fill"></i> Ujian ${formatNumber(student.jumlah_ujian || 0)} Juz
+                                </span>
+                                <span class="musyrif-mini-pill">
+                                    Nilai Sementara ${escapeHtml(nilaiSementara)}
+                                </span>
+                                <span class="musyrif-mini-pill is-ujian">
+                                    Nilai Ujian ${escapeHtml(nilaiUjian)}
+                                </span>
+                                ${Number(student.hadir_tidak_setor || 0) > 0 ? `<span class="musyrif-mini-pill is-warning">HTS ${formatNumber(student.hadir_tidak_setor)}</span>` : ''}
+                                ${Number(student.alpha || 0) > 0 ? `<span class="musyrif-mini-pill is-warning">Alpha ${formatNumber(student.alpha)}</span>` : ''}
+                            </div>
+                            <div class="small text-muted mt-2">
+                                Ujian terakhir: ${escapeHtml(student.tanggal_ujian_terakhir || '-')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function renderMusyrifDetailContent(payload) {
+                const groups = payload.kelas || [];
+
+                if (!groups.length) {
+                    $('#musyrifDetailContent').html(`
+                        <div class="juz-detail-empty">
+                            <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+                            Belum ada santri binaan pada filter laporan ini.
+                        </div>
+                    `);
+                    return;
+                }
+
+                const html = groups.map(function(group) {
+                    const students = group.santri || [];
+                    const studentCards = students.map(renderMusyrifStudentCard).join('');
+
+                    return `
+                        <section class="juz-class-card">
+                            <div class="juz-class-card__header">
+                                <div>
+                                    <h6 class="juz-class-card__title">${escapeHtml(group.nama_kelas || 'Tanpa Kelas')}</h6>
+                                    <div class="small text-muted mt-1">
+                                        Aktif setor ${formatNumber(group.santri_aktif || 0)} dari ${formatNumber(group.total_santri || 0)} santri
+                                    </div>
+                                </div>
+                                <span class="juz-class-total">
+                                    <i class="bi bi-journal-check"></i>
+                                    ${formatNumber(group.jumlah_setoran_harian || 0)} setoran · ${formatNumber(group.jumlah_ujian || 0)} ujian
+                                </span>
+                            </div>
+                            <div class="musyrif-student-grid">
+                                ${studentCards || '<div class="text-muted small">Belum ada data santri.</div>'}
+                            </div>
+                        </section>
+                    `;
+                }).join('');
+
+                $('#musyrifDetailContent').html(html);
+            }
+
+            function openMusyrifDetail(musyrifId, musyrifName) {
+                const filters = getReportFilters();
+                const modal = coreui.Modal.getOrCreateInstance(
+                    document.getElementById('modalDetailMusyrifProgress')
+                );
+
+                $('#musyrifDetailTitle').text(musyrifName || '-');
+                $('#musyrifDetailPeriod').text('Memuat data detail...');
+                $('#musyrifDetailTotalSantri').text('0');
+                $('#musyrifDetailAktif').text('0');
+                $('#musyrifDetailHarian').text('0');
+                $('#musyrifDetailUjian').text('0');
+                $('#musyrifDetailCoverage').text('0%');
+                $('#musyrifDetailNilaiUjian').text('-');
+                $('#musyrifDetailContent').html('');
+                $('#musyrifDetailLoading').removeClass('d-none');
+
+                modal.show();
+
+                $.get('{{ route('admin.laporan.rekap-musyrif') }}', {
+                        ...filters,
+                        detail: 1,
+                        musyrif_detail_id: musyrifId
+                    })
+                    .done(function(response) {
+                        const summary = response.summary || {};
+
+                        $('#musyrifDetailTitle').text(response.musyrif?.nama || musyrifName || '-');
+                        $('#musyrifDetailPeriod').text(response.period_label || '-');
+                        $('#musyrifDetailTotalSantri').text(formatNumber(summary.total_santri || 0));
+                        $('#musyrifDetailAktif').text(`${formatNumber(summary.santri_aktif_setoran || 0)} santri`);
+                        $('#musyrifDetailHarian').text(formatNumber(summary.jumlah_setoran_harian || 0));
+                        $('#musyrifDetailUjian').text(`${formatNumber(summary.jumlah_ujian || 0)} Juz`);
+                        $('#musyrifDetailCoverage').text(`${formatDecimal(summary.coverage_ujian_pct || 0)}%`);
+                        $('#musyrifDetailNilaiUjian').text(formatNullableDecimal(summary.rata_nilai_ujian));
+
+                        renderMusyrifDetailContent(response);
+                    })
+                    .fail(function(xhr) {
+                        const message = xhr.responseJSON?.message || 'Gagal memuat detail progress musyrif.';
+                        $('#musyrifDetailContent').html(`
+                            <div class="juz-detail-empty text-danger">
+                                <i class="bi bi-exclamation-triangle fs-3 d-block mb-2"></i>
+                                ${escapeHtml(message)}
+                            </div>
+                        `);
+                    })
+                    .always(function() {
+                        $('#musyrifDetailLoading').addClass('d-none');
+                    });
+            }
+
+            $(document).on('click', '#modalJuzDetail [data-coreui-dismiss="modal"]', function() {
+                getReportModalInstance('modalJuzDetail')?.hide();
+            });
+
+            $('#table-rekap-kelas').on('click', '.btn-kelas-juz-report', function() {
+                const button = $(this);
+                openKelasJuzReport(button.data('id'), button.data('kelas') || 'Kelas terpilih');
+            });
+
+            $('#kelasJuzReportContent').on('click', '.kelas-juz-report-card', function() {
+                const card = $(this);
+                const juz = Number(card.data('juz'));
+                const kelasId = card.data('kelas-id') || null;
+
+                if (!juz) return;
+
+                if (card.hasClass('is-locked') || String(card.data('locked')) === '1') {
+                    card.removeClass('is-shaking');
+                    void card[0].offsetWidth;
+                    card.addClass('is-shaking');
+
+                    setTimeout(function() {
+                        card.removeClass('is-shaking');
+                    }, 480);
+
+                    return;
+                }
+
+                const countText = card.find('.kelas-juz-report-card__value').text() || '0';
+                const count = Number(String(countText).replace(/[^0-9]/g, ''));
+
+                if (count <= 0) {
+                    showError(`Juz ${juz} sudah pernah diujiankan, tetapi belum ada santri yang lulus ujian akhir pada kelas ini.`);
+                    return;
+                }
+
+                openJuzDetail(juz, kelasId);
+            });
+
+            $('#table-rekap-musyrif').on('click', '.btn-detail-musyrif-progress', function() {
+                const button = $(this);
+                openMusyrifDetail(button.data('id'), button.data('nama') || 'Musyrif terpilih');
+            });
+
             $('#table-rekap-santri').on('click', '.btn-detail-santri', function() {
                 const button = $(this);
                 const santriId = button.data('id');
@@ -2718,40 +4335,71 @@
                 $('#detail_kelas_santri').text('-');
                 $('#detail_musyrif_santri').text('-');
                 $('#detail_periode_santri').text('Memuat periode...');
+                $('#detail_jumlah_harian').text('0');
+                $('#detail_jumlah_ujian').text('0');
+                $('#detail_rata_sementara').text('-');
+                $('#detail_rata_ujian').text('-');
+                $('#detail_nilai_ujian_terakhir').text('-');
+                setEvaluationBadge('Memuat...', 'secondary');
+
                 $('#table-riwayat-santri tbody').html(
-                    '<tr><td colspan="5" class="text-center py-4">Memuat data...</td></tr>'
+                    '<tr><td colspan="6" class="text-center py-4">Memuat data...</td></tr>'
                 );
 
                 let url = '{{ route('admin.laporan.riwayat-santri', ':id') }}'.replace(':id', santriId);
 
                 $.get(url, filters)
                     .done(function(response) {
+                        const summary = response.summary_nilai || {};
+
                         $('#detail_nama_santri').text(response.santri?.nama || '-');
                         $('#detail_kelas_santri').text(response.santri?.kelas || '-');
                         $('#detail_musyrif_santri').text(response.santri?.musyrif || '-');
                         $('#detail_periode_santri').text(response.period_label || '');
+                        $('#detail_jumlah_harian').text(formatNumber(summary.jumlah_setoran_harian || 0));
+                        $('#detail_jumlah_ujian').text(formatNumber(summary.jumlah_ujian_juz || 0));
+                        $('#detail_rata_sementara').text(formatNullableDecimal(summary.rata_nilai_sementara));
+                        $('#detail_rata_ujian').text(formatNullableDecimal(summary.rata_nilai_ujian));
+                        $('#detail_nilai_ujian_terakhir').text(formatNullableDecimal(summary.nilai_ujian_terakhir));
+                        setEvaluationBadge(summary.status_evaluasi || '-', summary.status_evaluasi_tone || 'secondary');
 
                         let rows = '';
                         (response.riwayat || []).forEach(function(item) {
+                            const kategori = item.kategori || 'lainnya';
+                            const badgeClass = kategori === 'ujian' ? 'is-ujian' : (kategori === 'harian' ?
+                                'is-harian' : 'is-lainnya');
+                            const icon = kategori === 'ujian' ? 'bi-award-fill' : (kategori === 'harian' ?
+                                'bi-journal-check' : 'bi-circle-fill');
+                            const juzText = item.juz ? `Juz ${escapeHtml(item.juz)} · ` : '';
+                            const nilaiText = item.nilai_angka !== null && item.nilai_angka !== undefined ?
+                                `${escapeHtml(item.nilai_label || '-')} <span class="text-muted">(${escapeHtml(item.nilai_angka)})</span>` :
+                                escapeHtml(item.nilai_label || '-');
+
                             rows += `
                                 <tr>
-                                    <td>${item.tanggal_setoran || '-'}</td>
-                                    <td>${item.materi || '-'}</td>
-                                    <td>${item.status || '-'}</td>
-                                    <td>${item.nilai_label || '-'}</td>
-                                    <td>${item.catatan || '-'}</td>
+                                    <td>${escapeHtml(item.tanggal_setoran || '-')}</td>
+                                    <td>
+                                        <span class="progress-stage-badge ${badgeClass}">
+                                            <i class="bi ${icon}"></i>${escapeHtml(item.tahap_label || '-')}
+                                        </span>
+                                    </td>
+                                    <td>${juzText}${escapeHtml(item.materi || '-')}</td>
+                                    <td>${escapeHtml(item.status || '-')}</td>
+                                    <td>${nilaiText}</td>
+                                    <td>${escapeHtml(item.catatan || '-')}</td>
                                 </tr>
                             `;
                         });
 
                         $('#table-riwayat-santri tbody').html(rows ||
-                            '<tr><td colspan="5" class="text-center py-4 text-muted">Belum ada setoran pada periode ini.</td></tr>'
+                            '<tr><td colspan="6" class="text-center py-4 text-muted">Belum ada setoran pada periode ini.</td></tr>'
                         );
                     })
                     .fail(function() {
                         $('#table-riwayat-santri tbody').html(
-                            '<tr><td colspan="5" class="text-center py-4 text-danger">Gagal memuat data.</td></tr>'
+                            '<tr><td colspan="6" class="text-center py-4 text-danger">Gagal memuat data.</td></tr>'
                         );
+                        setEvaluationBadge('Gagal memuat data', 'danger');
                     })
                     .always(function() {
                         coreui.Modal.getOrCreateInstance(document.getElementById('modalRiwayatSantri'))

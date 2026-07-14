@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
@@ -34,6 +35,78 @@ class LaporanController extends Controller
             WHEN {$prefix}nilai_label = 'jayyid' THEN 75
             WHEN {$prefix}nilai_label = 'mardud' THEN 65
             ELSE NULL
+        END";
+    }
+
+    /**
+     * Konversi nilai_label ke angka untuk kebutuhan perhitungan detail PHP.
+     */
+    private function nilaiLabelToAngka(?string $nilaiLabel): ?int
+    {
+        return match ($nilaiLabel) {
+            'mumtaz' => 95,
+            'jayyid_jiddan' => 85,
+            'jayyid' => 75,
+            'mardud' => 65,
+            default => null,
+        };
+    }
+
+    /**
+     * Tahapan yang masuk kategori proses harian sebelum ujian akhir.
+     */
+    private function tahapHarianList(): array
+    {
+        return [
+            'harian',
+            'tahap_1',
+            'tahap_2',
+            'tahap_3',
+        ];
+    }
+
+    /**
+     * Label tahapan proses setoran yang mudah dibaca.
+     */
+    private function tahapHafalanLabel(?string $tahap): string
+    {
+        return match ($tahap) {
+            'harian' => 'Harian',
+            'tahap_1' => 'Tahap 1',
+            'tahap_2' => 'Tahap 2',
+            'tahap_3' => 'Tahap 3',
+            'ujian_akhir' => 'Ujian Akhir',
+            default => '-',
+        };
+    }
+
+    /**
+     * Mengubah ranking tahapan menjadi kode tahap.
+     */
+    private function tahapHafalanFromRank(?int $rank): ?string
+    {
+        return match ((int) $rank) {
+            1 => 'harian',
+            2 => 'tahap_1',
+            3 => 'tahap_2',
+            4 => 'tahap_3',
+            5 => 'ujian_akhir',
+            default => null,
+        };
+    }
+
+    /**
+     * SQL ranking tahapan untuk memilih progress tertinggi.
+     */
+    private function tahapHafalanRankSql(string $tableAlias = 'ht'): string
+    {
+        return "CASE
+            WHEN {$tableAlias}.tahap = 'harian' THEN 1
+            WHEN {$tableAlias}.tahap = 'tahap_1' THEN 2
+            WHEN {$tableAlias}.tahap = 'tahap_2' THEN 3
+            WHEN {$tableAlias}.tahap = 'tahap_3' THEN 4
+            WHEN {$tableAlias}.tahap = 'ujian_akhir' THEN 5
+            ELSE 0
         END";
     }
 
@@ -419,56 +492,137 @@ class LaporanController extends Controller
 
     /**
      * Agregasi hafalan per santri pada satu rentang tanggal.
+     *
+     * Catatan perhitungan:
+     * - Setoran harian = template tahap harian, tahap_1, tahap_2, tahap_3.
+     * - Nilai rata-rata sementara hanya dari setoran harian dan dibatasi maksimal 70.
+     * - Ujian = template tahap ujian_akhir, jumlahnya dihitung sebagai jumlah Juz yang lulus.
+     * - Nilai ujian/final hanya keluar jika santri sudah memiliki ujian akhir yang lulus.
      */
     private function hafalanAggregate(
         int $semesterId,
         string $startDate,
         string $endDate
     ) {
+        $nilaiSql = $this->sqlNilaiLabelToAngka('hafalans');
+
         return DB::table('hafalans')
+            ->leftJoin(
+                'hafalan_templates as ht',
+                'ht.id',
+                '=',
+                'hafalans.hafalan_template_id'
+            )
             ->select(
-                'santri_id',
+                'hafalans.santri_id',
                 DB::raw(
-                    "SUM(CASE WHEN status IN ('lulus', 'ulang') THEN 1 ELSE 0 END) AS total_setor"
+                    "SUM(CASE WHEN hafalans.status IN ('lulus', 'ulang') THEN 1 ELSE 0 END) AS total_setor"
                 ),
                 DB::raw(
-                    "SUM(CASE WHEN status = 'hadir_tidak_setor' THEN 1 ELSE 0 END) AS hadir_tidak_setor"
+                    "SUM(CASE
+                        WHEN hafalans.status IN ('lulus', 'ulang')
+                            AND ht.tahap IN ('harian', 'tahap_1', 'tahap_2', 'tahap_3')
+                        THEN 1 ELSE 0
+                    END) AS jumlah_setoran_harian"
                 ),
                 DB::raw(
-                    "SUM(CASE WHEN status = 'sakit' THEN 1 ELSE 0 END) AS sakit"
+                    "COUNT(DISTINCT CASE
+                        WHEN hafalans.status = 'lulus'
+                            AND ht.tahap = 'ujian_akhir'
+                        THEN ht.juz ELSE NULL
+                    END) AS jumlah_ujian"
                 ),
                 DB::raw(
-                    "SUM(CASE WHEN status = 'izin' THEN 1 ELSE 0 END) AS izin"
+                    "SUM(CASE
+                        WHEN hafalans.status IN ('lulus', 'ulang')
+                            AND ht.tahap = 'ujian_akhir'
+                        THEN 1 ELSE 0
+                    END) AS total_setoran_ujian"
                 ),
                 DB::raw(
-                    "SUM(CASE WHEN status = 'alpha' THEN 1 ELSE 0 END) AS alpha"
+                    "SUM(CASE WHEN hafalans.status = 'hadir_tidak_setor' THEN 1 ELSE 0 END) AS hadir_tidak_setor"
+                ),
+                DB::raw(
+                    "SUM(CASE WHEN hafalans.status = 'sakit' THEN 1 ELSE 0 END) AS sakit"
+                ),
+                DB::raw(
+                    "SUM(CASE WHEN hafalans.status = 'izin' THEN 1 ELSE 0 END) AS izin"
+                ),
+                DB::raw(
+                    "SUM(CASE WHEN hafalans.status = 'alpha' THEN 1 ELSE 0 END) AS alpha"
                 ),
                 DB::raw(
                     "ROUND(AVG(CASE
-                        WHEN status IN ('lulus', 'ulang') THEN
-                            CASE
-                                WHEN nilai_label = 'mumtaz' THEN 95
-                                WHEN nilai_label = 'jayyid_jiddan' THEN 85
-                                WHEN nilai_label = 'jayyid' THEN 75
-                                WHEN nilai_label = 'mardud' THEN 65
-                                ELSE NULL
-                            END
+                        WHEN hafalans.status IN ('lulus', 'ulang') THEN {$nilaiSql}
                         ELSE NULL
                     END), 2) AS rata_nilai"
+                ),
+                DB::raw(
+                    "ROUND(LEAST(70, AVG(CASE
+                        WHEN hafalans.status IN ('lulus', 'ulang')
+                            AND ht.tahap IN ('harian', 'tahap_1', 'tahap_2', 'tahap_3')
+                        THEN {$nilaiSql}
+                        ELSE NULL
+                    END)), 2) AS rata_nilai_sementara"
+                ),
+                DB::raw(
+                    "ROUND(AVG(CASE
+                        WHEN hafalans.status = 'lulus'
+                            AND ht.tahap = 'ujian_akhir'
+                        THEN {$nilaiSql}
+                        ELSE NULL
+                    END), 2) AS rata_nilai_ujian"
+                ),
+                DB::raw(
+                    "SUM(CASE
+                        WHEN hafalans.status IN ('lulus', 'ulang')
+                            AND ht.tahap IN ('harian', 'tahap_1', 'tahap_2', 'tahap_3')
+                        THEN {$nilaiSql} ELSE 0
+                    END) AS total_nilai_harian"
+                ),
+                DB::raw(
+                    "COUNT(CASE
+                        WHEN hafalans.status IN ('lulus', 'ulang')
+                            AND ht.tahap IN ('harian', 'tahap_1', 'tahap_2', 'tahap_3')
+                            AND {$nilaiSql} IS NOT NULL
+                        THEN 1 ELSE NULL
+                    END) AS count_nilai_harian"
+                ),
+                DB::raw(
+                    "SUM(CASE
+                        WHEN hafalans.status = 'lulus'
+                            AND ht.tahap = 'ujian_akhir'
+                        THEN {$nilaiSql} ELSE 0
+                    END) AS total_nilai_ujian"
+                ),
+                DB::raw(
+                    "COUNT(CASE
+                        WHEN hafalans.status = 'lulus'
+                            AND ht.tahap = 'ujian_akhir'
+                            AND {$nilaiSql} IS NOT NULL
+                        THEN 1 ELSE NULL
+                    END) AS count_nilai_ujian"
+                ),
+                DB::raw(
+                    "MAX(CASE
+                        WHEN hafalans.status = 'lulus'
+                            AND ht.tahap = 'ujian_akhir'
+                        THEN hafalans.tanggal_setoran ELSE NULL
+                    END) AS tanggal_ujian_terakhir"
                 )
             )
             ->where(
-                'semester_id',
+                'hafalans.semester_id',
                 $semesterId
             )
             ->whereBetween(
-                'tanggal_setoran',
+                'hafalans.tanggal_setoran',
                 [
                     $startDate,
                     $endDate,
                 ]
             )
-            ->groupBy('santri_id');
+            ->groupBy('hafalans.santri_id');
     }
 
     /**
@@ -1188,7 +1342,7 @@ class LaporanController extends Controller
                 ]);
             }
 
-            $riwayat = Hafalan::query()
+            $items = Hafalan::query()
                 ->with('template')
                 ->where(
                     'santri_id',
@@ -1208,39 +1362,130 @@ class LaporanController extends Controller
                 ->orderByDesc(
                     'tanggal_setoran'
                 )
-                ->get()
-                ->map(function ($item) {
-                    $tanggal =
-                        $item->tanggal_setoran
-                        ?? optional(
-                            $item->created_at
-                        )->toDateString();
+                ->get();
 
-                    return [
-                        'tanggal_setoran' =>
-                        $tanggal
-                            ? Carbon::parse(
-                                $tanggal
-                            )->translatedFormat(
-                                'd F Y'
-                            )
-                            : '-',
-                        'materi' =>
-                        $item->template?->label
-                            ?? $item
-                            ->rentang_ayat_label
-                            ?? '-',
-                        'status' =>
-                        $item->status
-                            ?? '-',
-                        'nilai_label' =>
-                        $item->nilai_label
-                            ?? '-',
-                        'catatan' =>
-                        $item->catatan
-                            ?? '',
-                    ];
-                });
+            $tahapHarian = $this->tahapHarianList();
+
+            $harianItems = $items->filter(function ($item) use ($tahapHarian): bool {
+                return in_array($item->status, ['lulus', 'ulang'], true)
+                    && in_array($item->template?->tahap, $tahapHarian, true);
+            });
+
+            $harianScores = $harianItems
+                ->map(fn($item) => $this->nilaiLabelToAngka($item->nilai_label))
+                ->filter(fn($score) => $score !== null)
+                ->values();
+
+            $rataSementaraRaw = $harianScores->isNotEmpty()
+                ? round((float) $harianScores->avg(), 2)
+                : null;
+
+            $rataSementara = $rataSementaraRaw !== null
+                ? min(70, $rataSementaraRaw)
+                : null;
+
+            $ujianLulusItems = $items->filter(function ($item): bool {
+                return $item->status === 'lulus'
+                    && $item->template?->tahap === 'ujian_akhir';
+            });
+
+            $ujianScores = $ujianLulusItems
+                ->map(fn($item) => $this->nilaiLabelToAngka($item->nilai_label))
+                ->filter(fn($score) => $score !== null)
+                ->values();
+
+            $rataUjian = $ujianScores->isNotEmpty()
+                ? round((float) $ujianScores->avg(), 2)
+                : null;
+
+            $ujianTerakhir = $ujianLulusItems
+                ->sortByDesc('tanggal_setoran')
+                ->first();
+
+            $nilaiUjianTerakhir = $ujianTerakhir
+                ? $this->nilaiLabelToAngka($ujianTerakhir->nilai_label)
+                : null;
+
+            $statusEvaluasi = 'Belum Ujian';
+            $statusEvaluasiTone = 'secondary';
+
+            if ($rataUjian !== null && $rataSementara !== null) {
+                if ($rataUjian < $rataSementara) {
+                    $statusEvaluasi = 'Ujian Mengulang';
+                    $statusEvaluasiTone = 'danger';
+                } else {
+                    $statusEvaluasi = 'Ujian Memenuhi Nilai';
+                    $statusEvaluasiTone = 'success';
+                }
+            } elseif ($rataUjian !== null) {
+                $statusEvaluasi = 'Ujian Tercatat';
+                $statusEvaluasiTone = 'success';
+            }
+
+            $riwayat = $items->map(function ($item) use ($tahapHarian) {
+                $tanggal =
+                    $item->tanggal_setoran
+                    ?? optional(
+                        $item->created_at
+                    )->toDateString();
+
+                $tahap = $item->template?->tahap ?? '-';
+                $score = $this->nilaiLabelToAngka($item->nilai_label);
+
+                return [
+                    'tanggal_setoran' =>
+                    $tanggal
+                        ? Carbon::parse(
+                            $tanggal
+                        )->translatedFormat(
+                            'd F Y'
+                        )
+                        : '-',
+                    'materi' =>
+                    $item->template?->label
+                        ?? $item
+                        ->rentang_ayat_label
+                        ?? '-',
+                    'juz' => $item->template?->juz,
+                    'tahap' => $tahap,
+                    'tahap_label' => match ($tahap) {
+                        'harian' => 'Harian',
+                        'tahap_1' => 'Tahap 1',
+                        'tahap_2' => 'Tahap 2',
+                        'tahap_3' => 'Tahap 3',
+                        'ujian_akhir' => 'Ujian Akhir',
+                        default => '-',
+                    },
+                    'kategori' => $tahap === 'ujian_akhir'
+                        ? 'ujian'
+                        : (in_array($tahap, $tahapHarian, true) ? 'harian' : 'lainnya'),
+                    'status' =>
+                    $item->status
+                        ?? '-',
+                    'nilai_label' =>
+                    $item->nilai_label
+                        ?? '-',
+                    'nilai_angka' => $score,
+                    'catatan' =>
+                    $item->catatan
+                        ?? '',
+                ];
+            });
+
+            $summaryNilai = [
+                'jumlah_setoran_harian' => $harianItems->count(),
+                'jumlah_ujian_juz' => $ujianLulusItems
+                    ->pluck('template.juz')
+                    ->filter()
+                    ->unique()
+                    ->count(),
+                'rata_nilai_sementara_raw' => $rataSementaraRaw,
+                'rata_nilai_sementara' => $rataSementara,
+                'rata_nilai_ujian' => $rataUjian,
+                'nilai_ujian_terakhir' => $nilaiUjianTerakhir,
+                'status_evaluasi' => $statusEvaluasi,
+                'status_evaluasi_tone' => $statusEvaluasiTone,
+            ];
 
             return response()->json([
                 'santri' => [
@@ -1255,6 +1500,7 @@ class LaporanController extends Controller
                     'placement_status' =>
                     $placement->status,
                 ],
+                'summary_nilai' => $summaryNilai,
                 'riwayat' => $riwayat,
                 'period_label' =>
                 $context['period_label'],
@@ -1370,11 +1616,17 @@ class LaporanController extends Controller
                 'pk.nama_kelas as placement_kelas_nama',
                 'pm.nama as placement_musyrif_nama',
                 'h.total_setor',
+                'h.jumlah_setoran_harian',
+                'h.jumlah_ujian',
+                'h.total_setoran_ujian',
                 'h.hadir_tidak_setor',
                 'h.sakit',
                 'h.izin',
                 'h.alpha',
-                'h.rata_nilai'
+                'h.rata_nilai',
+                'h.rata_nilai_sementara',
+                'h.rata_nilai_ujian',
+                'h.tanggal_ujian_terakhir'
             );
 
         return DataTables::of($query)
@@ -1437,10 +1689,18 @@ class LaporanController extends Controller
                 'santris.nama $1'
             )
             ->editColumn(
-                'total_setor',
+                'jumlah_setoran_harian',
                 fn($row) =>
                 (int) (
-                    $row->total_setor
+                    $row->jumlah_setoran_harian
+                    ?? 0
+                )
+            )
+            ->editColumn(
+                'jumlah_ujian',
+                fn($row) =>
+                (int) (
+                    $row->jumlah_ujian
                     ?? 0
                 )
             )
@@ -1478,15 +1738,15 @@ class LaporanController extends Controller
                 )
             )
             ->editColumn(
-                'rata_nilai',
+                'rata_nilai_ujian',
                 fn($row) =>
                 is_null(
-                    $row->rata_nilai
+                    $row->rata_nilai_ujian
                 )
                     ? '-'
                     : number_format(
                         (float) $row
-                            ->rata_nilai,
+                            ->rata_nilai_ujian,
                         2
                     )
             )
@@ -1562,7 +1822,13 @@ class LaporanController extends Controller
                     'COUNT(DISTINCT sp.santri_id) AS jumlah_santri'
                 ),
                 DB::raw(
-                    'COALESCE(SUM(h.total_setor), 0) AS total_setor'
+                    'COALESCE(SUM(h.jumlah_setoran_harian), 0) AS jumlah_setoran_harian'
+                ),
+                DB::raw(
+                    'COALESCE(SUM(h.jumlah_ujian), 0) AS jumlah_ujian'
+                ),
+                DB::raw(
+                    'COALESCE(SUM(h.total_setoran_ujian), 0) AS total_setoran_ujian'
                 ),
                 DB::raw(
                     'COALESCE(SUM(h.hadir_tidak_setor), 0) AS hadir_tidak_setor'
@@ -1577,7 +1843,7 @@ class LaporanController extends Controller
                     'COALESCE(SUM(h.alpha), 0) AS alpha'
                 ),
                 DB::raw(
-                    'ROUND(AVG(h.rata_nilai), 2) AS rata_nilai'
+                    'ROUND(SUM(h.total_nilai_ujian) / NULLIF(SUM(h.count_nilai_ujian), 0), 2) AS rata_nilai_ujian'
                 )
             )
             ->leftJoin(
@@ -1638,10 +1904,26 @@ class LaporanController extends Controller
                 )
             )
             ->editColumn(
-                'total_setor',
+                'jumlah_setoran_harian',
                 fn($row) =>
                 (int) (
-                    $row->total_setor
+                    $row->jumlah_setoran_harian
+                    ?? 0
+                )
+            )
+            ->editColumn(
+                'jumlah_ujian',
+                fn($row) =>
+                (int) (
+                    $row->jumlah_ujian
+                    ?? 0
+                )
+            )
+            ->editColumn(
+                'total_setoran_ujian',
+                fn($row) =>
+                (int) (
+                    $row->total_setoran_ujian
                     ?? 0
                 )
             )
@@ -1679,19 +1961,265 @@ class LaporanController extends Controller
                 )
             )
             ->editColumn(
-                'rata_nilai',
+                'rata_nilai_ujian',
                 fn($row) =>
                 is_null(
-                    $row->rata_nilai
+                    $row->rata_nilai_ujian
                 )
                     ? '-'
                     : number_format(
                         (float) $row
-                            ->rata_nilai,
+                            ->rata_nilai_ujian,
                         2
                     )
             )
+            ->addColumn(
+                'aksi',
+                function ($row) {
+                    return '
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-primary btn-kelas-juz-report"
+                            data-id="'
+                        . (int) $row->id
+                        . '"
+                            data-kelas="'
+                        . e($row->nama_kelas)
+                        . '"
+                            data-coreui-toggle="tooltip"
+                            title="Raport kelulusan ujian akhir per Juz">
+                            <i class="bi bi-grid-3x3-gap-fill me-1"></i> Raport Juz
+                        </button>
+                    ';
+                }
+            )
+            ->rawColumns([
+                'aksi',
+            ])
             ->make(true);
+    }
+
+    /**
+     * Detail rekap satu musyrif untuk modal drill-down.
+     * Data tetap memakai placement semester dan agregasi hafalan yang sama dengan tabel utama.
+     */
+    private function buildRekapMusyrifDetail(
+        Request $request,
+        array $context,
+        ?int $kelasId
+    ) {
+        $musyrifDetailId = $request->filled('musyrif_detail_id')
+            ? (int) $request->input('musyrif_detail_id')
+            : null;
+
+        if (!$musyrifDetailId) {
+            throw ValidationException::withMessages([
+                'musyrif_detail_id' => [
+                    'Musyrif belum dipilih.',
+                ],
+            ]);
+        }
+
+        $musyrif = Musyrif::query()
+            ->findOrFail($musyrifDetailId);
+
+        $hafalanAgg = $this->hafalanAggregate(
+            $context['semester_id'],
+            $context['start_date'],
+            $context['end_date']
+        );
+
+        $rows = Santri::query()
+            ->join(
+                'santri_semester_placements as sp',
+                function ($join) use (
+                    $context,
+                    $musyrifDetailId,
+                    $kelasId
+                ): void {
+                    $join
+                        ->on(
+                            'sp.santri_id',
+                            '=',
+                            'santris.id'
+                        )
+                        ->where(
+                            'sp.semester_id',
+                            '=',
+                            $context['semester_id']
+                        )
+                        ->where(
+                            'sp.musyrif_id',
+                            '=',
+                            $musyrifDetailId
+                        );
+
+                    if ($kelasId) {
+                        $join->where(
+                            'sp.kelas_id',
+                            '=',
+                            $kelasId
+                        );
+                    }
+                }
+            )
+            ->leftJoin(
+                'kelas as k',
+                'k.id',
+                '=',
+                'sp.kelas_id'
+            )
+            ->leftJoinSub(
+                $hafalanAgg,
+                'h',
+                'h.santri_id',
+                '=',
+                'santris.id'
+            )
+            ->select(
+                'santris.id',
+                'santris.nama',
+                'santris.nis',
+                'sp.kelas_id',
+                'k.nama_kelas',
+                DB::raw('COALESCE(h.total_setor, 0) AS total_setor'),
+                DB::raw('COALESCE(h.jumlah_setoran_harian, 0) AS jumlah_setoran_harian'),
+                DB::raw('COALESCE(h.jumlah_ujian, 0) AS jumlah_ujian'),
+                DB::raw('COALESCE(h.total_setoran_ujian, 0) AS total_setoran_ujian'),
+                DB::raw('COALESCE(h.hadir_tidak_setor, 0) AS hadir_tidak_setor'),
+                DB::raw('COALESCE(h.sakit, 0) AS sakit'),
+                DB::raw('COALESCE(h.izin, 0) AS izin'),
+                DB::raw('COALESCE(h.alpha, 0) AS alpha'),
+                'h.rata_nilai_sementara',
+                'h.rata_nilai_ujian',
+                'h.tanggal_ujian_terakhir'
+            )
+            ->orderBy('k.nama_kelas')
+            ->orderBy('santris.nama')
+            ->get();
+
+        $totalSantri = $rows->count();
+
+        $santriAktif = $rows
+            ->filter(
+                fn($row) => ((int) $row->jumlah_setoran_harian) > 0
+                    || ((int) $row->total_setoran_ujian) > 0
+            )
+            ->count();
+
+        $santriSudahUjian = $rows
+            ->filter(
+                fn($row) => ((int) $row->jumlah_ujian) > 0
+            )
+            ->count();
+
+        $coverageUjianPct = $totalSantri > 0
+            ? round(($santriSudahUjian / $totalSantri) * 100, 1)
+            : 0;
+
+        $nilaiSementara = $rows
+            ->pluck('rata_nilai_sementara')
+            ->filter(fn($value) => $value !== null);
+
+        $nilaiUjian = $rows
+            ->pluck('rata_nilai_ujian')
+            ->filter(fn($value) => $value !== null);
+
+        $kelasGroups = $rows
+            ->groupBy(
+                fn($row) =>
+                $row->nama_kelas ?: 'Tanpa Kelas'
+            )
+            ->map(function (Collection $items, string $kelasName) {
+                $santri = $items->map(function ($row) {
+                    $jumlahHarian = (int) $row->jumlah_setoran_harian;
+                    $jumlahUjian = (int) $row->jumlah_ujian;
+                    $totalUjian = (int) $row->total_setoran_ujian;
+
+                    $statusLabel = 'Belum Setor';
+                    $statusTone = 'secondary';
+
+                    if ($jumlahUjian > 0) {
+                        $statusLabel = 'Sudah Ujian';
+                        $statusTone = 'success';
+                    } elseif ($jumlahHarian > 0 || $totalUjian > 0) {
+                        $statusLabel = 'Proses Setoran';
+                        $statusTone = 'primary';
+                    }
+
+                    return [
+                        'id' => (int) $row->id,
+                        'nama' => $row->nama,
+                        'nis' => $row->nis ?: '-',
+                        'jumlah_setoran_harian' => $jumlahHarian,
+                        'jumlah_ujian' => $jumlahUjian,
+                        'total_setoran_ujian' => $totalUjian,
+                        'hadir_tidak_setor' => (int) $row->hadir_tidak_setor,
+                        'sakit' => (int) $row->sakit,
+                        'izin' => (int) $row->izin,
+                        'alpha' => (int) $row->alpha,
+                        'rata_nilai_sementara' => $row->rata_nilai_sementara !== null
+                            ? round((float) $row->rata_nilai_sementara, 2)
+                            : null,
+                        'rata_nilai_ujian' => $row->rata_nilai_ujian !== null
+                            ? round((float) $row->rata_nilai_ujian, 2)
+                            : null,
+                        'tanggal_ujian_terakhir' => $row->tanggal_ujian_terakhir
+                            ? Carbon::parse($row->tanggal_ujian_terakhir)->translatedFormat('d M Y')
+                            : '-',
+                        'status_label' => $statusLabel,
+                        'status_tone' => $statusTone,
+                    ];
+                })->values();
+
+                return [
+                    'nama_kelas' => $kelasName,
+                    'total_santri' => $items->count(),
+                    'santri_aktif' => $santri
+                        ->filter(
+                            fn(array $item) =>
+                            $item['jumlah_setoran_harian'] > 0
+                                || $item['total_setoran_ujian'] > 0
+                        )
+                        ->count(),
+                    'santri_sudah_ujian' => $santri
+                        ->where('jumlah_ujian', '>', 0)
+                        ->count(),
+                    'jumlah_setoran_harian' => $items->sum('jumlah_setoran_harian'),
+                    'jumlah_ujian' => $items->sum('jumlah_ujian'),
+                    'santri' => $santri,
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'musyrif' => [
+                'id' => (int) $musyrif->id,
+                'nama' => $musyrif->nama,
+            ],
+            'semester_label' => $context['semester_label'],
+            'period_label' => $context['period_label'],
+            'summary' => [
+                'total_santri' => $totalSantri,
+                'santri_aktif_setoran' => $santriAktif,
+                'santri_sudah_ujian' => $santriSudahUjian,
+                'coverage_ujian_pct' => $coverageUjianPct,
+                'jumlah_setoran_harian' => (int) $rows->sum('jumlah_setoran_harian'),
+                'jumlah_ujian' => (int) $rows->sum('jumlah_ujian'),
+                'total_setoran_ujian' => (int) $rows->sum('total_setoran_ujian'),
+                'hadir_tidak_setor' => (int) $rows->sum('hadir_tidak_setor'),
+                'sakit' => (int) $rows->sum('sakit'),
+                'izin' => (int) $rows->sum('izin'),
+                'alpha' => (int) $rows->sum('alpha'),
+                'rata_nilai_sementara' => $nilaiSementara->isNotEmpty()
+                    ? round((float) $nilaiSementara->avg(), 2)
+                    : null,
+                'rata_nilai_ujian' => $nilaiUjian->isNotEmpty()
+                    ? round((float) $nilaiUjian->avg(), 2)
+                    : null,
+            ],
+            'kelas' => $kelasGroups,
+        ]);
     }
 
     /**
@@ -1725,6 +2253,14 @@ class LaporanController extends Controller
                 $request
             );
 
+        if ($request->boolean('detail')) {
+            return $this->buildRekapMusyrifDetail(
+                $request,
+                $context,
+                $kelasId
+            );
+        }
+
         $hafalanAgg =
             $this->hafalanAggregate(
                 $context['semester_id'],
@@ -1740,7 +2276,29 @@ class LaporanController extends Controller
                     'COUNT(DISTINCT sp.santri_id) AS jumlah_santri'
                 ),
                 DB::raw(
+                    "COUNT(DISTINCT CASE
+                        WHEN COALESCE(h.jumlah_setoran_harian, 0) > 0
+                            OR COALESCE(h.total_setoran_ujian, 0) > 0
+                        THEN sp.santri_id ELSE NULL
+                    END) AS santri_aktif_setoran"
+                ),
+                DB::raw(
+                    "COUNT(DISTINCT CASE
+                        WHEN COALESCE(h.jumlah_ujian, 0) > 0
+                        THEN sp.santri_id ELSE NULL
+                    END) AS santri_sudah_ujian"
+                ),
+                DB::raw(
                     'COALESCE(SUM(h.total_setor), 0) AS total_setor'
+                ),
+                DB::raw(
+                    'COALESCE(SUM(h.jumlah_setoran_harian), 0) AS jumlah_setoran_harian'
+                ),
+                DB::raw(
+                    'COALESCE(SUM(h.jumlah_ujian), 0) AS jumlah_ujian'
+                ),
+                DB::raw(
+                    'COALESCE(SUM(h.total_setoran_ujian), 0) AS total_setoran_ujian'
                 ),
                 DB::raw(
                     'COALESCE(SUM(h.hadir_tidak_setor), 0) AS hadir_tidak_setor'
@@ -1756,6 +2314,23 @@ class LaporanController extends Controller
                 ),
                 DB::raw(
                     'ROUND(AVG(h.rata_nilai), 2) AS rata_nilai'
+                ),
+                DB::raw(
+                    'ROUND(LEAST(70, SUM(h.total_nilai_harian) / NULLIF(SUM(h.count_nilai_harian), 0)), 2) AS rata_nilai_sementara'
+                ),
+                DB::raw(
+                    'ROUND(SUM(h.total_nilai_ujian) / NULLIF(SUM(h.count_nilai_ujian), 0), 2) AS rata_nilai_ujian'
+                ),
+                DB::raw(
+                    "ROUND(
+                        (
+                            COUNT(DISTINCT CASE
+                                WHEN COALESCE(h.jumlah_ujian, 0) > 0
+                                THEN sp.santri_id ELSE NULL
+                            END) / NULLIF(COUNT(DISTINCT sp.santri_id), 0)
+                        ) * 100,
+                        1
+                    ) AS coverage_ujian_pct"
                 )
             )
             ->leftJoin(
@@ -1808,6 +2383,19 @@ class LaporanController extends Controller
         return DataTables::of($query)
             ->addIndexColumn()
             ->editColumn(
+                'nama',
+                function ($row) {
+                    $nama = e($row->nama ?? '-');
+                    $aktif = (int) ($row->santri_aktif_setoran ?? 0);
+                    $total = (int) ($row->jumlah_santri ?? 0);
+
+                    return "
+                        <div class='fw-bold'>{$nama}</div>
+                        <div class='small text-muted'>Aktif setor: {$aktif}/{$total} santri</div>
+                    ";
+                }
+            )
+            ->editColumn(
                 'jumlah_santri',
                 fn($row) =>
                 (int) (
@@ -1815,13 +2403,55 @@ class LaporanController extends Controller
                     ?? 0
                 )
             )
+            ->addColumn(
+                'santri_aktif',
+                function ($row) {
+                    $aktif = (int) ($row->santri_aktif_setoran ?? 0);
+                    $total = (int) ($row->jumlah_santri ?? 0);
+                    $pct = $total > 0
+                        ? round(($aktif / $total) * 100, 1)
+                        : 0;
+
+                    return "
+                        <div class='fw-bold'>{$aktif}/{$total}</div>
+                        <div class='progress-thin mt-1' style='min-width:90px;'>
+                            <span style='width: {$pct}%; background: var(--report-purple);'></span>
+                        </div>
+                        <div class='small text-muted mt-1'>{$pct}% aktif</div>
+                    ";
+                }
+            )
             ->editColumn(
-                'total_setor',
+                'jumlah_setoran_harian',
                 fn($row) =>
                 (int) (
-                    $row->total_setor
+                    $row->jumlah_setoran_harian
                     ?? 0
                 )
+            )
+            ->editColumn(
+                'jumlah_ujian',
+                fn($row) =>
+                (int) (
+                    $row->jumlah_ujian
+                    ?? 0
+                )
+            )
+            ->addColumn(
+                'coverage_ujian',
+                function ($row) {
+                    $sudah = (int) ($row->santri_sudah_ujian ?? 0);
+                    $total = (int) ($row->jumlah_santri ?? 0);
+                    $pct = round((float) ($row->coverage_ujian_pct ?? 0), 1);
+
+                    return "
+                        <div class='fw-bold'>{$sudah}/{$total} santri</div>
+                        <div class='progress-thin mt-1' style='min-width:100px;'>
+                            <span style='width: {$pct}%; background: var(--report-success);'></span>
+                        </div>
+                        <div class='small text-muted mt-1'>{$pct}% sudah ujian</div>
+                    ";
+                }
             )
             ->editColumn(
                 'hadir_tidak_setor',
@@ -1857,18 +2487,44 @@ class LaporanController extends Controller
                 )
             )
             ->editColumn(
-                'rata_nilai',
+                'rata_nilai_ujian',
                 fn($row) =>
                 is_null(
-                    $row->rata_nilai
+                    $row->rata_nilai_ujian
                 )
                     ? '-'
                     : number_format(
                         (float) $row
-                            ->rata_nilai,
+                            ->rata_nilai_ujian,
                         2
                     )
             )
+            ->addColumn(
+                'aksi',
+                function ($row) {
+                    return '
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-primary btn-detail-musyrif-progress"
+                            data-id="'
+                        . (int) $row->id
+                        . '"
+                            data-nama="'
+                        . e($row->nama)
+                        . '"
+                            data-coreui-toggle="tooltip"
+                            title="Lihat rincian progress santri binaan">
+                            <i class="bi bi-people-fill me-1"></i> Detail
+                        </button>
+                    ';
+                }
+            )
+            ->rawColumns([
+                'nama',
+                'santri_aktif',
+                'coverage_ujian',
+                'aksi',
+            ])
             ->make(true);
     }
 
@@ -2147,6 +2803,36 @@ class LaporanController extends Controller
                 $request
             );
 
+        $isSetoranMode = $request->boolean('setoran')
+            || $request->input('mode') === 'setoran';
+
+        if ($isSetoranMode) {
+            if ($request->boolean('detail')) {
+                return $this->getChartJuzSetoranDetailPayload(
+                    $request,
+                    $context,
+                    $kelasId,
+                    $musyrifId
+                );
+            }
+
+            return $this->getChartJuzSetoranPayload(
+                $request,
+                $context,
+                $kelasId,
+                $musyrifId
+            );
+        }
+
+        if ($request->boolean('detail')) {
+            return $this->getChartJuzLulusDetailPayload(
+                $request,
+                $context,
+                $kelasId,
+                $musyrifId
+            );
+        }
+
         $rows = DB::table(
             'hafalans as h'
         )
@@ -2242,6 +2928,189 @@ class LaporanController extends Controller
             $labels
         );
 
+        $totalJuzLulus = array_sum($data);
+
+        /*
+         * Jumlah santri yang PERNAH mengikuti ujian akhir per Juz,
+         * baik hasilnya lulus maupun ulang. Data ini dipakai di UI Raport Juz
+         * untuk membedakan:
+         * - belum pernah diujiankan  => card terkunci/gembok
+         * - sudah diujiankan tetapi belum ada yang lulus => card aktif namun 0 lulus
+         */
+        $testedRows = DB::table(
+            'hafalans as h'
+        )
+            ->join(
+                'hafalan_templates as ht',
+                'ht.id',
+                '=',
+                'h.hafalan_template_id'
+            )
+            ->join(
+                'santri_semester_placements as sp',
+                function ($join) use (
+                    $context
+                ): void {
+                    $join
+                        ->on(
+                            'sp.santri_id',
+                            '=',
+                            'h.santri_id'
+                        )
+                        ->where(
+                            'sp.semester_id',
+                            '=',
+                            $context['semester_id']
+                        );
+                }
+            )
+            ->where(
+                'h.semester_id',
+                $context['semester_id']
+            )
+            ->where(
+                'ht.tahap',
+                'ujian_akhir'
+            )
+            ->whereIn(
+                'h.status',
+                [
+                    'lulus',
+                    'ulang',
+                ]
+            )
+            ->whereBetween(
+                'ht.juz',
+                [
+                    1,
+                    30,
+                ]
+            )
+            ->whereBetween(
+                'h.tanggal_setoran',
+                [
+                    $context['start_date'],
+                    $context['end_date'],
+                ]
+            )
+            ->when(
+                $kelasId,
+                fn($query) =>
+                $query->where(
+                    'sp.kelas_id',
+                    $kelasId
+                )
+            )
+            ->when(
+                $musyrifId,
+                fn($query) =>
+                $query->where(
+                    'sp.musyrif_id',
+                    $musyrifId
+                )
+            )
+            ->select(
+                'ht.juz',
+                DB::raw(
+                    'COUNT(DISTINCT h.santri_id) AS jumlah'
+                )
+            )
+            ->groupBy('ht.juz')
+            ->orderBy('ht.juz')
+            ->get();
+
+        $testedMap = $testedRows->pluck(
+            'jumlah',
+            'juz'
+        );
+
+        $testedData = array_map(
+            fn($juz) =>
+            (int) (
+                $testedMap[$juz]
+                ?? 0
+            ),
+            $labels
+        );
+
+        $totalJuzDiujiankan = array_sum($testedData);
+
+        $totalSantriLulusUjian = DB::table(
+            'hafalans as h'
+        )
+            ->join(
+                'hafalan_templates as ht',
+                'ht.id',
+                '=',
+                'h.hafalan_template_id'
+            )
+            ->join(
+                'santri_semester_placements as sp',
+                function ($join) use (
+                    $context
+                ): void {
+                    $join
+                        ->on(
+                            'sp.santri_id',
+                            '=',
+                            'h.santri_id'
+                        )
+                        ->where(
+                            'sp.semester_id',
+                            '=',
+                            $context['semester_id']
+                        );
+                }
+            )
+            ->where(
+                'h.semester_id',
+                $context['semester_id']
+            )
+            ->where(
+                'ht.tahap',
+                'ujian_akhir'
+            )
+            ->where(
+                'h.status',
+                'lulus'
+            )
+            ->whereBetween(
+                'ht.juz',
+                [
+                    1,
+                    30,
+                ]
+            )
+            ->whereBetween(
+                'h.tanggal_setoran',
+                [
+                    $context['start_date'],
+                    $context['end_date'],
+                ]
+            )
+            ->when(
+                $kelasId,
+                fn($query) =>
+                $query->where(
+                    'sp.kelas_id',
+                    $kelasId
+                )
+            )
+            ->when(
+                $musyrifId,
+                fn($query) =>
+                $query->where(
+                    'sp.musyrif_id',
+                    $musyrifId
+                )
+            )
+            ->distinct('h.santri_id')
+            ->count('h.santri_id');
+
+        $kelasLabel = $kelasId
+            ? (Kelas::query()->whereKey($kelasId)->value('nama_kelas') ?: 'Kelas terpilih')
+            : 'Semua Kelas';
+
         return response()->json([
             'labels' => array_map(
                 fn($juz) =>
@@ -2249,6 +3118,540 @@ class LaporanController extends Controller
                 $labels
             ),
             'data' => $data,
+            'kelas_id' => $kelasId,
+            'kelas_label' => $kelasLabel,
+            'period_label' => $context['period_label'],
+            'semester_label' => $context['semester_label'],
+            'total_juz_lulus' => $totalJuzLulus,
+            'tested_data' => $testedData,
+            'total_juz_diujiankan' => $totalJuzDiujiankan,
+            'total_santri_lulus_ujian' => $totalSantriLulusUjian,
+        ]);
+    }
+
+    /**
+     * Detail santri yang sudah lulus ujian akhir pada Juz tertentu.
+     * Dipakai oleh grafik Kelulusan Ujian Akhir per Juz dengan query detail=1.
+     */
+    private function getChartJuzLulusDetailPayload(
+        Request $request,
+        array $context,
+        ?int $kelasId,
+        ?int $musyrifId
+    ) {
+        $validated = $request->validate([
+            'juz' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:30',
+            ],
+        ]);
+
+        $juz = (int) $validated['juz'];
+
+        $rows = DB::table('hafalans as h')
+            ->join(
+                'hafalan_templates as ht',
+                'ht.id',
+                '=',
+                'h.hafalan_template_id'
+            )
+            ->join(
+                'santri_semester_placements as sp',
+                function ($join) use ($context): void {
+                    $join
+                        ->on(
+                            'sp.santri_id',
+                            '=',
+                            'h.santri_id'
+                        )
+                        ->where(
+                            'sp.semester_id',
+                            '=',
+                            $context['semester_id']
+                        );
+                }
+            )
+            ->join(
+                'santris as s',
+                's.id',
+                '=',
+                'h.santri_id'
+            )
+            ->leftJoin(
+                'kelas as k',
+                'k.id',
+                '=',
+                'sp.kelas_id'
+            )
+            ->leftJoin(
+                'musyrifs as m',
+                'm.id',
+                '=',
+                'sp.musyrif_id'
+            )
+            ->where(
+                'h.semester_id',
+                $context['semester_id']
+            )
+            ->where(
+                'ht.tahap',
+                'ujian_akhir'
+            )
+            ->where(
+                'ht.juz',
+                $juz
+            )
+            ->where(
+                'h.status',
+                'lulus'
+            )
+            ->whereBetween(
+                'h.tanggal_setoran',
+                [
+                    $context['start_date'],
+                    $context['end_date'],
+                ]
+            )
+            ->when(
+                $kelasId,
+                fn($query) =>
+                $query->where(
+                    'sp.kelas_id',
+                    $kelasId
+                )
+            )
+            ->when(
+                $musyrifId,
+                fn($query) =>
+                $query->where(
+                    'sp.musyrif_id',
+                    $musyrifId
+                )
+            )
+            ->select(
+                's.id as santri_id',
+                's.nama as santri_nama',
+                's.nis',
+                'k.id as kelas_id',
+                'k.nama_kelas',
+                'm.nama as musyrif_nama',
+                DB::raw('MAX(h.tanggal_setoran) as tanggal_lulus'),
+                DB::raw('COUNT(*) as total_record')
+            )
+            ->groupBy(
+                's.id',
+                's.nama',
+                's.nis',
+                'k.id',
+                'k.nama_kelas',
+                'm.nama'
+            )
+            ->orderBy('k.nama_kelas')
+            ->orderBy('s.nama')
+            ->get();
+
+        $kelasGroups = $rows
+            ->groupBy(fn($row) => $row->nama_kelas ?: 'Tanpa Kelas')
+            ->map(function ($items, $kelasNama) {
+                $first = $items->first();
+
+                return [
+                    'kelas_id' => $first->kelas_id,
+                    'kelas_nama' => $kelasNama,
+                    'total' => $items->count(),
+                    'santri' => $items
+                        ->values()
+                        ->map(function ($row, $index) {
+                            return [
+                                'no' => $index + 1,
+                                'id' => $row->santri_id,
+                                'nama' => $row->santri_nama,
+                                'nis' => $row->nis ?: '-',
+                                'musyrif' => $row->musyrif_nama ?: '-',
+                                'tanggal_lulus' => $row->tanggal_lulus
+                                    ? Carbon::parse($row->tanggal_lulus)
+                                    ->translatedFormat('d M Y')
+                                    : '-',
+                            ];
+                        })
+                        ->all(),
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'mode' => 'lulus',
+            'juz' => $juz,
+            'title' => "Juz {$juz}",
+            'detail_heading' => 'Detail Kelulusan Ujian Akhir',
+            'detail_title' => "Kelulusan Ujian Akhir: Juz {$juz}",
+            'date_label' => 'Lulus',
+            'empty_message' => "Belum ada santri yang lulus ujian akhir Juz {$juz} pada filter aktif.",
+            'period_label' => $context['period_label'],
+            'semester_label' => $context['semester_label'],
+            'total' => $rows->count(),
+            'kelas_count' => $kelasGroups->count(),
+            'groups' => $kelasGroups,
+        ]);
+    }
+
+    /**
+     * Grafik progress setoran santri per Juz.
+     *
+     * Berbeda dari Kelulusan Ujian Akhir per Juz:
+     * - grafik ini hanya menghitung proses setoran harian/tahap_1/tahap_2/tahap_3;
+     * - nilai bar = jumlah santri unik yang memiliki progress setoran pada Juz tersebut;
+     * - ujian_akhir tidak dihitung di sini supaya tidak tercampur dengan chart kelulusan ujian.
+     */
+    private function getChartJuzSetoranPayload(
+        Request $request,
+        array $context,
+        ?int $kelasId,
+        ?int $musyrifId
+    ) {
+        $labels = range(1, 30);
+        $tahapHarian = $this->tahapHarianList();
+
+        $baseQuery = DB::table('hafalans as h')
+            ->join(
+                'hafalan_templates as ht',
+                'ht.id',
+                '=',
+                'h.hafalan_template_id'
+            )
+            ->join(
+                'santri_semester_placements as sp',
+                function ($join) use ($context): void {
+                    $join
+                        ->on(
+                            'sp.santri_id',
+                            '=',
+                            'h.santri_id'
+                        )
+                        ->where(
+                            'sp.semester_id',
+                            '=',
+                            $context['semester_id']
+                        );
+                }
+            )
+            ->where(
+                'h.semester_id',
+                $context['semester_id']
+            )
+            ->whereIn(
+                'ht.tahap',
+                $tahapHarian
+            )
+            ->whereIn(
+                'h.status',
+                [
+                    'lulus',
+                    'ulang',
+                ]
+            )
+            ->whereBetween(
+                'ht.juz',
+                [
+                    1,
+                    30,
+                ]
+            )
+            ->whereBetween(
+                'h.tanggal_setoran',
+                [
+                    $context['start_date'],
+                    $context['end_date'],
+                ]
+            )
+            ->when(
+                $kelasId,
+                fn($query) =>
+                $query->where(
+                    'sp.kelas_id',
+                    $kelasId
+                )
+            )
+            ->when(
+                $musyrifId,
+                fn($query) =>
+                $query->where(
+                    'sp.musyrif_id',
+                    $musyrifId
+                )
+            );
+
+        $rows = (clone $baseQuery)
+            ->select(
+                'ht.juz',
+                DB::raw(
+                    'COUNT(DISTINCT h.santri_id) AS jumlah'
+                ),
+                DB::raw(
+                    'COUNT(*) AS total_setoran'
+                )
+            )
+            ->groupBy('ht.juz')
+            ->orderBy('ht.juz')
+            ->get();
+
+        $map = $rows->pluck(
+            'jumlah',
+            'juz'
+        );
+
+        $setoranMap = $rows->pluck(
+            'total_setoran',
+            'juz'
+        );
+
+        $data = array_map(
+            fn($juz) =>
+            (int) (
+                $map[$juz]
+                ?? 0
+            ),
+            $labels
+        );
+
+        $setoranData = array_map(
+            fn($juz) =>
+            (int) (
+                $setoranMap[$juz]
+                ?? 0
+            ),
+            $labels
+        );
+
+        $totalProgressJuz = array_sum($data);
+        $totalSetoran = array_sum($setoranData);
+
+        $totalSantriProgress = (clone $baseQuery)
+            ->distinct('h.santri_id')
+            ->count('h.santri_id');
+
+        $kelasLabel = $kelasId
+            ? (Kelas::query()->whereKey($kelasId)->value('nama_kelas') ?: 'Kelas terpilih')
+            : 'Semua Kelas';
+
+        return response()->json([
+            'mode' => 'setoran',
+            'labels' => array_map(
+                fn($juz) =>
+                "Juz {$juz}",
+                $labels
+            ),
+            'data' => $data,
+            'setoran_data' => $setoranData,
+            'kelas_id' => $kelasId,
+            'kelas_label' => $kelasLabel,
+            'period_label' => $context['period_label'],
+            'semester_label' => $context['semester_label'],
+            'total_progress_juz' => $totalProgressJuz,
+            'total_setoran' => $totalSetoran,
+            'total_santri_progress' => $totalSantriProgress,
+        ]);
+    }
+
+    /**
+     * Detail santri yang memiliki progress setoran pada Juz tertentu.
+     * Dipakai oleh grafik Progress Setoran per Juz dengan query setoran=1&detail=1.
+     */
+    private function getChartJuzSetoranDetailPayload(
+        Request $request,
+        array $context,
+        ?int $kelasId,
+        ?int $musyrifId
+    ) {
+        $validated = $request->validate([
+            'juz' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:30',
+            ],
+        ]);
+
+        $juz = (int) $validated['juz'];
+        $tahapHarian = $this->tahapHarianList();
+        $nilaiSql = $this->sqlNilaiLabelToAngka('h');
+        $tahapRankSql = $this->tahapHafalanRankSql('ht');
+
+        $rows = DB::table('hafalans as h')
+            ->join(
+                'hafalan_templates as ht',
+                'ht.id',
+                '=',
+                'h.hafalan_template_id'
+            )
+            ->join(
+                'santri_semester_placements as sp',
+                function ($join) use ($context): void {
+                    $join
+                        ->on(
+                            'sp.santri_id',
+                            '=',
+                            'h.santri_id'
+                        )
+                        ->where(
+                            'sp.semester_id',
+                            '=',
+                            $context['semester_id']
+                        );
+                }
+            )
+            ->join(
+                'santris as s',
+                's.id',
+                '=',
+                'h.santri_id'
+            )
+            ->leftJoin(
+                'kelas as k',
+                'k.id',
+                '=',
+                'sp.kelas_id'
+            )
+            ->leftJoin(
+                'musyrifs as m',
+                'm.id',
+                '=',
+                'sp.musyrif_id'
+            )
+            ->where(
+                'h.semester_id',
+                $context['semester_id']
+            )
+            ->whereIn(
+                'ht.tahap',
+                $tahapHarian
+            )
+            ->where(
+                'ht.juz',
+                $juz
+            )
+            ->whereIn(
+                'h.status',
+                [
+                    'lulus',
+                    'ulang',
+                ]
+            )
+            ->whereBetween(
+                'h.tanggal_setoran',
+                [
+                    $context['start_date'],
+                    $context['end_date'],
+                ]
+            )
+            ->when(
+                $kelasId,
+                fn($query) =>
+                $query->where(
+                    'sp.kelas_id',
+                    $kelasId
+                )
+            )
+            ->when(
+                $musyrifId,
+                fn($query) =>
+                $query->where(
+                    'sp.musyrif_id',
+                    $musyrifId
+                )
+            )
+            ->select(
+                's.id as santri_id',
+                's.nama as santri_nama',
+                's.nis',
+                'k.id as kelas_id',
+                'k.nama_kelas',
+                'm.nama as musyrif_nama',
+                DB::raw('COUNT(*) as jumlah_setoran'),
+                DB::raw("MAX({$tahapRankSql}) as tahap_rank"),
+                DB::raw("ROUND(LEAST(70, AVG({$nilaiSql})), 2) as nilai_sementara"),
+                DB::raw('MAX(h.tanggal_setoran) as tanggal_terakhir')
+            )
+            ->groupBy(
+                's.id',
+                's.nama',
+                's.nis',
+                'k.id',
+                'k.nama_kelas',
+                'm.nama'
+            )
+            ->orderBy('k.nama_kelas')
+            ->orderByDesc('tahap_rank')
+            ->orderBy('s.nama')
+            ->get();
+
+        $kelasGroups = $rows
+            ->groupBy(fn($row) => $row->nama_kelas ?: 'Tanpa Kelas')
+            ->map(function ($items, $kelasNama) {
+                $first = $items->first();
+
+                return [
+                    'kelas_id' => $first->kelas_id,
+                    'kelas_nama' => $kelasNama,
+                    'total' => $items->count(),
+                    'santri' => $items
+                        ->values()
+                        ->map(function ($row, $index) {
+                            $tahap = $this->tahapHafalanFromRank(
+                                (int) (
+                                    $row->tahap_rank
+                                    ?? 0
+                                )
+                            );
+
+                            $tanggalTerakhir = $row->tanggal_terakhir
+                                ? Carbon::parse($row->tanggal_terakhir)
+                                ->translatedFormat('d M Y')
+                                : '-';
+
+                            return [
+                                'no' => $index + 1,
+                                'id' => $row->santri_id,
+                                'nama' => $row->santri_nama,
+                                'nis' => $row->nis ?: '-',
+                                'musyrif' => $row->musyrif_nama ?: '-',
+                                'tahap' => $tahap,
+                                'tahap_label' => $this->tahapHafalanLabel($tahap),
+                                'jumlah_setoran' => (int) (
+                                    $row->jumlah_setoran
+                                    ?? 0
+                                ),
+                                'nilai_sementara' => is_null($row->nilai_sementara)
+                                    ? '-'
+                                    : number_format(
+                                        (float) $row->nilai_sementara,
+                                        2
+                                    ),
+                                'tanggal_terakhir' => $tanggalTerakhir,
+                                'tanggal_lulus' => $tanggalTerakhir,
+                            ];
+                        })
+                        ->all(),
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'mode' => 'setoran',
+            'juz' => $juz,
+            'title' => "Juz {$juz}",
+            'detail_heading' => 'Detail Progress Setoran',
+            'detail_title' => "Progress Setoran: Juz {$juz}",
+            'date_label' => 'Setoran terakhir',
+            'empty_message' => "Belum ada santri yang memiliki progress setoran Juz {$juz} pada filter aktif.",
+            'period_label' => $context['period_label'],
+            'semester_label' => $context['semester_label'],
+            'total' => $rows->count(),
+            'total_setoran' => (int) $rows->sum('jumlah_setoran'),
+            'kelas_count' => $kelasGroups->count(),
+            'groups' => $kelasGroups,
         ]);
     }
 
@@ -2543,11 +3946,17 @@ class LaporanController extends Controller
                 'pk.nama_kelas as placement_kelas_nama',
                 'pm.nama as placement_musyrif_nama',
                 'h.total_setor',
+                'h.jumlah_setoran_harian',
+                'h.jumlah_ujian',
+                'h.total_setoran_ujian',
                 'h.hadir_tidak_setor',
                 'h.sakit',
                 'h.izin',
                 'h.alpha',
-                'h.rata_nilai'
+                'h.rata_nilai',
+                'h.rata_nilai_sementara',
+                'h.rata_nilai_ujian',
+                'h.tanggal_ujian_terakhir'
             )
             ->orderBy('ssp.kelas_id')
             ->orderBy('santris.nama')
@@ -2653,6 +4062,15 @@ class LaporanController extends Controller
                     'COALESCE(SUM(h.total_setor), 0) AS total_setor'
                 ),
                 DB::raw(
+                    'COALESCE(SUM(h.jumlah_setoran_harian), 0) AS jumlah_setoran_harian'
+                ),
+                DB::raw(
+                    'COALESCE(SUM(h.jumlah_ujian), 0) AS jumlah_ujian'
+                ),
+                DB::raw(
+                    'COALESCE(SUM(h.total_setoran_ujian), 0) AS total_setoran_ujian'
+                ),
+                DB::raw(
                     'COALESCE(SUM(h.hadir_tidak_setor), 0) AS hadir_tidak_setor'
                 ),
                 DB::raw(
@@ -2666,6 +4084,12 @@ class LaporanController extends Controller
                 ),
                 DB::raw(
                     'ROUND(AVG(h.rata_nilai), 2) AS rata_nilai'
+                ),
+                DB::raw(
+                    'ROUND(LEAST(70, SUM(h.total_nilai_harian) / NULLIF(SUM(h.count_nilai_harian), 0)), 2) AS rata_nilai_sementara'
+                ),
+                DB::raw(
+                    'ROUND(SUM(h.total_nilai_ujian) / NULLIF(SUM(h.count_nilai_ujian), 0), 2) AS rata_nilai_ujian'
                 )
             )
             ->leftJoin(
@@ -2763,7 +4187,29 @@ class LaporanController extends Controller
                     'COUNT(DISTINCT sp.santri_id) AS jumlah_santri'
                 ),
                 DB::raw(
+                    "COUNT(DISTINCT CASE
+                        WHEN COALESCE(h.jumlah_setoran_harian, 0) > 0
+                            OR COALESCE(h.total_setoran_ujian, 0) > 0
+                        THEN sp.santri_id ELSE NULL
+                    END) AS santri_aktif_setoran"
+                ),
+                DB::raw(
+                    "COUNT(DISTINCT CASE
+                        WHEN COALESCE(h.jumlah_ujian, 0) > 0
+                        THEN sp.santri_id ELSE NULL
+                    END) AS santri_sudah_ujian"
+                ),
+                DB::raw(
                     'COALESCE(SUM(h.total_setor), 0) AS total_setor'
+                ),
+                DB::raw(
+                    'COALESCE(SUM(h.jumlah_setoran_harian), 0) AS jumlah_setoran_harian'
+                ),
+                DB::raw(
+                    'COALESCE(SUM(h.jumlah_ujian), 0) AS jumlah_ujian'
+                ),
+                DB::raw(
+                    'COALESCE(SUM(h.total_setoran_ujian), 0) AS total_setoran_ujian'
                 ),
                 DB::raw(
                     'COALESCE(SUM(h.hadir_tidak_setor), 0) AS hadir_tidak_setor'
@@ -2779,6 +4225,23 @@ class LaporanController extends Controller
                 ),
                 DB::raw(
                     'ROUND(AVG(h.rata_nilai), 2) AS rata_nilai'
+                ),
+                DB::raw(
+                    'ROUND(LEAST(70, SUM(h.total_nilai_harian) / NULLIF(SUM(h.count_nilai_harian), 0)), 2) AS rata_nilai_sementara'
+                ),
+                DB::raw(
+                    'ROUND(SUM(h.total_nilai_ujian) / NULLIF(SUM(h.count_nilai_ujian), 0), 2) AS rata_nilai_ujian'
+                ),
+                DB::raw(
+                    "ROUND(
+                        (
+                            COUNT(DISTINCT CASE
+                                WHEN COALESCE(h.jumlah_ujian, 0) > 0
+                                THEN sp.santri_id ELSE NULL
+                            END) / NULLIF(COUNT(DISTINCT sp.santri_id), 0)
+                        ) * 100,
+                        1
+                    ) AS coverage_ujian_pct"
                 )
             )
             ->leftJoin(
@@ -2927,24 +4390,263 @@ class LaporanController extends Controller
 
     private function buildExecutiveAnalytics($data): array
     {
+        $nilaiUjianValid = $data->filter(
+            fn($row) => !is_null($row->rata_nilai_ujian)
+        );
+
+        $nilaiSementaraValid = $data->filter(
+            fn($row) => !is_null($row->rata_nilai_sementara)
+        );
+
         return [
             'summary' => [
-                'total_santri' => $data->count(),
-                'total_setoran' => $data->sum('total_setor'),
-                'avg_nilai' => round($data->whereNotNull('rata_nilai')->avg('rata_nilai') ?? 0, 2),
-                'santri_aktif' => $data->where('total_setor', '>', 0)->count(),
+                'total_santri' => (int) $data->count(),
+                'total_setoran_harian' => (int) $data->sum(
+                    fn($row) => (int) ($row->jumlah_setoran_harian ?? 0)
+                ),
+                'total_ujian_juz' => (int) $data->sum(
+                    fn($row) => (int) ($row->jumlah_ujian ?? 0)
+                ),
+                'total_hts' => (int) $data->sum(
+                    fn($row) => (int) ($row->hadir_tidak_setor ?? 0)
+                ),
+                'total_sakit' => (int) $data->sum(
+                    fn($row) => (int) ($row->sakit ?? 0)
+                ),
+                'total_izin' => (int) $data->sum(
+                    fn($row) => (int) ($row->izin ?? 0)
+                ),
+                'total_alpha' => (int) $data->sum(
+                    fn($row) => (int) ($row->alpha ?? 0)
+                ),
+                'avg_nilai_sementara' => round(
+                    (float) ($nilaiSementaraValid->avg('rata_nilai_sementara') ?? 0),
+                    2
+                ),
+                'avg_nilai_ujian' => round(
+                    (float) ($nilaiUjianValid->avg('rata_nilai_ujian') ?? 0),
+                    2
+                ),
+                'santri_aktif' => (int) $data
+                    ->filter(
+                        fn($row) =>
+                        (int) ($row->jumlah_setoran_harian ?? 0) > 0
+                            || (int) ($row->total_setoran_ujian ?? 0) > 0
+                    )
+                    ->count(),
+                'santri_sudah_ujian' => (int) $data
+                    ->filter(
+                        fn($row) => (int) ($row->jumlah_ujian ?? 0) > 0
+                    )
+                    ->count(),
             ],
-            'topSantri' => $data
-                ->whereNotNull('rata_nilai')
-                ->sortByDesc('rata_nilai')
+            'topSantri' => $nilaiUjianValid
+                ->sortByDesc('rata_nilai_ujian')
                 ->take(10)
                 ->values(),
             'statusDistribution' => [
-                'mumtaz' => $data->where('rata_nilai', '>=', 90)->count(),
-                'jayyid_jiddan' => $data->whereBetween('rata_nilai', [80, 89.99])->count(),
-                'jayyid' => $data->whereBetween('rata_nilai', [70, 79.99])->count(),
-                'mardud' => $data->where('rata_nilai', '<', 70)->whereNotNull('rata_nilai')->count(),
+                'mumtaz' => $nilaiUjianValid->where('rata_nilai_ujian', '>=', 90)->count(),
+                'jayyid_jiddan' => $nilaiUjianValid->whereBetween('rata_nilai_ujian', [80, 89.99])->count(),
+                'jayyid' => $nilaiUjianValid->whereBetween('rata_nilai_ujian', [70, 79.99])->count(),
+                'mardud' => $nilaiUjianValid->where('rata_nilai_ujian', '<', 70)->count(),
             ],
+        ];
+    }
+
+
+    /**
+     * Membuat data visual 30 Juz untuk export PDF.
+     *
+     * Dipakai oleh export Santri, Kelas, dan Musyrif agar angka visual
+     * tetap mengikuti filter semester/periode/kelas/musyrif yang sama
+     * dengan tabel utama.
+     */
+    private function buildPdfJuzProgress(
+        Request $request,
+        string $groupLabel
+    ): array {
+        $kelasId = $request->filled('kelas_id')
+            ? (int) $request->input('kelas_id')
+            : null;
+
+        $musyrifId = $request->filled('musyrif_id')
+            ? (int) $request->input('musyrif_id')
+            : null;
+
+        $context = $this->resolveReportContext($request);
+
+        $santriIds = $this
+            ->filteredSantriQuery(
+                $context['semester_id'],
+                $kelasId,
+                $musyrifId
+            )
+            ->distinct()
+            ->pluck('santris.id');
+
+        $totalSantri = (int) $santriIds->count();
+
+        $emptyItems = collect(range(1, 30))->map(function (int $juz): array {
+            return [
+                'juz' => $juz,
+                'setoran_santri' => 0,
+                'setoran_records' => 0,
+                'ujian_santri' => 0,
+                'ujian_records' => 0,
+                'setoran_pct' => 0,
+                'ujian_pct' => 0,
+                'level' => 'empty',
+                'level_label' => 'Belum ada progress',
+            ];
+        });
+
+        if ($santriIds->isEmpty()) {
+            return [
+                'group_label' => $groupLabel,
+                'total_santri' => 0,
+                'total_setoran_santri' => 0,
+                'total_setoran_records' => 0,
+                'total_ujian_santri' => 0,
+                'total_ujian_records' => 0,
+                'avg_setoran_pct' => 0,
+                'avg_ujian_pct' => 0,
+                'completed_juz_count' => 0,
+                'active_juz_count' => 0,
+                'top_juz' => null,
+                'needs_attention' => $emptyItems->take(5)->values(),
+                'items' => $emptyItems->values(),
+            ];
+        }
+
+        $rows = DB::table('hafalans as h')
+            ->join(
+                'hafalan_templates as ht',
+                'ht.id',
+                '=',
+                'h.hafalan_template_id'
+            )
+            ->where('h.semester_id', $context['semester_id'])
+            ->whereIn('h.santri_id', $santriIds)
+            ->whereBetween(
+                'h.tanggal_setoran',
+                [
+                    $context['start_date'],
+                    $context['end_date'],
+                ]
+            )
+            ->whereIn('h.status', [
+                'lulus',
+                'ulang',
+            ])
+            ->select('ht.juz')
+            ->selectRaw(
+                "COUNT(DISTINCT CASE
+                    WHEN ht.tahap IN ('harian', 'tahap_1', 'tahap_2', 'tahap_3')
+                    THEN h.santri_id ELSE NULL
+                END) AS setoran_santri"
+            )
+            ->selectRaw(
+                "SUM(CASE
+                    WHEN ht.tahap IN ('harian', 'tahap_1', 'tahap_2', 'tahap_3')
+                    THEN 1 ELSE 0
+                END) AS setoran_records"
+            )
+            ->selectRaw(
+                "COUNT(DISTINCT CASE
+                    WHEN h.status = 'lulus'
+                        AND ht.tahap = 'ujian_akhir'
+                    THEN h.santri_id ELSE NULL
+                END) AS ujian_santri"
+            )
+            ->selectRaw(
+                "COUNT(DISTINCT CASE
+                    WHEN h.status = 'lulus'
+                        AND ht.tahap = 'ujian_akhir'
+                    THEN CONCAT(h.santri_id, ':', ht.juz) ELSE NULL
+                END) AS ujian_records"
+            )
+            ->groupBy('ht.juz')
+            ->get()
+            ->keyBy('juz');
+
+        $items = collect(range(1, 30))->map(
+            function (int $juz) use ($rows, $totalSantri): array {
+                $row = $rows->get($juz);
+
+                $setoranSantri = (int) ($row->setoran_santri ?? 0);
+                $setoranRecords = (int) ($row->setoran_records ?? 0);
+                $ujianSantri = (int) ($row->ujian_santri ?? 0);
+                $ujianRecords = (int) ($row->ujian_records ?? 0);
+
+                $setoranPct = $totalSantri > 0
+                    ? round(($setoranSantri / $totalSantri) * 100, 1)
+                    : 0;
+
+                $ujianPct = $totalSantri > 0
+                    ? round(($ujianSantri / $totalSantri) * 100, 1)
+                    : 0;
+
+                [$level, $levelLabel] = match (true) {
+                    $ujianPct >= 75 => ['excellent', 'Sangat kuat'],
+                    $ujianPct >= 50 => ['good', 'Baik'],
+                    $ujianPct >= 25 => ['progress', 'Mulai kuat'],
+                    $ujianPct > 0 => ['started', 'Sudah ada ujian'],
+                    $setoranPct > 0 => ['setoran', 'Masih proses setoran'],
+                    default => ['empty', 'Belum ada progress'],
+                };
+
+                return [
+                    'juz' => $juz,
+                    'setoran_santri' => $setoranSantri,
+                    'setoran_records' => $setoranRecords,
+                    'ujian_santri' => $ujianSantri,
+                    'ujian_records' => $ujianRecords,
+                    'setoran_pct' => $setoranPct,
+                    'ujian_pct' => $ujianPct,
+                    'level' => $level,
+                    'level_label' => $levelLabel,
+                ];
+            }
+        )->values();
+
+        $activeItems = $items
+            ->filter(
+                fn(array $item) =>
+                (int) $item['setoran_santri'] > 0
+                    || (int) $item['ujian_santri'] > 0
+            )
+            ->values();
+
+        $topJuz = $items
+            ->sortByDesc('ujian_santri')
+            ->sortByDesc('setoran_santri')
+            ->first();
+
+        $needsAttention = $items
+            ->filter(
+                fn(array $item) =>
+                (int) $item['ujian_santri'] === 0
+            )
+            ->sortByDesc('setoran_santri')
+            ->take(5)
+            ->values();
+
+        return [
+            'group_label' => $groupLabel,
+            'total_santri' => $totalSantri,
+            'total_setoran_santri' => (int) $items->sum('setoran_santri'),
+            'total_setoran_records' => (int) $items->sum('setoran_records'),
+            'total_ujian_santri' => (int) $items->sum('ujian_santri'),
+            'total_ujian_records' => (int) $items->sum('ujian_records'),
+            'avg_setoran_pct' => round((float) ($items->avg('setoran_pct') ?? 0), 1),
+            'avg_ujian_pct' => round((float) ($items->avg('ujian_pct') ?? 0), 1),
+            'completed_juz_count' => (int) $items
+                ->filter(fn(array $item) => (float) $item['ujian_pct'] >= 100)
+                ->count(),
+            'active_juz_count' => (int) $activeItems->count(),
+            'top_juz' => $topJuz,
+            'needs_attention' => $needsAttention,
+            'items' => $items,
         ];
     }
 
@@ -2967,6 +4669,10 @@ class LaporanController extends Controller
                         'topSantri' => $analytics['topSantri'],
                         'statusDistribution' =>
                         $analytics['statusDistribution'],
+                        'juzProgress' => $this->buildPdfJuzProgress(
+                            $request,
+                            'Santri'
+                        ),
                     ],
                     'filename' => 'rekap_hafalan_santri_' .
                         $export['filename_suffix'] .
@@ -2986,8 +4692,8 @@ class LaporanController extends Controller
                 $data = $this->fetchRekapKelasRaw($request);
                 $export = $this->exportContext($request);
 
-                $nilaiValid = $data->filter(
-                    fn($row) => !is_null($row->rata_nilai)
+                $nilaiUjianValid = $data->filter(
+                    fn($row) => !is_null($row->rata_nilai_ujian)
                 );
 
                 $summary = [
@@ -2995,18 +4701,33 @@ class LaporanController extends Controller
                     'total_santri' => (int) $data->sum(
                         fn($row) => (int) ($row->jumlah_santri ?? 0)
                     ),
-                    'total_setoran' => (int) $data->sum(
-                        fn($row) => (int) ($row->total_setor ?? 0)
+                    'total_setoran_harian' => (int) $data->sum(
+                        fn($row) => (int) ($row->jumlah_setoran_harian ?? 0)
                     ),
-                    'avg_nilai' => round(
-                        (float) ($nilaiValid->avg('rata_nilai') ?? 0),
+                    'total_ujian_juz' => (int) $data->sum(
+                        fn($row) => (int) ($row->jumlah_ujian ?? 0)
+                    ),
+                    'total_hts' => (int) $data->sum(
+                        fn($row) => (int) ($row->hadir_tidak_setor ?? 0)
+                    ),
+                    'total_sakit' => (int) $data->sum(
+                        fn($row) => (int) ($row->sakit ?? 0)
+                    ),
+                    'total_izin' => (int) $data->sum(
+                        fn($row) => (int) ($row->izin ?? 0)
+                    ),
+                    'total_alpha' => (int) $data->sum(
+                        fn($row) => (int) ($row->alpha ?? 0)
+                    ),
+                    'avg_nilai_ujian' => round(
+                        (float) ($nilaiUjianValid->avg('rata_nilai_ujian') ?? 0),
                         2
                     ),
                 ];
 
-                $topKelas = $nilaiValid
+                $topKelas = $data
                     ->sortByDesc(
-                        fn($row) => (float) ($row->rata_nilai ?? 0)
+                        fn($row) => (int) ($row->jumlah_ujian ?? 0)
                     )
                     ->take(10)
                     ->values();
@@ -3017,6 +4738,10 @@ class LaporanController extends Controller
                         'periode' => $export['label'],
                         'summary' => $summary,
                         'topKelas' => $topKelas,
+                        'juzProgress' => $this->buildPdfJuzProgress(
+                            $request,
+                            'Kelas'
+                        ),
                     ],
                     'filename' => 'rekap_hafalan_kelas_' .
                         $export['filename_suffix'] .
@@ -3036,8 +4761,8 @@ class LaporanController extends Controller
                 $data = $this->fetchRekapMusyrifRaw($request);
                 $export = $this->exportContext($request);
 
-                $nilaiValid = $data->filter(
-                    fn($row) => !is_null($row->rata_nilai)
+                $nilaiUjianValid = $data->filter(
+                    fn($row) => !is_null($row->rata_nilai_ujian)
                 );
 
                 $summary = [
@@ -3045,18 +4770,39 @@ class LaporanController extends Controller
                     'total_santri' => (int) $data->sum(
                         fn($row) => (int) ($row->jumlah_santri ?? 0)
                     ),
-                    'total_setoran' => (int) $data->sum(
-                        fn($row) => (int) ($row->total_setor ?? 0)
+                    'santri_aktif_setoran' => (int) $data->sum(
+                        fn($row) => (int) ($row->santri_aktif_setoran ?? 0)
                     ),
-                    'avg_nilai' => round(
-                        (float) ($nilaiValid->avg('rata_nilai') ?? 0),
+                    'santri_sudah_ujian' => (int) $data->sum(
+                        fn($row) => (int) ($row->santri_sudah_ujian ?? 0)
+                    ),
+                    'total_setoran_harian' => (int) $data->sum(
+                        fn($row) => (int) ($row->jumlah_setoran_harian ?? 0)
+                    ),
+                    'total_ujian_juz' => (int) $data->sum(
+                        fn($row) => (int) ($row->jumlah_ujian ?? 0)
+                    ),
+                    'total_hts' => (int) $data->sum(
+                        fn($row) => (int) ($row->hadir_tidak_setor ?? 0)
+                    ),
+                    'total_sakit' => (int) $data->sum(
+                        fn($row) => (int) ($row->sakit ?? 0)
+                    ),
+                    'total_izin' => (int) $data->sum(
+                        fn($row) => (int) ($row->izin ?? 0)
+                    ),
+                    'total_alpha' => (int) $data->sum(
+                        fn($row) => (int) ($row->alpha ?? 0)
+                    ),
+                    'avg_nilai_ujian' => round(
+                        (float) ($nilaiUjianValid->avg('rata_nilai_ujian') ?? 0),
                         2
                     ),
                 ];
 
-                $topMusyrif = $nilaiValid
+                $topMusyrif = $data
                     ->sortByDesc(
-                        fn($row) => (float) ($row->rata_nilai ?? 0)
+                        fn($row) => (int) ($row->jumlah_ujian ?? 0)
                     )
                     ->take(10)
                     ->values();
@@ -3067,6 +4813,10 @@ class LaporanController extends Controller
                         'periode' => $export['label'],
                         'summary' => $summary,
                         'topMusyrif' => $topMusyrif,
+                        'juzProgress' => $this->buildPdfJuzProgress(
+                            $request,
+                            'Musyrif'
+                        ),
                     ],
                     'filename' => 'rekap_hafalan_musyrif_' .
                         $export['filename_suffix'] .

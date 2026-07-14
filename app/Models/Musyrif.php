@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\LogsActivity; // Import trait untuk logging aktivitas
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Musyrif extends Model
 {
@@ -15,6 +16,7 @@ class Musyrif extends Model
         'user_id',
         'nama',
         'kode',
+        'jenis_kelamin',
         'keterangan',
         'kelas_id',
         'alamat',
@@ -52,5 +54,11 @@ class Musyrif extends Model
     public function kelas()
     {
         return $this->belongsTo(Kelas::class, 'kelas_id');
+    }
+
+    // Opsional: tambahkan relasi di dalam class User
+    public function systemReview(): HasOne
+    {
+        return $this->hasOne(\App\Models\SystemReview::class);
     }
 }

@@ -78,17 +78,20 @@ class DashboardController extends Controller
             ->distinct()
             ->pluck('santri_id');
 
-        $setoranHariIniQuery = Hafalan::query()
-            ->whereDate('tanggal_setoran', $today->toDateString())
-            ->whereIn('status', ['lulus', 'ulang']);
-
-        $this->applySemesterFilter(
-            $setoranHariIniQuery,
+        /*
+         * Perhitungan Hafalan dashboard disamakan dengan Laporan Page:
+         * - total_setor: semua transaksi status lulus/ulang;
+         * - jumlah_setoran_harian: hanya tahap harian, tahap_1, tahap_2, tahap_3;
+         * - jumlah_ujian: DISTINCT Juz yang lulus pada tahap ujian_akhir;
+         * - nilai sementara dibatasi maksimal 70, nilai final hanya dari ujian akhir lulus.
+         */
+        $hafalanHariIni = $this->hafalanReportSummary(
             $semesterAktif,
-            'tanggal_setoran'
+            $today,
+            $todayEnd
         );
 
-        $setoranHariIni = $setoranHariIniQuery->count();
+        $setoranHariIni = $hafalanHariIni['total_setor'];
 
         $validAttendanceToday = MusyrifAttendance::query()
             ->whereDate('attendance_at', $today->toDateString())
@@ -308,20 +311,13 @@ class DashboardController extends Controller
             ->distinct()
             ->count('santri_id');
 
-        $setoranSemesterQuery = Hafalan::query()
-            ->whereBetween('tanggal_setoran', [
-                $semesterStart->toDateString(),
-                $semesterEnd->toDateString(),
-            ])
-            ->whereIn('status', ['lulus', 'ulang']);
-
-        $this->applySemesterFilter(
-            $setoranSemesterQuery,
+        $hafalanSemester = $this->hafalanReportSummary(
             $semesterAktif,
-            'tanggal_setoran'
+            $semesterStart,
+            $semesterEnd
         );
 
-        $setoranSemester = $setoranSemesterQuery->count();
+        $setoranSemester = $hafalanSemester['total_setor'];
 
         $coverageSemester = $jumlahSantri > 0
             ? round(($santriAktifSemester / $jumlahSantri) * 100, 1)
@@ -466,6 +462,7 @@ class DashboardController extends Controller
             'aktivitasHariIni',
             'santriAktifHariIni',
             'setoranHariIni',
+            'hafalanHariIni',
             'musyrifHadirPagi',
             'musyrifHadirSore',
             'musyrifBelumPagi',
@@ -484,6 +481,7 @@ class DashboardController extends Controller
             'aktivitasSemester',
             'santriAktifSemester',
             'setoranSemester',
+            'hafalanSemester',
             'coverageSemester',
             'trendChart',
             'activityByClassChart',
@@ -542,6 +540,126 @@ class DashboardController extends Controller
                 'Hari ini',
             ],
         };
+    }
+
+
+    private function nilaiScoreSql(string $column = 'hafalans.nilai_label'): string
+    {
+        return "CASE {$column}
+            WHEN 'mumtaz' THEN 95
+            WHEN 'jayyid_jiddan' THEN 85
+            WHEN 'jayyid' THEN 75
+            WHEN 'mardud' THEN 65
+            ELSE NULL
+        END";
+    }
+
+    private function hafalanReportSummary(
+        ?Semester $semester,
+        Carbon $start,
+        Carbon $end
+    ): array {
+        $nilaiSql = $this->nilaiScoreSql('hafalans.nilai_label');
+
+        $summary = Hafalan::query()
+            ->leftJoin(
+                'hafalan_templates as ht',
+                'ht.id',
+                '=',
+                'hafalans.hafalan_template_id'
+            )
+            ->when(
+                $semester,
+                fn($query) =>
+                $query->where(
+                    'hafalans.semester_id',
+                    $semester->id
+                )
+            )
+            ->whereBetween(
+                'hafalans.tanggal_setoran',
+                [
+                    $start->toDateString(),
+                    $end->toDateString(),
+                ]
+            )
+            ->selectRaw(
+                "SUM(CASE WHEN hafalans.status IN ('lulus', 'ulang') THEN 1 ELSE 0 END) AS total_setor"
+            )
+            ->selectRaw(
+                "SUM(CASE
+                    WHEN hafalans.status IN ('lulus', 'ulang')
+                        AND ht.tahap IN ('harian', 'tahap_1', 'tahap_2', 'tahap_3')
+                    THEN 1 ELSE 0
+                END) AS jumlah_setoran_harian"
+            )
+            ->selectRaw(
+                "COUNT(DISTINCT CASE
+                    WHEN hafalans.status = 'lulus'
+                        AND ht.tahap = 'ujian_akhir'
+                    THEN ht.juz ELSE NULL
+                END) AS jumlah_ujian"
+            )
+            ->selectRaw(
+                "SUM(CASE
+                    WHEN hafalans.status IN ('lulus', 'ulang')
+                        AND ht.tahap = 'ujian_akhir'
+                    THEN 1 ELSE 0
+                END) AS total_setoran_ujian"
+            )
+            ->selectRaw(
+                "SUM(CASE WHEN hafalans.status = 'hadir_tidak_setor' THEN 1 ELSE 0 END) AS hadir_tidak_setor"
+            )
+            ->selectRaw(
+                "SUM(CASE WHEN hafalans.status = 'sakit' THEN 1 ELSE 0 END) AS sakit"
+            )
+            ->selectRaw(
+                "SUM(CASE WHEN hafalans.status = 'izin' THEN 1 ELSE 0 END) AS izin"
+            )
+            ->selectRaw(
+                "SUM(CASE WHEN hafalans.status = 'alpha' THEN 1 ELSE 0 END) AS alpha"
+            )
+            ->selectRaw(
+                "ROUND(AVG(CASE
+                    WHEN hafalans.status IN ('lulus', 'ulang') THEN {$nilaiSql}
+                    ELSE NULL
+                END), 2) AS rata_nilai"
+            )
+            ->selectRaw(
+                "ROUND(LEAST(70, AVG(CASE
+                    WHEN hafalans.status IN ('lulus', 'ulang')
+                        AND ht.tahap IN ('harian', 'tahap_1', 'tahap_2', 'tahap_3')
+                    THEN {$nilaiSql}
+                    ELSE NULL
+                END)), 2) AS rata_nilai_sementara"
+            )
+            ->selectRaw(
+                "ROUND(AVG(CASE
+                    WHEN hafalans.status = 'lulus'
+                        AND ht.tahap = 'ujian_akhir'
+                    THEN {$nilaiSql}
+                    ELSE NULL
+                END), 2) AS rata_nilai_ujian"
+            )
+            ->first();
+
+        return [
+            'total_setor' => (int) ($summary->total_setor ?? 0),
+            'jumlah_setoran_harian' => (int) ($summary->jumlah_setoran_harian ?? 0),
+            'jumlah_ujian' => (int) ($summary->jumlah_ujian ?? 0),
+            'total_setoran_ujian' => (int) ($summary->total_setoran_ujian ?? 0),
+            'hadir_tidak_setor' => (int) ($summary->hadir_tidak_setor ?? 0),
+            'sakit' => (int) ($summary->sakit ?? 0),
+            'izin' => (int) ($summary->izin ?? 0),
+            'alpha' => (int) ($summary->alpha ?? 0),
+            'rata_nilai' => $summary->rata_nilai !== null ? (float) $summary->rata_nilai : null,
+            'rata_nilai_sementara' => $summary->rata_nilai_sementara !== null
+                ? (float) $summary->rata_nilai_sementara
+                : null,
+            'rata_nilai_ujian' => $summary->rata_nilai_ujian !== null
+                ? (float) $summary->rata_nilai_ujian
+                : null,
+        ];
     }
 
     private function applySemesterFilter(
