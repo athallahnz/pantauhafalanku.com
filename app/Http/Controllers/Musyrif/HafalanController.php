@@ -19,6 +19,26 @@ class HafalanController extends Controller
 {
     use ResolvesActiveSemester;
 
+    private function hasPassedTarget(
+        int $santriId,
+        ?int $templateId,
+        ?int $ignoreHafalanId = null
+    ): bool {
+        if ($templateId === null) {
+            return false;
+        }
+
+        return Hafalan::query()
+            ->where('santri_id', $santriId)
+            ->where('hafalan_template_id', $templateId)
+            ->where('status', 'lulus')
+            ->when(
+                $ignoreHafalanId !== null,
+                fn($query) => $query->whereKeyNot($ignoreHafalanId)
+            )
+            ->exists();
+    }
+
     private function syncPoinAlpha(Hafalan $hafalan, int $musyrifId): void
     {
         $tanggal = $hafalan->tanggal_setoran;
@@ -213,25 +233,113 @@ class HafalanController extends Controller
     public function templates(Request $request)
     {
         $data = $request->validate([
+            'santri_id' => ['required', 'integer', 'min:1'],
             'juz' => ['required', 'integer', 'min:1', 'max:30'],
             'tahap' => ['required', 'in:harian,tahap_1,tahap_2,tahap_3,ujian_akhir'],
+            'current_hafalan_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        $templates = HafalanTemplate::query()
-            ->select(['id', 'urutan', 'label'])
+        $user = auth()->user();
+        $musyrif = $user->musyrif
+            ?? Musyrif::where('user_id', $user->id)->first();
+
+        if (!$musyrif) {
+            return response()->json([
+                'message' => 'Profil Musyrif tidak ditemukan.',
+            ], 422);
+        }
+
+        $isSantriBinaan = Santri::query()
+            ->active()
+            ->whereKey($data['santri_id'])
+            ->where('musyrif_id', $musyrif->id)
+            ->exists();
+
+        if (!$isSantriBinaan) {
+            return response()->json([
+                'message' => 'Santri yang dipilih bukan santri binaan Anda.',
+            ], 403);
+        }
+
+        $currentHafalanId = $data['current_hafalan_id'] ?? null;
+
+        if ($currentHafalanId !== null) {
+            $canEditCurrentRecord = Hafalan::query()
+                ->whereKey($currentHafalanId)
+                ->where('musyrif_id', $musyrif->id)
+                ->exists();
+
+            if (!$canEditCurrentRecord) {
+                return response()->json([
+                    'message' => 'Data hafalan yang sedang diedit tidak valid.',
+                ], 403);
+            }
+        }
+
+        $baseTemplateQuery = HafalanTemplate::query()
             ->where('juz', $data['juz'])
-            ->where('tahap', $data['tahap'])
+            ->where('tahap', $data['tahap']);
+
+        $totalTemplates = (clone $baseTemplateQuery)->count();
+
+        /*
+         * Progress Hafalan bersifat kumulatif lintas semester.
+         *
+         * Template disembunyikan jika sudah pernah Lulus. Record yang sedang
+         * diedit dikecualikan dari pemeriksaan agar pilihan aslinya tetap
+         * tersedia di modal edit.
+         */
+        $templates = $baseTemplateQuery
+            ->select(['id', 'urutan', 'label'])
+            ->whereNotExists(function ($query) use (
+                $data,
+                $currentHafalanId
+            ) {
+                $query
+                    ->selectRaw('1')
+                    ->from('hafalans')
+                    ->whereColumn(
+                        'hafalans.hafalan_template_id',
+                        'hafalan_templates.id'
+                    )
+                    ->where('hafalans.santri_id', $data['santri_id'])
+                    ->where('hafalans.status', 'lulus')
+                    ->when(
+                        $currentHafalanId !== null,
+                        fn($query) => $query->where(
+                            'hafalans.id',
+                            '!=',
+                            $currentHafalanId
+                        )
+                    );
+            })
             ->orderBy('urutan')
-            ->get()
-            ->map(fn($t) => [
-                'id' => $t->id,
-                'urutan' => $t->urutan,
-                'label' => $t->label ?? ('Bagian ' . $t->urutan),
-            ]);
+            ->get();
+
+        $ulangTemplateIds = Hafalan::query()
+            ->where('santri_id', $data['santri_id'])
+            ->where('status', 'ulang')
+            ->whereIn('hafalan_template_id', $templates->pluck('id'))
+            ->pluck('hafalan_template_id')
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->flip();
+
+        $templateOptions = $templates->map(fn($template) => [
+            'id' => $template->id,
+            'urutan' => $template->urutan,
+            'label' => $template->label
+                ?? ('Bagian ' . $template->urutan),
+            'is_ulang' => $ulangTemplateIds->has((int) $template->id),
+        ]);
 
         return response()->json([
             'ok' => true,
-            'templates' => $templates,
+            'templates' => $templateOptions,
+            'total_templates' => $totalTemplates,
+            'available_templates' => $templateOptions->count(),
+            'all_completed' => $totalTemplates > 0
+                && $templateOptions->isEmpty(),
         ]);
     }
 
@@ -269,6 +377,25 @@ class HafalanController extends Controller
             return response()->json([
                 'message' => 'Santri yang dipilih bukan santri binaan Anda.',
             ], 403);
+        }
+
+        if (
+            in_array($validated['status'], ['lulus', 'ulang'], true)
+            && $this->hasPassedTarget(
+                (int) $validated['santri_id'],
+                isset($validated['hafalan_template_id'])
+                    ? (int) $validated['hafalan_template_id']
+                    : null
+            )
+        ) {
+            return response()->json([
+                'message' => 'Target hafalan ini sudah berstatus Lulus dan tidak perlu disetorkan kembali.',
+                'errors' => [
+                    'hafalan_template_id' => [
+                        'Target hafalan ini sudah berstatus Lulus.',
+                    ],
+                ],
+            ], 422);
         }
 
         /*
@@ -376,6 +503,21 @@ class HafalanController extends Controller
             return response()->json([
                 'message' => 'Santri yang dipilih bukan santri binaan Anda.',
             ], 403);
+        }
+
+        if (
+            in_array($validated['status'], ['lulus', 'ulang'], true)
+            && $this->hasPassedTarget(
+                (int) $validated['santri_id'],
+                isset($validated['hafalan_template_id'])
+                    ? (int) $validated['hafalan_template_id']
+                    : null,
+                (int) $hafalan->id
+            )
+        ) {
+            return response()->json([
+                'message' => 'Target hafalan ini sudah berstatus Lulus pada pencatatan lain.',
+            ], 422);
         }
 
         /*

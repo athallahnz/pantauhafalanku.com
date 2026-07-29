@@ -179,14 +179,19 @@
                 <label class="form-label">Kelas Terakhir</label>
                 <select class="form-select" id="filterKelas">
                     <option value="">Semua Kelas</option>
-                    @foreach ($kelasList as $kelas)
-                        <option value="{{ $kelas->id }}">{{ $kelas->nama_kelas }}</option>
+                    @foreach ($kelasParents as $parent)
+                        <optgroup label="{{ $parent->nama_kelas }}">
+                            <option value="{{ $parent->id }}">{{ $parent->nama_kelas }} — Semua Kelompok</option>
+                            @foreach ($parent->children as $child)
+                                <option value="{{ $child->id }}">{{ $child->nama_kelas }}</option>
+                            @endforeach
+                        </optgroup>
                     @endforeach
                 </select>
             </div>
 
             <div class="col-md-6 col-xl-3">
-                <label class="form-label">Semester Kelulusan</label>
+                <label class="form-label">Semester Status</label>
                 <select class="form-select" id="filterSemester">
                     <option value="">Semua Semester</option>
                     @foreach ($semesterList as $semester)
@@ -224,7 +229,7 @@
                         <th>Santri</th>
                         <th>Status</th>
                         <th>Kelas Terakhir</th>
-                        <th>Semester Kelulusan</th>
+                        <th>Semester Status</th>
                         <th>Tanggal Status</th>
                         <th>Alasan / Catatan</th>
                         <th>Progress</th>
@@ -395,8 +400,14 @@
                         <label class="form-label">Kelas</label>
                         <select class="form-select" id="reactivateKelas" required>
                             <option value="">Pilih kelas...</option>
-                            @foreach ($kelasList as $kelas)
-                                <option value="{{ $kelas->id }}">{{ $kelas->nama_kelas }}</option>
+                            @foreach ($kelasParents as $parent)
+                                @if ($parent->children->isNotEmpty())
+                                    <optgroup label="{{ $parent->nama_kelas }}">
+                                        @foreach ($parent->children as $child)
+                                            <option value="{{ $child->id }}">{{ $child->nama_kelas }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
                             @endforeach
                         </select>
                     </div>
@@ -602,16 +613,37 @@
 
                 $('#detailArchiveSubtitle').text(`${santri.nama} • ${santri.nis || 'Tanpa NIS'}`);
 
+                const exitReasonLabels = {
+                    pindah_sekolah: 'Pindah sekolah/pesantren',
+                    mengundurkan_diri: 'Mengundurkan diri',
+                    dikeluarkan: 'Dikeluarkan',
+                    tidak_melanjutkan: 'Tidak melanjutkan',
+                    alasan_keluarga: 'Alasan keluarga',
+                    kesehatan: 'Kesehatan',
+                    lainnya: 'Lainnya',
+                };
+
+                const exitDetails = santri.exit_details || null;
+
                 const profile = [
                     ['Status', santri.status_label],
                     ['Kelas Terakhir', santri.kelas_nama || '-'],
-                    ['Semester Kelulusan', santri.graduated_semester_label || '-'],
+                    ['Semester Status', santri.status_period_label || santri.graduated_semester_label || '-'],
                     ['Tanggal Status', formatDateTime(santri.graduated_at || santri.status_changed_at)],
                     ['Alasan', santri.status_reason || '-'],
                     ['Diubah Oleh', santri.status_changed_by || '-'],
                     ['Akun', santri.user ? `${santri.user.name} • ${santri.user.nomor || santri.user.email || '-'}` : 'Tidak memiliki akun'],
                     ['Tanggal Lahir', santri.tanggal_lahir || '-'],
                 ];
+
+                if (exitDetails) {
+                    profile.push(
+                        ['Kategori Keluar', exitReasonLabels[exitDetails.reason_code] || exitDetails.reason_code || '-'],
+                        ['Tanggal Efektif', formatDateTime(exitDetails.effective_at)],
+                        ['Tujuan Pindah', exitDetails.destination || '-'],
+                        ['Nomor Dokumen', exitDetails.document_number || '-'],
+                    );
+                }
 
                 $('#detailArchiveProfile').html(profile.map(([label, value]) => `
                     <div class="col-md-6 col-xl-3">
@@ -638,7 +670,18 @@
                 `).join(''));
 
                 $('#detailProgressLink').attr('href', endpoint(endpoints.progress, santri.id));
-                $('#detailArchiveTimeline').html(histories.length ? histories.map(history => `
+                $('#detailArchiveTimeline').html(histories.length ? histories.map(history => {
+                    const historyExit = history.metadata?.exit || null;
+                    const historyExitInfo = historyExit ? `
+                        <div class="small mt-2 p-2 rounded-3 bg-danger-subtle text-danger-emphasis">
+                            Kategori: ${escapeHtml(exitReasonLabels[historyExit.reason_code] || historyExit.reason_code || '-')} •
+                            Efektif: ${escapeHtml(formatDateTime(historyExit.effective_at))} •
+                            Tujuan: ${escapeHtml(historyExit.destination || '-')} •
+                            Dokumen: ${escapeHtml(historyExit.document_number || '-')}
+                        </div>
+                    ` : '';
+
+                    return `
                     <div class="archive-timeline-item">
                         <div class="d-flex flex-wrap justify-content-between gap-2">
                             <div class="fw-bold">
@@ -652,9 +695,11 @@
                             Kelas: ${escapeHtml(history.kelas || '-')} • Musyrif: ${escapeHtml(history.musyrif || '-')} • Semester: ${escapeHtml(history.semester || '-')}
                         </div>
                         <div class="mt-2">${escapeHtml(history.reason || 'Tidak ada catatan')}</div>
+                        ${historyExitInfo}
                         <div class="small text-body-secondary mt-1">Oleh: ${escapeHtml(history.changed_by || 'Sistem / data lama')}</div>
                     </div>
-                `).join('') : '<div class="text-body-secondary">Belum ada histori status.</div>');
+                `;
+                }).join('') : '<div class="text-body-secondary">Belum ada histori status.</div>');
 
                 return json;
             }
@@ -751,11 +796,12 @@
                     const { santri } = await loadDetail(this.dataset.id);
                     $('#reactivateSantriId').val(santri.id);
                     $('#reactivateName').text(`${santri.nama} • ${santri.status_label}`);
-                    $('#reactivateKelas').val(santri.kelas_id || '');
+                    $('#reactivateKelas').val(String(santri.kelas_id || ''));
+                    const selectedOperationalKelas = $('#reactivateKelas').val() || '';
                     $('#reactivateChangedAt').val(nowLocalValue());
                     $('#reactivateReason').val('');
                     reactivateModal.show();
-                    await loadMusyrifs(santri.kelas_id || '');
+                    await loadMusyrifs(selectedOperationalKelas);
                 } catch (error) {
                     showError(error);
                 }

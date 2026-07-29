@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Musyrif;
 
 use App\Http\Controllers\Controller;
+use App\Models\AttendanceLocation;
 use App\Models\Musyrif;
 use App\Models\MusyrifAttendance;
 use App\Events\MusyrifAbsenEvent;
@@ -19,10 +20,29 @@ use Carbon\Carbon;
 class MusyrifAttendanceController extends Controller
 {
 
-    // Titik pusat lokasi setoran (Masjid Darut Taqwa putra)
-    private float $geoLat = -7.8186683;
-    private float $geoLng = 111.5244092;
-    private int $geoRadiusM = 150; // sesuaikan kebijakan
+    /**
+     * Ambil hanya titik aktif. Array ini juga dikirim ke frontend sehingga UI
+     * dan validasi server selalu memakai sumber konfigurasi yang sama.
+     *
+     * @return array<int, array{id: int, name: string, lat: float, lng: float, radius_m: int, color: string}>
+     */
+    private function geofenceLocations(): array
+    {
+        return AttendanceLocation::query()
+            ->active()
+            ->ordered()
+            ->get(['id', 'name', 'latitude', 'longitude', 'radius_m', 'color'])
+            ->map(fn(AttendanceLocation $location) => [
+                'id' => $location->id,
+                'name' => $location->name,
+                'lat' => (float) $location->latitude,
+                'lng' => (float) $location->longitude,
+                'radius_m' => (int) $location->radius_m,
+                'color' => $location->color,
+            ])
+            ->values()
+            ->all();
+    }
 
     private function haversineMeters(float $lat1, float $lon1, float $lat2, float $lon2): float
     {
@@ -33,6 +53,43 @@ class MusyrifAttendanceController extends Controller
         $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) ** 2;
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
         return $R * $c;
+    }
+
+    /**
+     * Cari lokasi valid. Jika tidak ada radius yang mencakup perangkat,
+     * kembalikan titik terdekat sebagai konteks penolakan.
+     *
+     * @param array<int, array{id: int, name: string, lat: float, lng: float, radius_m: int, color: string}> $locations
+     * @return array{inside: bool, location: array{id: int, name: string, lat: float, lng: float, radius_m: int, color: string, distance_m: float}}|null
+     */
+    private function evaluateGeofences(float $lat, float $lng, array $locations): ?array
+    {
+        if ($locations === []) {
+            return null;
+        }
+
+        $evaluated = collect($locations)
+            ->map(function (array $location) use ($lat, $lng) {
+                $location['distance_m'] = $this->haversineMeters(
+                    $lat,
+                    $lng,
+                    $location['lat'],
+                    $location['lng']
+                );
+
+                return $location;
+            })
+            ->sortBy('distance_m')
+            ->values();
+
+        $inside = $evaluated->first(
+            fn(array $location) => $location['distance_m'] <= $location['radius_m']
+        );
+
+        return [
+            'inside' => $inside !== null,
+            'location' => $inside ?? $evaluated->first(),
+        ];
     }
 
     public function index(Request $request)
@@ -47,7 +104,14 @@ class MusyrifAttendanceController extends Controller
         $afternoon = MusyrifAttendance::where('musyrif_id', $musyrif->id)
             ->whereDate('attendance_at', $today)->where('type', 'afternoon')->latest()->first();
 
-        return view('musyrif.absensi.index', compact('musyrif', 'morning', 'afternoon'));
+        $geofenceLocations = $this->geofenceLocations();
+
+        return view('musyrif.absensi.index', compact(
+            'musyrif',
+            'morning',
+            'afternoon',
+            'geofenceLocations'
+        ));
     }
 
     public function store(Request $request)
@@ -66,24 +130,37 @@ class MusyrifAttendanceController extends Controller
 
         $status = 'valid';
         $notesExtra = null;
+        $nearestLocation = null;
+        $geofenceLocations = $this->geofenceLocations();
 
         $lat = $validated['latitude'] ?? null;
         $lng = $validated['longitude'] ?? null;
 
-        if ($lat === null || $lng === null) {
+        if ($geofenceLocations === []) {
+            $status = 'suspect';
+            $notesExtra = 'Belum ada titik lokasi absensi aktif yang dikonfigurasi Admin.';
+        } elseif ($lat === null || $lng === null) {
             $status = 'suspect';
             $notesExtra = 'GPS tidak tersedia.';
         } else {
-            $dist = $this->haversineMeters(
-                (float) $lat,
-                (float) $lng,
-                $this->geoLat,
-                $this->geoLng
-            );
+            $evaluation = $this->evaluateGeofences((float) $lat, (float) $lng, $geofenceLocations);
+            $nearestLocation = $evaluation['location'];
+            $dist = $nearestLocation['distance_m'];
 
-            if ($dist > $this->geoRadiusM) {
+            if (!$evaluation['inside']) {
                 $status = 'rejected';
-                $notesExtra = 'Di luar radius geofence (' . round($dist) . ' m).';
+                $notesExtra = sprintf(
+                    'Di luar radius seluruh kampus. Titik terdekat: %s (%d m; radius %d m).',
+                    $nearestLocation['name'],
+                    (int) round($dist),
+                    $nearestLocation['radius_m']
+                );
+            } else {
+                $notesExtra = sprintf(
+                    'Lokasi terverifikasi di %s (jarak %d m).',
+                    $nearestLocation['name'],
+                    (int) round($dist)
+                );
             }
         }
 
@@ -102,7 +179,7 @@ class MusyrifAttendanceController extends Controller
         $photoPath = $this->storeBase64Photo($validated['photo'], $musyrif->id);
 
         // Gunakan variabel untuk menangkap hasil data absensi
-        $attendance = DB::transaction(function () use ($musyrif, $validated, $photoPath, $request, $status, $notesExtra, $lat, $lng) {
+        $attendance = DB::transaction(function () use ($musyrif, $validated, $photoPath, $request, $status, $notesExtra, $lat, $lng, $nearestLocation) {
             return MusyrifAttendance::create([
                 'musyrif_id' => $musyrif->id,
                 'type' => $validated['type'],
@@ -111,7 +188,7 @@ class MusyrifAttendanceController extends Controller
                 'latitude' => $lat,
                 'longitude' => $lng,
                 'accuracy' => isset($validated['accuracy']) ? (int) round($validated['accuracy']) : null,
-                'address_text' => $validated['address_text'] ?? null,
+                'address_text' => $validated['address_text'] ?? ($nearestLocation['name'] ?? null),
                 'ip_address' => $request->ip(),
                 'device_info' => (string) $request->userAgent(),
                 'status' => $status,

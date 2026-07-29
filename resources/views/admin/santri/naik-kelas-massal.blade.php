@@ -114,10 +114,49 @@
             background: var(--cui-body-bg);
         }
 
+        .manual-select-cell {
+            width: 48px;
+            text-align: center;
+        }
+
+        .manual-preview-row.is-unselected {
+            opacity: .55;
+            background: var(--cui-tertiary-bg);
+        }
+
+        .manual-preview-row.is-unselected .santri-musyrif-select {
+            pointer-events: none;
+        }
+
+        .manual-selection-summary {
+            border: 1px solid rgba(13, 110, 253, .22);
+            border-radius: .85rem;
+            background: rgba(13, 110, 253, .06);
+        }
+
         .auto-mapping-safe {
             border: 1px solid rgba(25, 135, 84, .25);
             border-radius: 1rem;
             background: rgba(25, 135, 84, .08);
+        }
+
+        .transition-choice-card {
+            border: 1px solid rgba(13, 110, 253, .22);
+            border-radius: 1rem;
+            background: rgba(13, 110, 253, .055);
+        }
+
+        .transition-choice-icon {
+            width: 44px;
+            height: 44px;
+            flex: 0 0 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: .9rem;
+            color: #0d6efd;
+            background: rgba(13, 110, 253, .12);
+            font-size: 1.15rem;
         }
 
         .graduation-option-card {
@@ -179,6 +218,65 @@
 
         .auto-individual-assignment {
             border-top: 1px solid var(--cui-border-color);
+        }
+
+        /* ================= JENIS KELAMIN MIGRASI ================= */
+        .migration-gender-card {
+            border: 1px solid rgba(111, 66, 193, .22);
+            border-radius: 1rem;
+            background: rgba(111, 66, 193, .055);
+        }
+
+        .migration-gender-icon {
+            width: 44px;
+            height: 44px;
+            flex: 0 0 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: .9rem;
+            color: var(--islamic-purple-700, #59359d);
+            background: rgba(111, 66, 193, .12);
+            font-size: 1.15rem;
+        }
+
+        .gender-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+        }
+
+        .gender-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            border-radius: 999px;
+            padding: .38rem .7rem;
+            font-size: .75rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .gender-badge-putra {
+            color: #0a58ca;
+            background: rgba(13, 110, 253, .12);
+            border: 1px solid rgba(13, 110, 253, .2);
+        }
+
+        .gender-badge-putri {
+            color: #a61e4d;
+            background: rgba(214, 51, 132, .12);
+            border: 1px solid rgba(214, 51, 132, .2);
+        }
+
+        .gender-badge-mixed {
+            color: var(--cui-secondary-color);
+            background: var(--cui-tertiary-bg);
+            border: 1px solid var(--cui-border-color);
+        }
+
+        [data-coreui-theme="dark"] .migration-gender-card {
+            background: var(--cui-tertiary-bg);
         }
 
         /* ================= FLOATING PAGE GUIDE ================= */
@@ -499,7 +597,7 @@
                         @endforelse
                     </select>
 
-                    <div class="small opacity-75 mt-2">
+                    <div class="small opacity-75 mt-2" id="toSemesterHelp">
                         Penempatan kelas baru akan disimpan pada semester ini.
                     </div>
                 </div>
@@ -570,30 +668,53 @@
             {{-- ALUR 1: MANUAL PER KELAS --}}
             <div class="section-title mb-4">ALUR 1: KONFIGURASI MANUAL PER KELAS</div>
 
+            <div class="migration-gender-card p-3 mb-4">
+                <div class="row align-items-center g-3">
+                    <div class="col-lg">
+                        <div class="d-flex align-items-start gap-3">
+                            <span class="migration-gender-icon">
+                                <i class="bi bi-gender-ambiguous"></i>
+                            </span>
+
+                            <div>
+                                <div class="fw-bold mb-1">Jenis Kelamin yang Diproses</div>
+                                <div class="small text-body-secondary" id="migrationGenderHelp">
+                                    Default memproses seluruh santri. Pilih Putra atau Putri untuk memfilter santri
+                                    dan kelas. Pilihan Musyrif tetap mengikuti tingkat utama tujuan tanpa batasan gender.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <label class="form-label" for="migrationGender">Filter Jenis Kelamin</label>
+                        <select class="form-select shadow-xs" id="migrationGender" {{ !$semesterAktif ? 'disabled' : '' }}>
+                            <option value="">Semua Santri</option>
+                            <option value="L">Putra / Laki-laki</option>
+                            <option value="P">Putri / Perempuan</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div class="row g-4 mb-4">
                 <div class="col-md-4">
                     <label class="form-label">Kelas Asal</label>
                     <select class="form-select shadow-xs" id="fromKelasId" {{ !$semesterAktif ? 'disabled' : '' }}>
                         <option value="">Pilih kelas asal...</option>
-                        @foreach ($kelasList as $k)
-                            <option value="{{ $k->id }}">{{ $k->nama_kelas }}</option>
-                        @endforeach
                     </select>
+                    <div class="form-text" id="fromKelasHelp">
+                        Kelas asal otomatis difilter berdasarkan gender dan jumlah santri aktif.
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Kelas Tujuan</label>
                     <select class="form-select shadow-xs" id="toKelasId" {{ !$semesterAktif ? 'disabled' : '' }}>
                         <option value="">Pilih kelas tujuan...</option>
-
-                        @foreach ($kelasList as $k)
-                            <option value="{{ $k->id }}">
-                                {{ $k->nama_kelas }}
-                            </option>
-                        @endforeach
                     </select>
 
                     <div class="form-text" id="toKelasHelp">
-                        Pilih kelas tujuan sesuai tipe perubahan.
+                        Kelas tujuan otomatis difilter berdasarkan metadata gender kelas.
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -625,6 +746,7 @@
                         <option value="mutasi">Mutasi</option>
                         <option value="tinggal_kelas">Tinggal Kelas</option>
                         <option value="penempatan">Penempatan</option>
+                        <option value="keluar">Santri Keluar / Arsip</option>
                     </select>
                 </div>
                 <div class="col-md-9">
@@ -633,6 +755,99 @@
                         placeholder="Contoh: Kenaikan Semester Genap 2025/2026" {{ !$semesterAktif ? 'disabled' : '' }}>
                 </div>
             </div>
+
+            {{-- DETAIL KHUSUS SANTRI KELUAR --}}
+            <div class="alert alert-danger border-0 rounded-4 mb-4 d-none" id="exitDetailPanel">
+                <div class="d-flex align-items-start gap-3 mb-3">
+                    <i class="bi bi-box-arrow-right fs-4"></i>
+                    <div>
+                        <div class="fw-bold">Arsip Santri Keluar</div>
+                        <div class="small">
+                            Santri terpilih akan berhenti pada semester asal, masuk arsip, dan tidak dibuatkan
+                            placement pada semester tujuan. Kelas serta musyrif terakhir tetap tersimpan.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label" for="exitReasonCode">Kategori Keluar <span class="text-danger">*</span></label>
+                        <select class="form-select" id="exitReasonCode">
+                            <option value="">Pilih kategori...</option>
+                            <option value="pindah_sekolah">Pindah sekolah/pesantren</option>
+                            <option value="mengundurkan_diri">Mengundurkan diri</option>
+                            <option value="dikeluarkan">Dikeluarkan</option>
+                            <option value="tidak_melanjutkan">Tidak melanjutkan</option>
+                            <option value="alasan_keluarga">Alasan keluarga</option>
+                            <option value="kesehatan">Kesehatan</option>
+                            <option value="lainnya">Lainnya</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label" for="exitEffectiveAt">Tanggal Efektif <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="exitEffectiveAt"
+                            @if ($semesterAktif?->tanggal_mulai)
+                                min="{{ $semesterAktif->tanggal_mulai->format('Y-m-d') }}T00:00"
+                            @endif
+                            @if ($semesterAktif?->tanggal_selesai)
+                                max="{{ $semesterAktif->tanggal_selesai->format('Y-m-d') }}T23:59"
+                            @endif>
+                        <div class="form-text">Harus berada dalam rentang semester asal.</div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label" for="exitDocumentNumber">Nomor Surat/Dokumen</label>
+                        <input type="text" class="form-control" id="exitDocumentNumber" maxlength="100"
+                            placeholder="Opsional">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label" for="exitDestination">Tujuan Pindah</label>
+                        <input type="text" class="form-control" id="exitDestination" maxlength="255"
+                            placeholder="Opsional, contoh: Pondok Pesantren ...">
+                    </div>
+                </div>
+            </div>
+
+            @if (!empty($transitionChoices))
+                <div class="transition-choice-card p-3 mb-3" id="transitionChoicePanel">
+                    <div class="d-flex align-items-start gap-3 mb-3">
+                        <span class="transition-choice-icon">
+                            <i class="bi bi-signpost-split-fill"></i>
+                        </span>
+                        <div>
+                            <div class="fw-bold">Pilih Jalur Tingkat Bercabang</div>
+                            <div class="small text-body-secondary">
+                                Pilihan berlaku untuk seluruh kelompok pada tingkat asal dan mempertahankan urutan kelompok. Transisi SMP ke SMA memetakan A→1, B→2, dan C→3.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        @foreach ($transitionChoices as $choice)
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    {{ $choice['from_parent_nama'] }} menuju
+                                </label>
+                                <select class="form-select auto-transition-choice"
+                                    data-from-parent-id="{{ $choice['from_parent_id'] }}"
+                                    {{ !$semesterAktif ? 'disabled' : '' }}>
+                                    <option value="">Pilih tingkat tujuan...</option>
+                                    @foreach ($choice['targets'] as $target)
+                                        <option value="{{ $target['id'] }}">
+                                            {{ $target['nama'] }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="form-text">
+                                    Contoh: Kelas 9 A menuju Kelas 10 Reg 1, sedangkan Kelas 10 Reg 1 menuju Kelas 11 Reg 1.
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
             {{-- AUTO GRADUATION OPTION --}}
             <div class="graduation-option-card p-3 mb-3" id="graduationOptionCard">
@@ -721,8 +936,7 @@
 
                     <div class="small text-body-secondary">
                         Seluruh posisi kelas asal dikunci dan disnapshot dalam satu
-                        transaksi sebelum perubahan dilakukan. Musyrif lama dipertahankan secara default. Mapping individual
-                        hanya diperlukan jika pembimbing berubah.
+                        transaksi sebelum perubahan dilakukan. Musyrif lama hanya dipertahankan bila sudah bertugas pada kelas tujuan. Jika tidak, pilih musyrif kelas tujuan.
                     </div>
                 </div>
             </div>
@@ -754,6 +968,8 @@
                             <div class="small text-primary fw-semibold mt-1" id="manualBatchInfo">
                                 Batch belum dibuat.
                             </div>
+
+                            <div class="gender-summary mt-2" id="manualGenderSummary"></div>
                         </div>
 
                         <div class="text-lg-end">
@@ -774,8 +990,8 @@
                             </div>
 
                             <div class="small text-body-secondary">
-                                Preview individual disembunyikan karena tidak ada
-                                perubahan assignment musyrif.
+                                Gunakan checkbox pada tabel untuk memilih santri yang diproses.
+                                Musyrif lama dipertahankan bila tingkat tujuan tetap sesuai.
                             </div>
                         </div>
                     </div>
@@ -786,8 +1002,13 @@
                         <table class="table table-striped table-hover align-middle mb-0">
                             <thead class="table-light text-uppercase small fw-bold">
                                 <tr>
-                                    <th class="ps-4" style="width:60px;">#</th>
+                                    <th class="manual-select-cell ps-3">
+                                        <input type="checkbox" class="form-check-input" id="manualSelectAll"
+                                            checked aria-label="Pilih semua santri">
+                                    </th>
+                                    <th style="width:55px;">#</th>
                                     <th>Santri</th>
+                                    <th>Jenis Kelamin</th>
                                     <th>Musyrif Lama</th>
                                     <th class="pe-4" style="min-width:300px;">
                                         Musyrif Semester Tujuan
@@ -799,10 +1020,16 @@
                         </table>
                     </div>
 
-                    <div class="small text-body-secondary mt-3">
-                        <i class="bi bi-people me-1"></i>
-                        Dropdown menampilkan seluruh data Master Musyrif dan tidak
-                        dibatasi oleh kelas_id musyrif.
+                    <div class="manual-selection-summary p-3 mt-3">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check2-square text-primary"></i>
+                            <div class="small text-body-secondary">
+                                Centang hanya santri yang akan diproses ke kelas tujuan ini.
+                                Santri yang tidak dicentang tetap berada pada kelas asal dan dapat
+                                dibuatkan Preview baru menuju kelas tujuan lain. Dropdown Musyrif
+                                mengikuti <strong>kelas_induk_id</strong> kelas tujuan.
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -828,6 +1055,8 @@
                         <div class="small text-body-secondary" id="autoSnapshotInfo">
                             Belum ada snapshot.
                         </div>
+
+                        <div class="gender-summary mt-2" id="autoGenderSummary"></div>
                     </div>
 
                     <span class="badge text-bg-warning rounded-pill px-3 py-2" id="autoAssignmentStatusBadge">
@@ -947,8 +1176,8 @@
                                 </div>
 
                                 <div class="small text-body-secondary">
-                                    Tentukan kelas asal, kelas tujuan, tipe perubahan,
-                                    catatan riwayat, serta Semester Tujuan. Untuk
+                                    Tentukan jenis kelamin yang diproses, kelas asal, kelas tujuan,
+                                    tipe perubahan, catatan riwayat, serta Semester Tujuan. Untuk
                                     tinggal kelas, kelas asal dan tujuan harus sama.
                                     Untuk naik kelas atau mutasi, keduanya harus berbeda.
                                 </div>
@@ -1191,6 +1420,26 @@
             const fromSemesterId =
                 {{ $semesterAktif?->id ?? 'null' }};
 
+            @php
+                $kelasOptionsPayload = $kelasList
+                    ->map(function ($kelas) {
+                        return [
+                            'id' => (int) $kelas->id,
+                            'nama' => $kelas->nama_kelas,
+                            'parent_id' => (int) $kelas->parent_id,
+                            'gender' => $kelas->jenis_kelamin,
+                            'gender_label' => $kelas->gender_label,
+                            'putra_count' => (int) $kelas->active_putra_count,
+                            'putri_count' => (int) $kelas->active_putri_count,
+                            'total_count' => (int) $kelas->active_santri_count,
+                        ];
+                    })
+                    ->values()
+                    ->all();
+            @endphp
+
+            const kelasOptions = @json($kelasOptionsPayload);
+
             const semesterInputLocked = @json((bool) $semesterAktif?->input_locked_at);
 
 
@@ -1204,8 +1453,20 @@
             const toSemesterId =
                 document.getElementById('toSemesterId');
 
+            const toSemesterHelp =
+                document.getElementById('toSemesterHelp');
+
+            const migrationGender =
+                document.getElementById('migrationGender');
+
+            const migrationGenderHelp =
+                document.getElementById('migrationGenderHelp');
+
             const fromKelasId =
                 document.getElementById('fromKelasId');
+
+            const fromKelasHelp =
+                document.getElementById('fromKelasHelp');
 
             const toKelasId =
                 document.getElementById('toKelasId');
@@ -1228,6 +1489,21 @@
 
             const catatan =
                 document.getElementById('catatan');
+
+            const exitDetailPanel =
+                document.getElementById('exitDetailPanel');
+
+            const exitReasonCode =
+                document.getElementById('exitReasonCode');
+
+            const exitEffectiveAt =
+                document.getElementById('exitEffectiveAt');
+
+            const exitDestination =
+                document.getElementById('exitDestination');
+
+            const exitDocumentNumber =
+                document.getElementById('exitDocumentNumber');
 
             const includeGraduation =
                 document.getElementById(
@@ -1259,6 +1535,9 @@
             const previewRows =
                 document.getElementById('previewRows');
 
+            const manualSelectAll =
+                document.getElementById('manualSelectAll');
+
             const manualKeepSummary =
                 document.getElementById(
                     'manualKeepSummary'
@@ -1284,6 +1563,11 @@
                     'manualBatchInfo'
                 );
 
+            const manualGenderSummary =
+                document.getElementById(
+                    'manualGenderSummary'
+                );
+
             const btnAutoPreview =
                 document.getElementById('btnAutoPreview');
 
@@ -1295,6 +1579,9 @@
 
             const autoSnapshotInfo =
                 document.getElementById('autoSnapshotInfo');
+
+            const autoGenderSummary =
+                document.getElementById('autoGenderSummary');
 
             const autoAssignmentStatusBadge =
                 document.getElementById(
@@ -1314,6 +1601,17 @@
             let autoBatchId = null;
             let autoBatchCode = null;
             let autoRows = [];
+
+            function manualIsExit() {
+                return tipe.value === 'keluar';
+            }
+
+            function nowLocalValue() {
+                const date = new Date();
+                return new Date(
+                    date.getTime() - (date.getTimezoneOffset() * 60000)
+                ).toISOString().slice(0, 16);
+            }
 
             function resetManualFlow() {
                 lastCount = 0;
@@ -1344,6 +1642,10 @@
                 manualBatchInfo.textContent =
                     'Batch belum dibuat.';
 
+                if (manualGenderSummary) {
+                    manualGenderSummary.innerHTML = '';
+                }
+
                 updateAssignmentStatus();
                 togglePreviewEnable();
             }
@@ -1362,6 +1664,10 @@
 
                 autoSnapshotInfo.textContent =
                     'Belum ada snapshot.';
+
+                if (autoGenderSummary) {
+                    autoGenderSummary.innerHTML = '';
+                }
 
                 btnAutoExecute.disabled = true;
                 btnAutoExecute.setAttribute(
@@ -1400,6 +1706,152 @@
                 }
             }
 
+            function normalizeClassGender(value) {
+                const normalized = String(value ?? '')
+                    .trim()
+                    .toUpperCase();
+
+                return ['L', 'P', 'MIXED'].includes(normalized)
+                    ? normalized
+                    : '';
+            }
+
+            function classAcceptsSelectedGender(kelas, selectedGender) {
+                const gender = normalizeGender(selectedGender);
+                const classGender = normalizeClassGender(kelas?.gender);
+
+                return !gender ||
+                    !classGender ||
+                    classGender === 'MIXED' ||
+                    classGender === gender;
+            }
+
+            function activeGenderCount(kelas, selectedGender) {
+                const gender = normalizeGender(selectedGender);
+
+                if (gender === 'L') {
+                    return Number(kelas?.putra_count ?? 0);
+                }
+
+                if (gender === 'P') {
+                    return Number(kelas?.putri_count ?? 0);
+                }
+
+                return Number(kelas?.total_count ?? 0);
+            }
+
+            function classGenderLabel(kelas) {
+                const classGender = normalizeClassGender(kelas?.gender);
+
+                if (classGender === 'L') {
+                    return 'Putra';
+                }
+
+                if (classGender === 'P') {
+                    return 'Putri';
+                }
+
+                if (classGender === 'MIXED') {
+                    return 'Campuran';
+                }
+
+                return 'Belum diatur';
+            }
+
+            function appendKelasOption(select, kelas, mode, selectedGender) {
+                const count = activeGenderCount(kelas, selectedGender);
+                const suffix = mode === 'source'
+                    ? ` • ${classGenderLabel(kelas)} • ${count} santri`
+                    : ` • ${classGenderLabel(kelas)}`;
+                const option = new Option(
+                    `${kelas.nama}${suffix}`,
+                    String(kelas.id)
+                );
+
+                option.dataset.gender = kelas.gender || '';
+                option.dataset.parentId = String(kelas.parent_id || '');
+                option.dataset.putraCount = String(kelas.putra_count || 0);
+                option.dataset.putriCount = String(kelas.putri_count || 0);
+                option.dataset.totalCount = String(kelas.total_count || 0);
+                select.append(option);
+            }
+
+            function refreshKelasDropdowns() {
+                const selectedGender = migrationGender?.value || '';
+                const previousFrom = fromKelasId.value;
+                const previousTo = toKelasId.value;
+
+                fromKelasId.innerHTML = '<option value="">Pilih kelas asal...</option>';
+                toKelasId.innerHTML = '<option value="">Pilih kelas tujuan...</option>';
+
+                let sourceVisible = 0;
+                let targetVisible = 0;
+
+                kelasOptions.forEach(function(kelas) {
+                    if (!classAcceptsSelectedGender(kelas, selectedGender)) {
+                        return;
+                    }
+
+                    const matchingStudents = activeGenderCount(
+                        kelas,
+                        selectedGender
+                    );
+
+                    if (matchingStudents > 0) {
+                        appendKelasOption(
+                            fromKelasId,
+                            kelas,
+                            'source',
+                            selectedGender
+                        );
+                        sourceVisible++;
+                    }
+
+                    appendKelasOption(
+                        toKelasId,
+                        kelas,
+                        'target',
+                        selectedGender
+                    );
+                    targetVisible++;
+                });
+
+                if (
+                    previousFrom &&
+                    Array.from(fromKelasId.options)
+                        .some(option => option.value === previousFrom)
+                ) {
+                    fromKelasId.value = previousFrom;
+                }
+
+                if (
+                    previousTo &&
+                    Array.from(toKelasId.options)
+                        .some(option => option.value === previousTo)
+                ) {
+                    toKelasId.value = previousTo;
+                }
+
+                if (fromKelasHelp) {
+                    fromKelasHelp.textContent = selectedGender
+                        ? `${sourceVisible} kelas memiliki santri aktif ${selectedGender === 'L' ? 'Putra' : 'Putri'} dan kompatibel dengan metadata kelas.`
+                        : `${sourceVisible} kelas memiliki santri aktif.`;
+                }
+
+                if (toKelasHelp && tipe.value !== 'tinggal_kelas') {
+                    toKelasHelp.textContent = selectedGender
+                        ? `${targetVisible} kelas tujuan kompatibel untuk ${selectedGender === 'L' ? 'Putra' : 'Putri'}. Kelas Campuran/Belum diatur tetap tersedia.`
+                        : 'Pilih kelas tujuan sesuai tipe perubahan.';
+                }
+
+                if (
+                    tipe.value === 'tinggal_kelas' &&
+                    fromKelasId.value
+                ) {
+                    toKelasId.value = fromKelasId.value;
+                }
+            }
+
             function getPreviewDisabledReason() {
                 if (!fromSemesterId) {
                     return 'Semester aktif tidak ditemukan.';
@@ -1413,8 +1865,20 @@
                     return 'Pilih kelas asal.';
                 }
 
-                if (!toKelasId.value) {
+                if (!manualIsExit() && !toKelasId.value) {
                     return 'Pilih kelas tujuan.';
+                }
+
+                if (manualIsExit() && !exitReasonCode?.value) {
+                    return 'Pilih kategori santri keluar.';
+                }
+
+                if (manualIsExit() && !exitEffectiveAt?.value) {
+                    return 'Isi tanggal efektif santri keluar.';
+                }
+
+                if (manualIsExit() && !catatan?.value.trim()) {
+                    return 'Catatan/alasan santri keluar wajib diisi.';
                 }
 
                 const sameClass =
@@ -1458,8 +1922,38 @@
             function syncTransitionControls() {
                 const isTinggalKelas =
                     tipe.value === 'tinggal_kelas';
+                const isExit = manualIsExit();
 
-                if (isTinggalKelas) {
+                exitDetailPanel?.classList.toggle('d-none', !isExit);
+                manualMusyrifStrategy.disabled = isExit || !fromSemesterId;
+
+                if (isExit) {
+                    toKelasId.value = '';
+                    toKelasId.disabled = true;
+                    manualMusyrifStrategy.value = 'keep';
+
+                    if (exitEffectiveAt && !exitEffectiveAt.value) {
+                        const nowValue = nowLocalValue();
+                        const minValue = exitEffectiveAt.min || nowValue;
+                        const maxValue = exitEffectiveAt.max || nowValue;
+
+                        exitEffectiveAt.value = nowValue < minValue
+                            ? minValue
+                            : nowValue > maxValue
+                                ? maxValue
+                                : nowValue;
+                    }
+
+                    toKelasHelp.textContent =
+                        'Tidak diperlukan. Santri keluar tidak memperoleh placement semester tujuan.';
+                    manualMusyrifStrategyHelp.textContent =
+                        'Tidak diperlukan. Musyrif terakhir tetap tersimpan pada snapshot arsip.';
+
+                    if (toSemesterHelp) {
+                        toSemesterHelp.textContent =
+                            'Semester ini menjadi batas administrasi: santri tidak akan memperoleh placement di semester tersebut.';
+                    }
+                } else if (isTinggalKelas) {
                     if (fromKelasId.value) {
                         toKelasId.value =
                             fromKelasId.value;
@@ -1469,6 +1963,11 @@
 
                     toKelasHelp.textContent =
                         'Tinggal kelas menggunakan kelas asal yang sama pada semester tujuan.';
+
+                    if (toSemesterHelp) {
+                        toSemesterHelp.textContent =
+                            'Penempatan kelas baru akan disimpan pada semester ini.';
+                    }
                 } else {
                     toKelasId.disabled = !fromSemesterId;
 
@@ -1476,6 +1975,11 @@
                         tipe.value === 'penempatan' ?
                         'Penempatan boleh menggunakan kelas yang sama atau berbeda.' :
                         'Kelas tujuan harus berbeda dari kelas asal.';
+
+                    if (toSemesterHelp) {
+                        toSemesterHelp.textContent =
+                            'Penempatan kelas baru akan disimpan pada semester ini.';
+                    }
                 }
 
                 togglePreviewEnable();
@@ -1490,6 +1994,141 @@
                 }
             }
 
+            function normalizeGender(value) {
+                const normalized = String(value ?? '')
+                    .trim()
+                    .toLowerCase();
+
+                if (['l', 'lk', 'laki-laki', 'laki laki', 'male', 'putra'].includes(normalized)) {
+                    return 'L';
+                }
+
+                if (['p', 'pr', 'perempuan', 'female', 'putri'].includes(normalized)) {
+                    return 'P';
+                }
+
+                return '';
+            }
+
+            function genderMeta(value) {
+                const gender = normalizeGender(value);
+
+                if (gender === 'L') {
+                    return {
+                        value: 'L',
+                        label: 'Putra',
+                        icon: 'bi-gender-male',
+                        className: 'gender-badge-putra'
+                    };
+                }
+
+                if (gender === 'P') {
+                    return {
+                        value: 'P',
+                        label: 'Putri',
+                        icon: 'bi-gender-female',
+                        className: 'gender-badge-putri'
+                    };
+                }
+
+                return {
+                    value: '',
+                    label: 'Belum Diisi',
+                    icon: 'bi-question-circle',
+                    className: 'gender-badge-mixed'
+                };
+            }
+
+            function resolveGender(row) {
+                return normalizeGender(
+                    row?.jenis_kelamin ??
+                    row?.gender ??
+                    row?.jk ??
+                    row?.santri_jenis_kelamin ??
+                    row?.from_jenis_kelamin ??
+                    ''
+                );
+            }
+
+            function genderBadge(value, withLabel = true) {
+                const meta = genderMeta(value);
+
+                return `
+                    <span class="gender-badge ${meta.className}">
+                        <i class="bi ${meta.icon}"></i>
+                        ${withLabel ? escapeHtml(meta.label) : ''}
+                    </span>
+                `;
+            }
+
+            function genderSelectionLabel() {
+                const meta = genderMeta(migrationGender?.value);
+
+                return migrationGender?.value ?
+                    meta.label :
+                    'Semua Santri';
+            }
+
+            function genderCounts(rows) {
+                return (rows ?? []).reduce(
+                    (result, row) => {
+                        const gender = resolveGender(row);
+
+                        if (gender === 'L') {
+                            result.putra++;
+                        } else if (gender === 'P') {
+                            result.putri++;
+                        } else {
+                            result.unknown++;
+                        }
+
+                        return result;
+                    }, {
+                        putra: 0,
+                        putri: 0,
+                        unknown: 0
+                    }
+                );
+            }
+
+            function renderGenderSummary(element, rows) {
+                if (!element) {
+                    return;
+                }
+
+                const counts = genderCounts(rows);
+                const badges = [];
+
+                if (counts.putra > 0) {
+                    badges.push(`
+                        <span class="gender-badge gender-badge-putra">
+                            <i class="bi bi-gender-male"></i>
+                            ${counts.putra} Putra
+                        </span>
+                    `);
+                }
+
+                if (counts.putri > 0) {
+                    badges.push(`
+                        <span class="gender-badge gender-badge-putri">
+                            <i class="bi bi-gender-female"></i>
+                            ${counts.putri} Putri
+                        </span>
+                    `);
+                }
+
+                if (counts.unknown > 0) {
+                    badges.push(`
+                        <span class="gender-badge gender-badge-mixed">
+                            <i class="bi bi-question-circle"></i>
+                            ${counts.unknown} Belum Diisi
+                        </span>
+                    `);
+                }
+
+                element.innerHTML = badges.join('');
+            }
+
             function musyrifOptionLabel(
                 musyrif
             ) {
@@ -1497,9 +2136,16 @@
                     `${musyrif.nama} — ${musyrif.kode}` :
                     musyrif.nama;
 
-                return musyrif.kelas_nama ?
-                    `${identity} • ${musyrif.kelas_nama}` :
-                    identity;
+                const level = musyrif.tingkat_utama ?
+                    ` • ${musyrif.tingkat_utama}` :
+                    '';
+
+                const handled = Array.isArray(musyrif.kelas_binaan_nama)
+                    && musyrif.kelas_binaan_nama.length > 0 ?
+                    ` • Binaan: ${musyrif.kelas_binaan_nama.join(', ')}` :
+                    '';
+
+                return `${identity}${level}${handled}`;
             }
 
             function targetMusyrifOptions(
@@ -1509,21 +2155,27 @@
                     '<option value="">Pilih musyrif...</option>'
                 ];
 
-                targetMusyrifs.forEach(
-                    function(musyrif) {
-                        const selected =
-                            String(musyrif.id) ===
-                            String(selectedId) ?
-                            ' selected' :
-                            '';
+                targetMusyrifs
+                    .forEach(
+                        function(musyrif) {
+                            const selected =
+                                String(musyrif.id) ===
+                                String(selectedId) ?
+                                ' selected' :
+                                '';
 
-                        options.push(
-                            `<option value="${Number(musyrif.id)}"${selected}>` +
-                            `${escapeHtml(musyrifOptionLabel(musyrif))}` +
-                            `</option>`
-                        );
-                    }
-                );
+                            const genderLabel =
+                                resolveGender(musyrif) ?
+                                ` • ${genderMeta(resolveGender(musyrif)).label}` :
+                                ' • Gender belum diisi';
+
+                            options.push(
+                                `<option value="${Number(musyrif.id)}"${selected}>` +
+                                `${escapeHtml(musyrifOptionLabel(musyrif) + genderLabel)}` +
+                                `</option>`
+                            );
+                        }
+                    );
 
                 return options.join('');
             }
@@ -1536,8 +2188,75 @@
                 );
             }
 
+            function getRowCheckboxes() {
+                return Array.from(
+                    document.querySelectorAll(
+                        '.manual-santri-check'
+                    )
+                );
+            }
+
+            function selectedManualCheckboxes() {
+                return getRowCheckboxes().filter(
+                    checkbox => checkbox.checked
+                );
+            }
+
+            function syncManualSelectAllState() {
+                if (!manualSelectAll) {
+                    return;
+                }
+
+                const checkboxes = getRowCheckboxes().filter(
+                    checkbox => !checkbox.disabled
+                );
+                const selected = checkboxes.filter(
+                    checkbox => checkbox.checked
+                ).length;
+
+                manualSelectAll.checked =
+                    checkboxes.length > 0
+                    && selected === checkboxes.length;
+                manualSelectAll.indeterminate =
+                    selected > 0
+                    && selected < checkboxes.length;
+            }
+
+            function syncManualRowState() {
+                const individual =
+                    manualUsesIndividualMapping();
+
+                getRowCheckboxes().forEach(
+                    function(checkbox) {
+                        const row = checkbox.closest(
+                            '.manual-preview-row'
+                        );
+                        const select = row?.querySelector(
+                            '.santri-musyrif-select'
+                        );
+                        const selected = checkbox.checked;
+
+                        row?.classList.toggle(
+                            'is-unselected',
+                            !selected
+                        );
+
+                        if (select) {
+                            select.disabled =
+                                !selected || !individual;
+                            select.classList.remove(
+                                'assignment-incomplete'
+                            );
+                        }
+                    }
+                );
+
+                syncManualSelectAllState();
+            }
+
             function manualUsesIndividualMapping() {
-                return manualMusyrifStrategy?.value ===
+                return !manualIsExit()
+                    && manualMusyrifStrategy?.value ===
                     'individual';
             }
 
@@ -1548,109 +2267,132 @@
                 manualKeepSummary?.classList
                     .toggle('d-none', individual);
 
+                // Tabel seleksi selalu tampil agar Admin dapat memilih subset santri.
                 manualIndividualAssignmentBox?.classList
-                    .toggle('d-none', !individual);
+                    .remove('d-none');
 
                 if (manualAssignmentNotice) {
                     manualAssignmentNotice.textContent =
+                        manualIsExit() ?
+                        'Centang santri yang akan diarsipkan sebagai keluar. Assignment Musyrif tujuan tidak diperlukan.' :
                         individual ?
-                        'Pilih musyrif untuk setiap santri. Seluruh Master Musyrif tersedia pada dropdown.' :
-                        'Musyrif lama dipertahankan untuk seluruh santri, termasuk ketika kelas berubah.';
+                        'Centang santri yang diproses lalu pilih Musyrif tujuan berdasarkan tingkat utama.' :
+                        'Centang santri yang diproses. Musyrif lama dipertahankan bila berada pada tingkat tujuan yang sama.';
                 }
 
                 if (manualMusyrifStrategyHelp) {
                     manualMusyrifStrategyHelp.textContent =
+                        manualIsExit() ?
+                        'Musyrif terakhir disimpan dalam snapshot arsip dan placement semester asal.' :
                         individual ?
-                        'Preview individual ditampilkan untuk mapping satu per satu.' :
-                        'Default mempertahankan musyrif lama walaupun santri berpindah kelas.';
+                        'Hanya baris yang dicentang dan memiliki Musyrif tujuan yang akan dieksekusi.' :
+                        'Baris yang tidak dicentang tetap berada pada kelas asal.';
                 }
 
+                syncManualRowState();
                 updateAssignmentStatus();
             }
 
             function updateAssignmentStatus() {
-                if (
-                    !manualUsesIndividualMapping()
-                ) {
-                    const missingNames =
-                        previewSantris
-                        .filter(
-                            santri =>
-                            !santri.musyrif_id
+                const selectedCheckboxes =
+                    selectedManualCheckboxes();
+                const selectedIds = new Set(
+                    selectedCheckboxes.map(
+                        checkbox => Number(
+                            checkbox.dataset.santriId
                         )
-                        .map(
-                            santri =>
-                            santri.nama ??
-                            `Santri #${santri.id}`
-                        );
+                    )
+                );
+                const selectedCount = selectedIds.size;
+                const missingNames = [];
+                let ready = 0;
 
-                    const ready =
-                        previewSantris.length -
-                        missingNames.length;
+                if (manualIsExit()) {
+                    ready = selectedCount;
 
                     assignmentStatusBadge.textContent =
-                        `${ready} / ${previewSantris.length} siap`;
-
+                        `${selectedCount} dipilih • siap diarsipkan`;
                     assignmentStatusBadge.className =
-                        missingNames.length === 0 ?
-                        'badge text-bg-success rounded-pill px-3 py-2' :
-                        'badge text-bg-warning rounded-pill px-3 py-2';
+                        selectedCount > 0
+                            ? 'badge text-bg-success rounded-pill px-3 py-2'
+                            : 'badge text-bg-warning rounded-pill px-3 py-2';
+                    btnExecute.disabled = !semesterInputLocked
+                        || lastCount === 0
+                        || selectedCount === 0;
+                    syncManualSelectAllState();
 
-                    btnExecute.disabled = !semesterInputLocked ||
-                        lastCount === 0 ||
-                        missingNames.length > 0;
-
-                    return missingNames;
+                    return [];
                 }
 
-                const selects = getRowSelects();
-                let ready = 0;
-                const missingNames = [];
-
-                selects.forEach(
-                    function(select) {
-                        const valid =
-                            Boolean(select.value);
-
-                        select.classList.toggle(
-                            'assignment-incomplete',
-                            !valid
-                        );
-
-                        if (valid) {
-                            ready++;
-                            return;
-                        }
-
-                        const santriId = Number(
-                            select.dataset.santriId
-                        );
-
-                        const santri =
-                            previewSantris.find(
-                                row =>
-                                Number(row.id) ===
-                                santriId
+                if (!manualUsesIndividualMapping()) {
+                    previewSantris
+                        .filter(
+                            santri => selectedIds.has(
+                                Number(santri.id)
+                            )
+                        )
+                        .forEach(function(santri) {
+                            if (santri.musyrif_id) {
+                                ready++;
+                            } else {
+                                missingNames.push(
+                                    santri.nama ??
+                                    `Santri #${santri.id}`
+                                );
+                            }
+                        });
+                } else {
+                    getRowSelects().forEach(
+                        function(select) {
+                            const santriId = Number(
+                                select.dataset.santriId
                             );
 
-                        missingNames.push(
-                            santri?.nama ??
-                            `Santri #${santriId}`
-                        );
-                    }
-                );
+                            if (!selectedIds.has(santriId)) {
+                                select.classList.remove(
+                                    'assignment-incomplete'
+                                );
+                                return;
+                            }
+
+                            const valid = Boolean(select.value);
+                            select.classList.toggle(
+                                'assignment-incomplete',
+                                !valid
+                            );
+
+                            if (valid) {
+                                ready++;
+                                return;
+                            }
+
+                            const santri = previewSantris.find(
+                                row => Number(row.id) === santriId
+                            );
+
+                            missingNames.push(
+                                santri?.nama ??
+                                `Santri #${santriId}`
+                            );
+                        }
+                    );
+                }
 
                 assignmentStatusBadge.textContent =
-                    `${ready} / ${selects.length} siap`;
+                    `${selectedCount} dipilih • ${ready} / ${selectedCount} siap`;
 
                 assignmentStatusBadge.className =
-                    ready === selects.length ?
+                    selectedCount > 0
+                    && missingNames.length === 0 ?
                     'badge text-bg-success rounded-pill px-3 py-2' :
                     'badge text-bg-warning rounded-pill px-3 py-2';
 
-                btnExecute.disabled = !semesterInputLocked ||
-                    lastCount === 0 ||
-                    missingNames.length > 0;
+                btnExecute.disabled = !semesterInputLocked
+                    || lastCount === 0
+                    || selectedCount === 0
+                    || missingNames.length > 0;
+
+                syncManualSelectAllState();
 
                 return missingNames;
             }
@@ -1671,8 +2413,12 @@
 
                 previewSantris =
                     Array.isArray(json.santris) ?
-                    json.santris :
-                    [];
+                    json.santris : [];
+
+                renderGenderSummary(
+                    manualGenderSummary,
+                    previewSantris
+                );
 
                 if (
                     Array.isArray(
@@ -1683,20 +2429,32 @@
                         json.target_musyrifs;
                 }
 
-                const hasMissingCurrentMusyrif =
+                const hasRequiredAssignment =
                     previewSantris.some(
                         santri =>
-                        !santri.musyrif_id
+                        Boolean(santri.assignment_required)
                     );
 
-                if (hasMissingCurrentMusyrif) {
+                if (hasRequiredAssignment) {
                     manualMusyrifStrategy.value =
                         'individual';
 
                     swalHelper(
                         'warning',
                         'Mapping Individual Diperlukan',
-                        'Ada santri yang belum memiliki musyrif lama. Pilih musyrif melalui dropdown individual.'
+                        'Ada santri yang musyrif lamanya tidak bertugas pada kelas tujuan. Pilih musyrif kelas tujuan melalui dropdown individual.'
+                    );
+                }
+
+                const blockedExitCount = previewSantris.filter(
+                    santri => Boolean(santri.exit_blocked)
+                ).length;
+
+                if (manualIsExit() && blockedExitCount > 0) {
+                    swalHelper(
+                        'warning',
+                        'Ada Placement Semester Tujuan',
+                        `${blockedExitCount} santri tidak dapat dipilih karena sudah memiliki placement pada semester tujuan. Koreksi placement tersebut terlebih dahulu jika santri memang harus keluar.`
                     );
                 }
 
@@ -1707,23 +2465,33 @@
                             santri,
                             index
                         ) {
+                            const santriGender =
+                                resolveGender(santri);
+
                             const selectedId =
-                                santri.musyrif_id &&
+                                santri.suggested_to_musyrif_id &&
                                 targetMusyrifs.some(
                                     musyrif =>
                                     Number(musyrif.id) ===
                                     Number(
-                                        santri.musyrif_id
+                                        santri.suggested_to_musyrif_id
                                     )
                                 ) ?
-                                santri.musyrif_id :
+                                santri.suggested_to_musyrif_id :
                                 '';
 
                             return `
-                                    <tr>
-                                        <td class="ps-4">
-                                            ${index + 1}
+                                    <tr class="manual-preview-row" data-santri-id="${Number(santri.id)}">
+                                        <td class="manual-select-cell ps-3">
+                                            <input type="checkbox"
+                                                class="form-check-input manual-santri-check"
+                                                data-santri-id="${Number(santri.id)}"
+                                                data-batch-item-id="${Number(santri.batch_item_id)}"
+                                                ${santri.exit_blocked ? 'disabled' : 'checked'}
+                                                aria-label="Pilih ${escapeHtml(santri.nama ?? 'santri')}">
                                         </td>
+
+                                        <td>${index + 1}</td>
 
                                         <td>
                                             <div class="fw-bold">
@@ -1733,6 +2501,10 @@
                                             <div class="small text-body-secondary">
                                                 NIS: ${escapeHtml(santri.nis ?? '-')}
                                             </div>
+                                        </td>
+
+                                        <td>
+                                            ${genderBadge(santriGender)}
                                         </td>
 
                                         <td>
@@ -1752,12 +2524,24 @@
                                         </td>
 
                                         <td class="pe-4">
-                                            <select
+                                            ${manualIsExit() && santri.exit_blocked ? `
+                                                <span class="badge text-bg-warning rounded-pill">
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                                    Sudah Ada Placement Tujuan
+                                                </span>
+                                            ` : manualIsExit() ? `
+                                                <span class="badge text-bg-danger rounded-pill">
+                                                    <i class="bi bi-archive-fill me-1"></i>
+                                                    Masuk Arsip
+                                                </span>
+                                            ` : `
+                                                <select
                                                 class="form-select form-select-sm assignment-select santri-musyrif-select"
                                                 data-santri-id="${Number(santri.id)}"
                                                 data-batch-item-id="${Number(santri.batch_item_id)}">
-                                                ${targetMusyrifOptions(selectedId)}
-                                            </select>
+                                                    ${targetMusyrifOptions(selectedId)}
+                                                </select>
+                                            `}
                                         </td>
                                     </tr>
                                 `;
@@ -1774,6 +2558,36 @@
                     }
                 );
 
+                getRowCheckboxes().forEach(
+                    function(checkbox) {
+                        checkbox.addEventListener(
+                            'change',
+                            function() {
+                                syncManualRowState();
+                                updateAssignmentStatus();
+                            }
+                        );
+                    }
+                );
+
+                if (manualSelectAll) {
+                    manualSelectAll.checked = false;
+                    manualSelectAll.indeterminate = false;
+                    manualSelectAll.onchange = function() {
+                        getRowCheckboxes().forEach(
+                            checkbox => {
+                                if (!checkbox.disabled) {
+                                    checkbox.checked =
+                                        manualSelectAll.checked;
+                                }
+                            }
+                        );
+
+                        syncManualRowState();
+                        updateAssignmentStatus();
+                    };
+                }
+
                 previewBox.classList.remove(
                     'd-none'
                 );
@@ -1782,30 +2596,25 @@
             }
 
             function collectAssignmentItems() {
-                if (
-                    !manualUsesIndividualMapping()
-                ) {
-                    return previewSantris.map(
-                        function(santri) {
-                            return {
-                                batch_item_id: Number(
-                                    santri.batch_item_id
-                                ),
-                                to_musyrif_id: null
-                            };
-                        }
-                    );
-                }
+                const selected = selectedManualCheckboxes();
 
-                return getRowSelects().map(
-                    function(select) {
+                return selected.map(
+                    function(checkbox) {
+                        const row = checkbox.closest(
+                            '.manual-preview-row'
+                        );
+                        const select = row?.querySelector(
+                            '.santri-musyrif-select'
+                        );
+
                         return {
                             batch_item_id: Number(
-                                select.dataset.batchItemId
+                                checkbox.dataset.batchItemId
                             ),
-                            to_musyrif_id: select.value ?
-                                Number(select.value) :
-                                null
+                            to_musyrif_id:
+                                manualUsesIndividualMapping()
+                                && select?.value ?
+                                Number(select.value) : null
                         };
                     }
                 );
@@ -1815,6 +2624,12 @@
                 if (!manualBatchId) {
                     throw new Error(
                         'Batch Manual tidak tersedia. Jalankan Preview ulang.'
+                    );
+                }
+
+                if (selectedManualCheckboxes().length === 0) {
+                    throw new Error(
+                        'Pilih minimal satu santri untuk dieksekusi.'
                     );
                 }
 
@@ -1842,21 +2657,26 @@
                 ];
 
                 (group.target_musyrifs ?? [])
-                .forEach(
-                    function(musyrif) {
-                        const selected =
-                            String(musyrif.id) ===
-                            String(selectedId) ?
-                            ' selected' :
-                            '';
+                    .forEach(
+                        function(musyrif) {
+                            const selected =
+                                String(musyrif.id) ===
+                                String(selectedId) ?
+                                ' selected' :
+                                '';
 
-                        options.push(
-                            `<option value="${Number(musyrif.id)}"${selected}>` +
-                            `${escapeHtml(musyrifOptionLabel(musyrif))}` +
-                            `</option>`
-                        );
-                    }
-                );
+                            const genderLabel =
+                                resolveGender(musyrif) ?
+                                ` • ${genderMeta(resolveGender(musyrif)).label}` :
+                                ' • Gender belum diisi';
+
+                            options.push(
+                                `<option value="${Number(musyrif.id)}"${selected}>` +
+                                `${escapeHtml(musyrifOptionLabel(musyrif) + genderLabel)}` +
+                                `</option>`
+                            );
+                        }
+                    );
 
                 return options.join('');
             }
@@ -1906,6 +2726,28 @@
                 );
             }
 
+            function collectTargetParentOverrides() {
+                const overrides = {};
+
+                document
+                    .querySelectorAll('.auto-transition-choice')
+                    .forEach(function(select) {
+                        const sourceParentId = Number(
+                            select.dataset.fromParentId
+                        );
+
+                        if (!select.value) {
+                            throw new Error(
+                                `Pilih jalur tujuan untuk ${select.closest('.col-md-6')?.querySelector('label')?.textContent?.trim() ?? 'tingkat bercabang'}.`
+                            );
+                        }
+
+                        overrides[sourceParentId] = Number(select.value);
+                    });
+
+                return overrides;
+            }
+
             function renderAutoPreview(
                 json
             ) {
@@ -1918,8 +2760,19 @@
 
                 autoRows =
                     Array.isArray(json.rows) ?
-                    json.rows :
-                    [];
+                    json.rows : [];
+
+                const allAutoSantris =
+                    autoRows.flatMap(
+                        group =>
+                        Array.isArray(group.santris) ?
+                        group.santris : []
+                    );
+
+                renderGenderSummary(
+                    autoGenderSummary,
+                    allAutoSantris
+                );
 
                 const graduationIncluded =
                     Boolean(
@@ -1934,6 +2787,7 @@
                 autoSnapshotInfo.textContent =
                     `${autoBatchCode ?? 'Batch tidak tersedia'} • ` +
                     `${Number(json.snapshot_count ?? 0)} santri • ` +
+                    `${genderSelectionLabel()} • ` +
                     `${graduationSummary} • ` +
                     `berlaku sampai ${formatDateTime(json?.batch?.expires_at)}`;
 
@@ -1947,15 +2801,15 @@
                             const isGraduation =
                                 group.tipe === 'lulus';
 
-                            const hasMissingCurrentMusyrif =
+                            const hasRequiredAssignment =
                                 (group.santris ?? [])
                                 .some(
                                     santri =>
-                                    !santri.from_musyrif_id
+                                    Boolean(santri.assignment_required)
                                 );
 
                             const defaultStrategy =
-                                hasMissingCurrentMusyrif ?
+                                hasRequiredAssignment ?
                                 'individual' :
                                 'keep';
 
@@ -1974,7 +2828,7 @@
 
                                                     <option value="keep"
                                                         ${defaultStrategy === 'keep' ? 'selected' : ''}
-                                                        ${hasMissingCurrentMusyrif ? 'disabled' : ''}>
+                                                        ${hasRequiredAssignment ? 'disabled' : ''}>
                                                         Musyrif Tetap Sama
                                                     </option>
 
@@ -1993,17 +2847,20 @@
                                         santri,
                                         santriIndex
                                     ) {
+                                        const santriGender =
+                                            resolveGender(santri);
+
                                         const selectedId =
-                                            santri.from_musyrif_id &&
+                                            santri.suggested_to_musyrif_id &&
                                             (group.target_musyrifs ?? [])
                                             .some(
                                                 musyrif =>
                                                 Number(musyrif.id) ===
                                                 Number(
-                                                    santri.from_musyrif_id
+                                                    santri.suggested_to_musyrif_id
                                                 )
                                             ) ?
-                                            santri.from_musyrif_id :
+                                            santri.suggested_to_musyrif_id :
                                             '';
 
                                         return `
@@ -2020,6 +2877,10 @@
                                                             <div class="small text-body-secondary">
                                                                 NIS: ${escapeHtml(santri.nis ?? '-')}
                                                             </div>
+                                                        </td>
+
+                                                        <td>
+                                                            ${genderBadge(santriGender)}
                                                         </td>
 
                                                         <td>
@@ -2073,6 +2934,7 @@
                                                             <tr>
                                                                 <th class="ps-3" style="width:55px;">#</th>
                                                                 <th>Santri</th>
+                                                                <th>Jenis Kelamin</th>
                                                                 <th>Musyrif Lama</th>
                                                                 <th class="pe-3" style="min-width:300px;">
                                                                     Musyrif Semester Tujuan
@@ -2082,19 +2944,19 @@
 
                                                         <tbody>
                                                             ${rows || `
-                                                                    <tr>
-                                                                        <td colspan="4"
-                                                                            class="text-center text-body-secondary py-3">
-                                                                            Tidak ada santri aktif.
-                                                                        </td>
-                                                                    </tr>
-                                                                `}
+                                                                        <tr>
+                                                                            <td colspan="5"
+                                                                                class="text-center text-body-secondary py-3">
+                                                                                Tidak ada santri aktif.
+                                                                            </td>
+                                                                        </tr>
+                                                                    `}
                                                         </tbody>
                                                     </table>
                                                 </div>
 
                                                 <div class="small text-body-secondary p-3 pt-2">
-                                                    Dropdown menampilkan seluruh data Master Musyrif tanpa filter kelas_id.
+                                                    Dropdown menampilkan seluruh musyrif pada tingkat utama tujuan tanpa filter gender.
                                                 </div>
                                             </div>
                                         `;
@@ -2114,6 +2976,23 @@
                                                     <div class="small text-body-secondary">
                                                         ${Number(group.count_santri ?? 0)} santri •
                                                         ${isGraduation ? 'Kelulusan' : 'Kenaikan kelas'}
+                                                    </div>
+
+                                                    <div class="gender-summary mt-2">
+                                                        ${(() => {
+                                                            const counts = genderCounts(group.santris ?? []);
+                                                            return [
+                                                                counts.putra > 0 ?
+                                                                    `<span class="gender-badge gender-badge-putra"><i class="bi bi-gender-male"></i>${counts.putra} Putra</span>` :
+                                                                    '',
+                                                                counts.putri > 0 ?
+                                                                    `<span class="gender-badge gender-badge-putri"><i class="bi bi-gender-female"></i>${counts.putri} Putri</span>` :
+                                                                    '',
+                                                                counts.unknown > 0 ?
+                                                                    `<span class="gender-badge gender-badge-mixed"><i class="bi bi-question-circle"></i>${counts.unknown} Belum Diisi</span>` :
+                                                                    ''
+                                                            ].join('');
+                                                        })()}
                                                     </div>
                                                 </div>
 
@@ -2212,8 +3091,7 @@
                                         santri.batch_item_id
                                     ),
                                     to_musyrif_id: select?.value ?
-                                        Number(select.value) :
-                                        null
+                                        Number(select.value) : null
                                 });
                             }
                         );
@@ -2258,7 +3136,7 @@
                             .forEach(
                                 function(santri) {
                                     if (
-                                        santri.from_musyrif_id
+                                        santri.suggested_to_musyrif_id
                                     ) {
                                         ready++;
                                     } else {
@@ -2424,6 +3302,25 @@
                 }
             );
 
+            migrationGender?.addEventListener(
+                'change',
+                function() {
+                    resetAllFlows();
+
+                    if (migrationGenderHelp) {
+                        migrationGenderHelp.textContent =
+                            migrationGender.value === 'L' ?
+                            'Batch hanya memproses santri Putra. Kelas asal/tujuan difilter untuk Putra; pilihan Musyrif tetap berdasarkan tingkat utama tanpa filter gender.' :
+                            migrationGender.value === 'P' ?
+                            'Batch hanya memproses santri Putri. Kelas asal/tujuan difilter untuk Putri; pilihan Musyrif tetap berdasarkan tingkat utama tanpa filter gender.' :
+                            'Default memproses seluruh santri. Pilihan Musyrif mengikuti tingkat utama tujuan dan tidak dibatasi gender.';
+                    }
+
+                    refreshKelasDropdowns();
+                    syncTransitionControls();
+                }
+            );
+
             catatan.addEventListener(
                 'input',
                 function() {
@@ -2489,9 +3386,24 @@
                             fromKelasId.value;
                     }
 
+                    refreshKelasDropdowns();
                     syncTransitionControls();
                 }
             );
+
+            [
+                exitReasonCode,
+                exitEffectiveAt,
+                exitDestination,
+                exitDocumentNumber
+            ].filter(Boolean).forEach(function(field) {
+                field.addEventListener('change', function() {
+                    resetManualFlow();
+                    togglePreviewEnable();
+                });
+
+                field.addEventListener('input', togglePreviewEnable);
+            });
 
             btnPreview.addEventListener(
                 'click',
@@ -2522,9 +3434,14 @@
                                     ),
                                     to_kelas_id: Number(
                                         toKelasId.value
-                                    ),
+                                    ) || null,
                                     tipe: tipe.value,
-                                    catatan: catatan.value
+                                    jenis_kelamin: migrationGender?.value || null,
+                                    catatan: catatan.value,
+                                    exit_reason_code: manualIsExit() ? exitReasonCode.value : null,
+                                    exit_effective_at: manualIsExit() ? exitEffectiveAt.value : null,
+                                    exit_destination: manualIsExit() ? exitDestination.value : null,
+                                    exit_document_number: manualIsExit() ? exitDocumentNumber.value : null
                                 }
                             );
 
@@ -2536,7 +3453,7 @@
                             Number(json.count ?? 0);
 
                         countInfo.textContent =
-                            `${lastCount} Santri`;
+                            `${lastCount} Santri • ${genderSelectionLabel()}`;
 
                         countInfo.className =
                             'h5 mb-0 text-success fw-bold';
@@ -2547,7 +3464,7 @@
                             swalHelper(
                                 'warning',
                                 'Tidak Ada Santri',
-                                'Tidak ada santri aktif pada kelas asal.'
+                                `Tidak ada santri aktif (${genderSelectionLabel()}) pada kelas asal.`
                             );
 
                             return;
@@ -2566,6 +3483,8 @@
                         swalHelper(
                             'success',
                             'Preview Berhasil',
+                            manualIsExit() ?
+                            'Periksa checkbox, kategori, tanggal efektif, dan alasan sebelum mengarsipkan santri.' :
                             manualUsesIndividualMapping() ?
                             'Silakan periksa mapping musyrif setiap santri.' :
                             'Musyrif lama akan dipertahankan untuk seluruh santri.'
@@ -2609,10 +3528,11 @@
                         const confirm = window.Swal ?
                             await Swal.fire({
                                 icon: 'warning',
-                                title: 'Konfirmasi Migrasi',
-                                html: `Proses <b>${items.length} santri</b>?<br>` +
-                                    `<small>${manualUsesIndividualMapping() ? 'Menggunakan mapping musyrif individual.' : 'Musyrif lama dipertahankan.'}</small><br>` +
-                                    `<small class="text-danger">Aksi ini tidak dapat dibatalkan.</small>`,
+                                title: manualIsExit() ? 'Konfirmasi Santri Keluar' : 'Konfirmasi Migrasi',
+                                html: `Proses <b>${items.length} santri terpilih</b> (${genderSelectionLabel()})?<br>` +
+                                    `<small>${manualIsExit() ? 'Santri akan masuk arsip dan tidak dibuatkan placement semester tujuan.' : (manualUsesIndividualMapping() ? 'Menggunakan mapping Musyrif individual berdasarkan tingkat tujuan.' : 'Musyrif lama dipertahankan bila sesuai tingkat tujuan.')}</small><br>` +
+                                    `<small>Santri yang tidak dicentang tetap berada pada kelas asal dan dapat diproses ke target lain.</small><br>` +
+                                    `<small class="text-danger">${manualIsExit() ? 'Pastikan kategori, tanggal efektif, alasan, dan checkbox sudah benar.' : 'Pastikan pilihan checkbox dan Musyrif sudah benar.'}</small>`,
                                 showCancelButton: true,
                                 confirmButtonText: 'Ya, Proses',
                                 cancelButtonText: 'Batal',
@@ -2672,6 +3592,12 @@
             | Auto-Mapping events
             |--------------------------------------------------------------------------
             */
+            document
+                .querySelectorAll('.auto-transition-choice')
+                .forEach(function(select) {
+                    select.addEventListener('change', resetAutoFlow);
+                });
+
             btnAutoPreview.addEventListener(
                 'click',
                 async function() {
@@ -2739,6 +3665,9 @@
                                         toSemesterId.value
                                     ),
                                     include_graduation: graduationEnabled,
+                                    target_parent_overrides:
+                                        collectTargetParentOverrides(),
+                                    jenis_kelamin: migrationGender?.value || null,
                                     catatan: catatan.value
                                 }
                             );
@@ -2820,7 +3749,7 @@
                             await Swal.fire({
                                 icon: 'warning',
                                 title: 'Eksekusi Auto-Mapping?',
-                                html: `Proses snapshot <b>${items.length} santri</b> dari seluruh kelas?<br>` +
+                                html: `Proses snapshot <b>${items.length} santri</b> (${genderSelectionLabel()}) dari seluruh kelas?<br>` +
                                     (
                                         Boolean(
                                             autoLast?.include_graduation
@@ -2913,6 +3842,7 @@
                     .replaceAll("'", '&#039;');
             }
 
+            refreshKelasDropdowns();
             syncTransitionControls();
             updateAssignmentStatus();
             updateAutoAssignmentStatus();

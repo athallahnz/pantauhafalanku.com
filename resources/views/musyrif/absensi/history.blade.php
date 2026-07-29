@@ -286,9 +286,11 @@
                             </div>
 
                             <div class="d-flex justify-content-between align-items-end">
-                                <div class="text-muted text-truncate pe-2" style="font-size: 0.7rem; max-width: 60%;">
-                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i>Akurasi:
-                                    {{ $row->accuracy ?? '-' }}m
+                                <div class="text-muted text-truncate pe-2" style="font-size: 0.7rem; max-width: 65%;"
+                                    title="{{ $row->address_text ?: $row->latitude . ', ' . $row->longitude }}">
+                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i>
+                                    {{ $row->address_text ?: 'Lokasi GPS' }}<br>
+                                    <span class="ms-3">Akurasi: {{ $row->accuracy ?? '-' }}m</span>
                                 </div>
                                 <span class="badge {{ $statusColor($row->status) }} rounded-pill px-2 py-1 shadow-sm"
                                     style="font-size: 0.65rem;">
@@ -341,7 +343,10 @@
                                         </span>
                                     </td>
                                     <td class="small">
-                                        <div class="text-muted"><i
+                                        <div class="fw-bold"><i class="bi bi-building me-1 text-primary"></i>
+                                            {{ $row->address_text ?: 'Lokasi GPS' }}
+                                        </div>
+                                        <div class="text-muted mt-1"><i
                                                 class="bi bi-geo-alt-fill text-danger me-1"></i>{{ $row->latitude }},
                                             {{ $row->longitude }}</div>
                                         <div class="fw-bold mt-1" style="font-size: 10px;">Akurasi:

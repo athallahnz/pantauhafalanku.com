@@ -16,10 +16,12 @@ use App\Http\Controllers\Admin\LaporanController as AdminLaporanController;
 use App\Http\Controllers\Admin\SantriController as AdminSantriController;
 use App\Http\Controllers\Admin\SantriProgressController as AdminSantriProgressController;
 use App\Http\Controllers\Admin\MusyrifController as AdminMusyrifController;
+use App\Http\Controllers\Admin\AttendanceLocationController as AdminAttendanceLocationController;
 use App\Http\Controllers\Admin\MigrasiSantriController as AdminMigrasiSantriController;
 use App\Http\Controllers\Admin\SantriMigrationBatchAuditController as AdminSantriMigrationBatchAuditController;
 use App\Http\Controllers\Admin\SantriArchiveController as AdminSantriArchiveController;
 use App\Http\Controllers\Admin\SantriPlacementBackfillController as AdminSantriPlacementBackfillController;
+use App\Http\Controllers\Admin\KelasGroupAssignmentController as AdminKelasGroupAssignmentController;
 use App\Http\Controllers\Admin\AcademicDocumentController as AdminAcademicDocumentController;
 
 use App\Http\Controllers\Musyrif\DashboardController as MusyrifDashboardController;
@@ -290,6 +292,31 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'account.active', 'r
 
     // Dashboard Admin
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tahap 4 — Assignment Kelas Induk ke Kelompok
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('kelas-group-assignment')
+        ->name('kelas-group-assignment.')
+        ->controller(AdminKelasGroupAssignmentController::class)
+        ->group(function (): void {
+            Route::get('/', 'index')
+                ->name('index');
+
+            Route::post('/preview', 'preview')
+                ->name('preview');
+
+            Route::post('/{batch}/execute', 'execute')
+                ->where('batch', '[0-9a-fA-F-]{36}')
+                ->name('execute');
+
+            Route::post('/{batch}/rollback', 'rollback')
+                ->where('batch', '[0-9a-fA-F-]{36}')
+                ->name('rollback');
+        });
 
     Route::get(
         '/settings/institution',
@@ -601,6 +628,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'account.active', 'r
         [AdminLaporanController::class, 'exportMusyrifExcel']
     )->name('laporan.export-musyrif-excel');
 
+
+    Route::prefix('musyrif/attendance-locations')
+        ->name('musyrif.attendance-locations.')
+        ->controller(AdminAttendanceLocationController::class)
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::put('/{attendanceLocation}', 'update')->name('update');
+            Route::delete('/{attendanceLocation}', 'destroy')->name('destroy');
+        });
     /*
         |--------------------------------------------------------------------------
         | Export PDF — Tahap Persiapan
@@ -852,6 +889,9 @@ Route::prefix('kelas')
         // DataTables source
         Route::get('/datatable', [KelasController::class, 'getData'])
             ->name('datatable');
+
+        Route::get('/options', [KelasController::class, 'options'])
+            ->name('options');
 
         // CRUD via AJAX/modal
         Route::post('/', [KelasController::class, 'store'])

@@ -18,6 +18,152 @@ use Yajra\DataTables\Facades\DataTables;
 
 class SantriMigrationBatchAuditController extends Controller
 {
+
+    private function normalizeJenisKelamin(mixed $value): ?string
+    {
+        $normalized = mb_strtolower(trim((string) $value));
+
+        return match ($normalized) {
+            'l', 'lk', 'laki-laki', 'laki laki', 'male', 'putra' => 'L',
+            'p', 'pr', 'perempuan', 'female', 'putri' => 'P',
+            'mixed', 'campuran', 'semua', 'all' => 'MIXED',
+            default => null,
+        };
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function jenisKelaminDatabaseValues(string $jenisKelamin): array
+    {
+        return $jenisKelamin === 'L'
+            ? [
+                'L',
+                'l',
+                'LK',
+                'lk',
+                'Laki-laki',
+                'laki-laki',
+                'Laki Laki',
+                'laki laki',
+                'Male',
+                'male',
+                'Putra',
+                'putra',
+            ]
+            : [
+                'P',
+                'p',
+                'PR',
+                'pr',
+                'Perempuan',
+                'perempuan',
+                'Female',
+                'female',
+                'Putri',
+                'putri',
+            ];
+    }
+
+    private function withGenderCounts(Builder $query): Builder
+    {
+        return $query->withCount([
+            'items as putra_count' => function (Builder $itemQuery): void {
+                $itemQuery->whereHas(
+                    'santri',
+                    fn(Builder $santriQuery) => $santriQuery->whereIn(
+                        'jenis_kelamin',
+                        $this->jenisKelaminDatabaseValues('L')
+                    )
+                );
+            },
+            'items as putri_count' => function (Builder $itemQuery): void {
+                $itemQuery->whereHas(
+                    'santri',
+                    fn(Builder $santriQuery) => $santriQuery->whereIn(
+                        'jenis_kelamin',
+                        $this->jenisKelaminDatabaseValues('P')
+                    )
+                );
+            },
+        ]);
+    }
+
+    /**
+     * @return array{
+     *     jenis_kelamin:?string,
+     *     gender_counts:array{L:int,P:int,unknown:int}
+     * }
+     */
+    private function batchGenderPayload(SantriMigrationBatch $batch): array
+    {
+        $metadata = is_array($batch->metadata)
+            ? $batch->metadata
+            : [];
+
+        $storedCounts = data_get(
+            $metadata,
+            'gender_counts'
+        );
+        $hasStoredCounts = is_array($storedCounts);
+
+        $putra = $hasStoredCounts
+            ? (int) ($storedCounts['L'] ?? 0)
+            : (int) ($batch->putra_count ?? 0);
+        $putri = $hasStoredCounts
+            ? (int) ($storedCounts['P'] ?? 0)
+            : (int) ($batch->putri_count ?? 0);
+        $unknownFromMetadata = $hasStoredCounts
+            ? (int) ($storedCounts['unknown'] ?? 0)
+            : 0;
+
+        $unknown = $hasStoredCounts
+            ? $unknownFromMetadata
+            : max(
+                0,
+                (int) $batch->items_count
+                    - $putra
+                    - $putri
+            );
+
+        $storedGender = $this->normalizeJenisKelamin(
+            data_get($metadata, 'jenis_kelamin')
+                ?? data_get($metadata, 'gender')
+        );
+
+        $resolvedGender = match (true) {
+            $putra > 0 && $putri > 0 => 'MIXED',
+            $putra > 0 => 'L',
+            $putri > 0 => 'P',
+            default => $storedGender,
+        };
+
+        return [
+            'jenis_kelamin' => $resolvedGender,
+            'gender_counts' => [
+                'L' => $putra,
+                'P' => $putri,
+                'unknown' => $unknown,
+            ],
+        ];
+    }
+
+    private function jenisKelaminLabel(SantriMigrationBatch $batch): string
+    {
+        $payload = $this->batchGenderPayload($batch);
+        $counts = $payload['gender_counts'];
+
+        if ($counts['L'] > 0 && $counts['P'] > 0) {
+            return "Campuran ({$counts['L']} Putra, {$counts['P']} Putri)";
+        }
+
+        return match ($payload['jenis_kelamin']) {
+            'L' => $counts['L'] > 0 ? "Putra ({$counts['L']})" : 'Putra',
+            'P' => $counts['P'] > 0 ? "Putri ({$counts['P']})" : 'Putri',
+            default => 'Belum tersedia',
+        };
+    }
+
     public function index()
     {
         $this->expireStaleBatches();
@@ -38,16 +184,18 @@ class SantriMigrationBatchAuditController extends Controller
         $this->validateFilters($request);
         $this->expireStaleBatches();
 
-        $query = $this->filteredQuery($request)
-            ->with([
-                'fromSemester.tahunAjaran',
-                'toSemester.tahunAjaran',
-                'fromKelas:id,nama_kelas',
-                'toKelas:id,nama_kelas',
-                'creator:id,name',
-                'executor:id,name',
-                'rollbackActor:id,name',
-            ]);
+        $query = $this->withGenderCounts(
+            $this->filteredQuery($request)
+                ->with([
+                    'fromSemester.tahunAjaran',
+                    'toSemester.tahunAjaran',
+                    'fromKelas:id,nama_kelas',
+                    'toKelas:id,nama_kelas',
+                    'creator:id,name',
+                    'executor:id,name',
+                    'rollbackActor:id,name',
+                ])
+        );
 
         return DataTables::eloquent($query)
             ->addColumn('waktu', function (SantriMigrationBatch $batch): string {
@@ -102,15 +250,26 @@ class SantriMigrationBatchAuditController extends Controller
                 }
 
                 $from = e($batch->fromKelas?->nama_kelas ?? '-');
-                $to = $batch->transition_type === 'lulus'
-                    ? 'LULUS'
-                    : e($batch->toKelas?->nama_kelas ?? '-');
+                $to = match ($batch->transition_type) {
+                    'lulus' => 'LULUS',
+                    'keluar' => 'ARSIP — KELUAR',
+                    default => e($batch->toKelas?->nama_kelas ?? '-'),
+                };
                 $transition = e($this->transitionLabel($batch->transition_type));
 
                 return <<<HTML
                     <div class="fw-semibold">{$from} <i class="bi bi-arrow-right mx-1"></i> {$to}</div>
                     <div class="small text-body-secondary mt-1">{$transition}</div>
                 HTML;
+            })
+            ->addColumn('jenis_kelamin', function (SantriMigrationBatch $batch): ?string {
+                return $this->batchGenderPayload($batch)['jenis_kelamin'];
+            })
+            ->addColumn('gender_counts', function (SantriMigrationBatch $batch): array {
+                return $this->batchGenderPayload($batch)['gender_counts'];
+            })
+            ->addColumn('jenis_kelamin_counts', function (SantriMigrationBatch $batch): array {
+                return $this->batchGenderPayload($batch)['gender_counts'];
             })
             ->addColumn('progress', function (SantriMigrationBatch $batch): string {
                 $total = max(0, (int) $batch->items_count);
@@ -228,6 +387,31 @@ class SantriMigrationBatchAuditController extends Controller
             ->groupBy('status')
             ->pluck('total', 'status');
 
+        if ($request->filled('jenis_kelamin')) {
+            $jenisKelamin = (string) $request->input('jenis_kelamin');
+
+            $batchIds = (clone $query)
+                ->select('santri_migration_batches.id');
+
+            $itemQuery = SantriMigrationBatchItem::query()
+                ->whereIn('batch_id', $batchIds)
+                ->whereHas(
+                    'santri',
+                    fn(Builder $santriQuery) => $santriQuery->whereIn(
+                        'jenis_kelamin',
+                        $this->jenisKelaminDatabaseValues($jenisKelamin)
+                    )
+                );
+
+            $itemsCount = (clone $itemQuery)->count();
+            $graduatedCount = (clone $itemQuery)
+                ->where('transition_type', 'lulus')
+                ->count();
+        } else {
+            $itemsCount = (int) (clone $query)->sum('items_count');
+            $graduatedCount = (int) (clone $query)->sum('graduated_count');
+        }
+
         return response()->json([
             'ok' => true,
             'data' => [
@@ -238,8 +422,8 @@ class SantriMigrationBatchAuditController extends Controller
                 'cancelled' => (int) ($statusCounts[SantriMigrationBatch::STATUS_CANCELLED] ?? 0),
                 'expired' => (int) ($statusCounts[SantriMigrationBatch::STATUS_EXPIRED] ?? 0),
                 'rolled_back' => (int) ($statusCounts[SantriMigrationBatch::STATUS_ROLLED_BACK] ?? 0),
-                'items' => (int) (clone $query)->sum('items_count'),
-                'graduated' => (int) (clone $query)->sum('graduated_count'),
+                'items' => $itemsCount,
+                'graduated' => $graduatedCount,
             ],
         ]);
     }
@@ -258,11 +442,33 @@ class SantriMigrationBatchAuditController extends Controller
             'rollbackActor:id,name',
         ]);
 
+        $batch->loadCount([
+            'items as putra_count' => function (Builder $itemQuery): void {
+                $itemQuery->whereHas(
+                    'santri',
+                    fn(Builder $santriQuery) => $santriQuery->whereIn(
+                        'jenis_kelamin',
+                        $this->jenisKelaminDatabaseValues('L')
+                    )
+                );
+            },
+            'items as putri_count' => function (Builder $itemQuery): void {
+                $itemQuery->whereHas(
+                    'santri',
+                    fn(Builder $santriQuery) => $santriQuery->whereIn(
+                        'jenis_kelamin',
+                        $this->jenisKelaminDatabaseValues('P')
+                    )
+                );
+            },
+        ]);
+
         $status = $this->statusMeta($batch->status);
         $mode = $this->modeMeta($batch->mode);
         $percentage = $batch->items_count > 0
             ? min(100, (int) round(($batch->completed_count / $batch->items_count) * 100))
             : 0;
+        $gender = $this->batchGenderPayload($batch);
 
         return response()->json([
             'ok' => true,
@@ -279,12 +485,17 @@ class SantriMigrationBatchAuditController extends Controller
                 'from_semester' => $this->semesterLabel($batch->fromSemester),
                 'to_semester' => $this->semesterLabel($batch->toSemester),
                 'from_kelas' => $batch->fromKelas?->nama_kelas,
-                'to_kelas' => $batch->transition_type === 'lulus'
-                    ? 'LULUS'
-                    : $batch->toKelas?->nama_kelas,
+                'to_kelas' => match ($batch->transition_type) {
+                    'lulus' => 'LULUS',
+                    'keluar' => 'ARSIP — KELUAR',
+                    default => $batch->toKelas?->nama_kelas,
+                },
                 'transition_type' => $batch->transition_type,
                 'transition_label' => $this->transitionLabel($batch->transition_type),
                 'include_graduation' => (bool) $batch->include_graduation,
+                'jenis_kelamin' => $gender['jenis_kelamin'],
+                'gender_counts' => $gender['gender_counts'],
+                'jenis_kelamin_counts' => $gender['gender_counts'],
                 'items_count' => (int) $batch->items_count,
                 'completed_count' => (int) $batch->completed_count,
                 'graduated_count' => (int) $batch->graduated_count,
@@ -318,14 +529,30 @@ class SantriMigrationBatchAuditController extends Controller
         $query = SantriMigrationBatchItem::query()
             ->where('batch_id', $batch->id)
             ->with([
-                'santri:id,nama,nis',
+                'santri:id,nama,nis,jenis_kelamin',
                 'fromKelas:id,nama_kelas',
                 'toKelas:id,nama_kelas',
-                'fromMusyrif:id,nama,kode',
-                'toMusyrif:id,nama,kode',
+                'fromMusyrif:id,nama,kode,jenis_kelamin',
+                'toMusyrif:id,nama,kode,jenis_kelamin',
             ]);
 
         return DataTables::eloquent($query)
+            ->addColumn('jenis_kelamin', function (SantriMigrationBatchItem $item): ?string {
+                $source = $item->source_snapshot ?? [];
+
+                return $this->normalizeJenisKelamin(
+                    $source['jenis_kelamin']
+                        ?? $item->santri?->jenis_kelamin
+                );
+            })
+            ->addColumn('from_jenis_kelamin', function (SantriMigrationBatchItem $item): ?string {
+                $source = $item->source_snapshot ?? [];
+
+                return $this->normalizeJenisKelamin(
+                    $source['jenis_kelamin']
+                        ?? $item->santri?->jenis_kelamin
+                );
+            })
             ->addColumn('santri_info', function (SantriMigrationBatchItem $item): string {
                 $source = $item->source_snapshot ?? [];
                 $name = e($source['nama'] ?? $item->santri?->nama ?? 'Santri terhapus');
@@ -348,12 +575,15 @@ class SantriMigrationBatchAuditController extends Controller
             })
             ->addColumn('tujuan', function (SantriMigrationBatchItem $item): string {
                 $target = $item->target_snapshot ?? [];
-                $kelas = $item->transition_type === 'lulus'
-                    ? 'LULUS'
-                    : e($target['kelas_nama'] ?? $item->toKelas?->nama_kelas ?? '-');
-                $musyrif = $item->transition_type === 'lulus'
-                    ? 'Musyrif dikosongkan'
-                    : e($item->toMusyrif?->nama ?? 'Belum ditentukan');
+                $kelas = match ($item->transition_type) {
+                    'lulus' => 'LULUS',
+                    'keluar' => 'ARSIP — KELUAR',
+                    default => e($target['kelas_nama'] ?? $item->toKelas?->nama_kelas ?? '-'),
+                };
+                $musyrif = match ($item->transition_type) {
+                    'lulus', 'keluar' => 'Tidak ada placement tujuan',
+                    default => e($item->toMusyrif?->nama ?? 'Belum ditentukan'),
+                };
 
                 return <<<HTML
                     <div class="fw-semibold text-success">{$kelas}</div>
@@ -364,6 +594,7 @@ class SantriMigrationBatchAuditController extends Controller
                 $label = e($this->transitionLabel($item->transition_type));
                 $class = match ($item->transition_type) {
                     'lulus' => 'text-bg-dark',
+                    'keluar' => 'text-bg-danger',
                     'tinggal_kelas' => 'text-bg-warning',
                     'mutasi' => 'text-bg-info',
                     'penempatan' => 'text-bg-secondary',
@@ -568,17 +799,18 @@ class SantriMigrationBatchAuditController extends Controller
         $this->expireStaleBatches();
 
         $fileName = 'audit_migrasi_santri_' . now()->format('Ymd_His') . '.csv';
-        $query = $this->filteredQuery($request)
-            ->with([
-                'fromSemester.tahunAjaran',
-                'toSemester.tahunAjaran',
-                'fromKelas:id,nama_kelas',
-                'toKelas:id,nama_kelas',
-                'creator:id,name',
-                'executor:id,name',
-                'rollbackActor:id,name',
-            ])
-            ->orderByDesc('created_at');
+        $query = $this->withGenderCounts(
+            $this->filteredQuery($request)
+                ->with([
+                    'fromSemester.tahunAjaran',
+                    'toSemester.tahunAjaran',
+                    'fromKelas:id,nama_kelas',
+                    'toKelas:id,nama_kelas',
+                    'creator:id,name',
+                    'executor:id,name',
+                    'rollbackActor:id,name',
+                ])
+        )->orderByDesc('created_at');
 
         return response()->streamDownload(
             function () use ($query): void {
@@ -594,6 +826,10 @@ class SantriMigrationBatchAuditController extends Controller
                     'Kelas Asal',
                     'Kelas Tujuan',
                     'Tipe',
+                    'Jenis Kelamin',
+                    'Putra',
+                    'Putri',
+                    'Belum Diisi',
                     'Jumlah Item',
                     'Selesai',
                     'Lulus',
@@ -612,6 +848,8 @@ class SantriMigrationBatchAuditController extends Controller
 
                 $query->chunkById(500, function ($batches) use ($handle): void {
                     foreach ($batches as $batch) {
+                        $gender = $this->batchGenderPayload($batch);
+
                         fputcsv($handle, [
                             $batch->code,
                             $this->modeMeta($batch->mode)['label'],
@@ -619,10 +857,16 @@ class SantriMigrationBatchAuditController extends Controller
                             $this->semesterLabel($batch->fromSemester),
                             $this->semesterLabel($batch->toSemester),
                             $batch->fromKelas?->nama_kelas,
-                            $batch->transition_type === 'lulus'
-                                ? 'LULUS'
-                                : $batch->toKelas?->nama_kelas,
+                            match ($batch->transition_type) {
+                                'lulus' => 'LULUS',
+                                'keluar' => 'ARSIP — KELUAR',
+                                default => $batch->toKelas?->nama_kelas,
+                            },
                             $this->transitionLabel($batch->transition_type),
+                            $this->jenisKelaminLabel($batch),
+                            $gender['gender_counts']['L'],
+                            $gender['gender_counts']['P'],
+                            $gender['gender_counts']['unknown'],
                             $batch->items_count,
                             $batch->completed_count,
                             $batch->graduated_count,
@@ -660,6 +904,18 @@ class SantriMigrationBatchAuditController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->string('status')->toString());
+        }
+
+        if ($request->filled('jenis_kelamin')) {
+            $jenisKelamin = (string) $request->input('jenis_kelamin');
+
+            $query->whereHas(
+                'items.santri',
+                fn(Builder $santriQuery) => $santriQuery->whereIn(
+                    'jenis_kelamin',
+                    $this->jenisKelaminDatabaseValues($jenisKelamin)
+                )
+            );
         }
 
         if ($request->filled('semester_id')) {
@@ -707,6 +963,13 @@ class SantriMigrationBatchAuditController extends Controller
                     SantriMigrationBatch::STATUS_CANCELLED,
                     SantriMigrationBatch::STATUS_EXPIRED,
                     SantriMigrationBatch::STATUS_ROLLED_BACK,
+                ]),
+            ],
+            'jenis_kelamin' => [
+                'nullable',
+                Rule::in([
+                    'L',
+                    'P',
                 ]),
             ],
             'semester_id' => [
@@ -909,6 +1172,7 @@ class SantriMigrationBatchAuditController extends Controller
             'mutasi' => 'Mutasi',
             'penempatan' => 'Penempatan',
             'lulus' => 'Lulus',
+            'keluar' => 'Santri Keluar',
             null, '' => 'Multi Mapping',
             default => str($transition)->replace('_', ' ')->title()->toString(),
         };

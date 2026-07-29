@@ -4,7 +4,14 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Sistem Informasi Pantau Hafalanku | Solusi Manajemen Pesantren</title>
+    <title>SIMTAQU APPS | Dept. Al-Qur'an Pondok Pesantren Darut Taqwa</title>
+    <meta name="description"
+        content="SIMTAQU APPS adalah sistem informasi pembinaan Al-Qur'an milik Departemen Al-Qur'an Pondok Pesantren Darut Taqwa Ponorogo untuk memantau tahfidz, tahsin, tilawah, evaluasi, dan laporan santri secara terintegrasi.">
+    <meta name="theme-color" content="#5640a5">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="SIMTAQU APPS — Menjaga Proses, Menguatkan Generasi Qur'ani">
+    <meta property="og:description"
+        content="Produk digital resmi Departemen Al-Qur'an Pondok Pesantren Darut Taqwa Ponorogo.">
 
     {{-- Fonts: Plus Jakarta Sans --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,6 +43,8 @@
             --islamic-purple-900: #1b143a;
             --islamic-tosca-400: #39c1cc;
             --islamic-tosca-500: #13a3b3;
+            --brand-gold-400: #f7c948;
+            --brand-gold-500: #e7ad24;
 
             --bg-main: #f8fafc;
             --bg-section: #ffffff;
@@ -124,6 +133,88 @@
 
         [data-coreui-theme="dark"] .section-label {
             color: var(--islamic-tosca-400);
+        }
+
+        .theme-logo {
+            position: relative;
+            display: inline-flex;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-logo--nav {
+            width: 48px;
+            height: 48px;
+        }
+
+        .theme-logo--footer {
+            width: 56px;
+            height: 56px;
+        }
+
+        .theme-logo--owner {
+            width: 100px;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, .14);
+            border-radius: 26px;
+            background: rgba(255, 255, 255, .07);
+            box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .55);
+        }
+
+        .theme-logo img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .theme-logo .logo-dark {
+            display: none;
+        }
+
+        [data-coreui-theme="dark"] .theme-logo .logo-light {
+            display: none;
+        }
+
+        [data-coreui-theme="dark"] .theme-logo .logo-dark {
+            display: block;
+        }
+
+        .theme-logo.theme-logo--inverse .logo-light {
+            display: none;
+        }
+
+        .theme-logo.theme-logo--inverse .logo-dark {
+            display: block;
+        }
+
+        .brand-copy {
+            line-height: 1.05;
+        }
+
+        .brand-copy strong {
+            display: block;
+            font-size: 1rem;
+            letter-spacing: -.02em;
+        }
+
+        .brand-copy small {
+            display: block;
+            margin-top: .28rem;
+            color: var(--text-muted);
+            font-size: .62rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+        }
+
+        .navbar-glass:not(.scrolled) .brand-copy small {
+            color: var(--text-muted);
+        }
+
+        [data-coreui-theme="dark"] .brand-copy small {
+            color: rgba(255, 255, 255, .68);
         }
 
         /* ============================================================
@@ -594,61 +685,93 @@
         }
 
         /* ============================================================
-           8. PRICING CARDS & PRO FIXES
+           8. INSTITUTIONAL PRODUCT STORY
         ============================================================ */
-        .pricing-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 28px;
-            padding: 3rem 2rem;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .pricing-pro {
-            background: linear-gradient(135deg, var(--islamic-purple-700) 0%, var(--islamic-purple-900) 100%);
-            color: white;
-            box-shadow: var(--shadow-glow);
+        .institution-panel {
             position: relative;
-            z-index: 2;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            border-radius: 32px;
+            background:
+                radial-gradient(circle at 90% 10%, rgba(247, 201, 72, .16), transparent 28%),
+                linear-gradient(135deg, rgba(107, 78, 255, .10), rgba(255, 255, 255, .02)),
+                var(--card-bg);
+            box-shadow: var(--shadow-md);
         }
 
-        [data-coreui-theme="dark"] .pricing-pro {
-            background: linear-gradient(135deg, var(--islamic-purple-600) 0%, #110d26 100%);
-            border: 1px solid var(--islamic-purple-500);
+        .institution-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: .55rem;
+            padding: .55rem .9rem;
+            border: 1px solid rgba(107, 78, 255, .18);
+            border-radius: 999px;
+            color: var(--islamic-purple-700);
+            background: rgba(107, 78, 255, .08);
+            font-size: .76rem;
+            font-weight: 800;
+            letter-spacing: .04em;
         }
 
-        .pricing-pro h4,
-        .pricing-pro h2,
-        .pricing-pro .text-muted {
-            color: white !important;
+        [data-coreui-theme="dark"] .institution-eyebrow {
+            color: var(--brand-gold-400);
+            border-color: rgba(247, 201, 72, .22);
+            background: rgba(247, 201, 72, .08);
         }
 
-        .pricing-pro .text-white-50 {
-            color: rgba(255, 255, 255, 0.7) !important;
-        }
-
-        .pricing-card:not(.pricing-pro) li:not(.text-muted) {
+        .institution-quote {
+            border-left: 4px solid var(--brand-gold-400);
+            padding: .25rem 0 .25rem 1.25rem;
             color: var(--text-heading);
-            font-weight: 500;
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.7;
         }
 
-        .pricing-pro li:not(.text-muted) {
-            color: #ffffff !important;
-            font-weight: 500;
+        .institution-card {
+            height: 100%;
+            padding: 1.7rem;
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            background: var(--card-bg);
+            box-shadow: var(--shadow-sm);
+            transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
         }
 
-        [data-coreui-theme="dark"] .pricing-card:not(.pricing-pro) li.text-muted {
-            color: rgba(255, 255, 255, 0.3) !important;
+        .institution-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(107, 78, 255, .3);
+            box-shadow: var(--shadow-md);
         }
 
-        .pricing-pro li.text-muted {
-            color: rgba(255, 255, 255, 0.4) !important;
+        .institution-card .mini-icon {
+            width: 48px;
+            height: 48px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            color: var(--islamic-purple-600);
+            background: rgba(107, 78, 255, .1);
+            font-size: 1.25rem;
         }
 
-        @media (min-width: 992px) {
-            .transform-scale {
-                transform: scale(1.06);
-            }
+        .ownership-card {
+            height: 100%;
+            padding: 2.25rem;
+            border-radius: 28px;
+            color: #ffffff;
+            background: linear-gradient(145deg, var(--islamic-purple-700), var(--islamic-purple-900));
+            box-shadow: 0 25px 55px -20px rgba(27, 20, 58, .75);
+        }
+
+        .ownership-card h3,
+        .ownership-card h4 {
+            color: #ffffff;
+        }
+
+        .ownership-card p {
+            color: rgba(255, 255, 255, .74);
         }
 
         /* ============================================================
@@ -861,7 +984,6 @@
         [data-coreui-theme="dark"] .system-review-card::after {
             color: rgba(169, 155, 255, .10);
         }
-
     </style>
 </head>
 
@@ -869,8 +991,15 @@
     {{-- NAVBAR --}}
     <nav class="navbar navbar-expand-lg fixed-top navbar-glass">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="#">
-                <span class="fw-bold">Pantau Hafalanku</span>
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#home">
+                <span class="theme-logo theme-logo--nav">
+                    <img class="logo-light" src="{{ asset('assets/logos-primary.png') }}" alt="Logo SIMTAQU APPS">
+                    <img class="logo-dark" src="{{ asset('assets/logos.png') }}" alt="" aria-hidden="true">
+                </span>
+                <span class="brand-copy">
+                    <strong>SIMTAQU APPS</strong>
+                    <small>DEPT. AL-QUR'AN · DARUT TAQWA</small>
+                </span>
             </a>
 
             <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse"
@@ -880,11 +1009,11 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul
-                    class="navbar-nav ms-lg-auto align-items-start align-items-lg-center gap-3 gap-lg-4 text-nowrap pt-3 pt-lg-0">
+                    class="navbar-nav ms-lg-auto align-items-start align-items-lg-center gap-3 gap-lg-2 text-nowrap pt-3 pt-lg-0">
                     <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#home">Beranda</a></li>
                     <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#fitur">Fitur</a></li>
+                    <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#tentang">Tentang</a></li>
                     <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#review">Review</a></li>
-                    <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#harga">Paket</a></li>
                     <li class="nav-item w-100 w-lg-auto"><a class="nav-link" href="#faq">Tanya Jawab</a></li>
 
                     <div
@@ -914,11 +1043,6 @@
                                         class="btn btn-outline-purple rounded-pill px-4 w-100 fw-bold">
                                         Masuk
                                     </a>
-                                    <a href="{{ route('register') }}"
-                                        class="btn btn-login-portal text-white rounded-pill px-4 w-100 fw-bold"
-                                        style="background-color: var(--islamic-purple-600);">
-                                        Daftar
-                                    </a>
                                 @endauth
                             @endif
                         </li>
@@ -929,28 +1053,28 @@
     </nav>
 
     {{-- HERO SECTION --}}
-    <section class="hero-section">
+    <section id="home" class="hero-section">
         <div id="aurora-bg"></div>
         <div class="container hero-content">
             <div class="row align-items-center justify-content-between">
                 <div class="col-lg-6 mb-5 mb-lg-0 animate__animated animate__fadeInLeft">
                     <div class="d-inline-block hero-badge rounded-pill px-3 py-2 mb-4">
-                        <span class="fw-bold small"><i class="bi bi-stars text-warning me-1"></i> Platform Digital
-                            Pesantren</span>
+                        <span class="fw-bold small"><i class="bi bi-patch-check-fill text-warning me-1"></i>
+                            Presented by Departemen Al-Qur'an</span>
                     </div>
                     <h1 class="hero-title mb-4">
-                        Pantau Setoran Hafalan Lebih <span class="text-warning">Mudah & Akurat.</span>
+                        Menjaga Setiap Proses, Menguatkan <span class="text-warning">Generasi Qur'ani.</span>
                     </h1>
                     <p class="hero-subtitle mb-5">
-                        Tinggalkan rekap manual. Solusi cerdas terintegrasi untuk mengelola data musyrif, santri, hingga
-                        laporan perkembangan tahfidz secara real-time.
+                        SIMTAQU APPS menyatukan pembinaan tahfidz, tahsin, dan tilawah dalam satu sistem informasi
+                        terintegrasi milik Departemen Al-Qur'an Pondok Pesantren Darut Taqwa Ponorogo.
                     </p>
                     <div class="d-flex flex-wrap gap-3">
                         <a href="{{ route('login') }}" class="btn btn-warning btn-lg rounded-pill px-5 shadow-lg">
-                            Mulai Sekarang <i class="bi bi-arrow-right ms-2"></i>
+                            Masuk ke SIMTAQU <i class="bi bi-arrow-right ms-2"></i>
                         </a>
-                        <a href="#fitur" class="btn btn-lg rounded-pill px-4 btn-hero-outline shadow-sm">
-                            Pelajari Fitur
+                        <a href="#tentang" class="btn btn-lg rounded-pill px-4 btn-hero-outline shadow-sm">
+                            Kenali Sistem
                         </a>
                     </div>
                 </div>
@@ -963,9 +1087,9 @@
                                     style="width: 88px; height: 88px;">
                                     <i class="bi bi-pie-chart-fill text-primary" style="font-size: 2.5rem;"></i>
                                 </div>
-                                <h4 class="fw-bold mb-3">Smart Dashboard</h4>
-                                <p class="small opacity-75 mb-4 px-2" style="line-height: 1.6;">Pantau grafik
-                                    perkembangan dan persentase kelulusan santri secara real-time.</p>
+                                <h4 class="fw-bold mb-3">Pantauan 30 Juz</h4>
+                                <p class="small opacity-75 mb-4 px-2" style="line-height: 1.6;">Pimpinan dan pengelola
+                                    dapat membaca capaian setoran serta kelulusan ujian santri secara visual.</p>
                                 <div class="progress bg-secondary bg-opacity-25 mb-3 rounded-pill"
                                     style="height: 10px;">
                                     <div class="progress-bar bg-warning rounded-pill" style="width: 85%"></div>
@@ -980,9 +1104,9 @@
                                     style="width: 88px; height: 88px;">
                                     <i class="bi bi-check2-square text-warning" style="font-size: 2.5rem;"></i>
                                 </div>
-                                <h4 class="fw-bold mb-3">Input Instan</h4>
-                                <p class="small opacity-75 mb-4 px-2" style="line-height: 1.6;">Musyrif dapat mengisi
-                                    setoran harian langsung dari smartphone hanya dalam 3 klik.</p>
+                                <h4 class="fw-bold mb-3">Setoran Terstruktur</h4>
+                                <p class="small opacity-75 mb-4 px-2" style="line-height: 1.6;">Musyrif mencatat
+                                    setoran, status kehadiran, dan hasil evaluasi langsung dari smartphone.</p>
                                 <button class="btn btn-primary w-100 rounded-pill fw-bold text-white py-3 shadow-sm">
                                     <i class="bi bi-plus-lg me-2"></i> Input Setoran
                                 </button>
@@ -993,13 +1117,13 @@
                                     style="width: 88px; height: 88px;">
                                     <i class="bi bi-file-earmark-excel text-success" style="font-size: 2.5rem;"></i>
                                 </div>
-                                <h4 class="fw-bold mb-3">Import Otomatis</h4>
-                                <p class="small opacity-75 mb-4 px-2" style="line-height: 1.6;">Pindahkan ribuan data
-                                    santri lama Anda ke sistem baru menggunakan format Excel.</p>
+                                <h4 class="fw-bold mb-3">Laporan Akademik</h4>
+                                <p class="small opacity-75 mb-4 px-2" style="line-height: 1.6;">Rekap santri, kelas,
+                                    dan musyrif tersaji konsisten untuk evaluasi serta dokumen akademik.</p>
                                 <div
                                     class="d-flex justify-content-between align-items-center border-top border-secondary border-opacity-25 pt-4 mt-auto">
-                                    <span class="small fw-bold opacity-75">Status: Success</span>
-                                    <span class="badge bg-success rounded-pill px-3 py-2">400 Baris</span>
+                                    <span class="small fw-bold opacity-75">Status Data</span>
+                                    <span class="badge bg-success rounded-pill px-3 py-2">Tersinkron</span>
                                 </div>
                             </div>
                         </div>
@@ -1020,25 +1144,24 @@
             <div class="stats-wrapper">
                 <div class="row g-4 text-center align-items-center">
                     <div class="col-6 col-lg-3 stats-divider">
-                        <div class="stats-number"><span class="counter" data-target="50">0</span>+</div>
-                        <div class="stats-label">Lembaga Mitra</div>
-                        <div class="stats-desc mt-1">Pesantren & Madrasah</div>
+                        <div class="stats-number"><span class="counter" data-target="30">0</span> Juz</div>
+                        <div class="stats-label">Peta Capaian</div>
+                        <div class="stats-desc mt-1">Progress Tahfidz Terukur</div>
                     </div>
                     <div class="col-6 col-lg-3 stats-divider">
-                        <div class="stats-number"><span class="counter" data-target="15">0</span>K+</div>
-                        <div class="stats-label">Santri Dikelola</div>
-                        <div class="stats-desc mt-1">Data Aman di Cloud</div>
+                        <div class="stats-number"><span class="counter" data-target="3">0</span></div>
+                        <div class="stats-label">Program Utama</div>
+                        <div class="stats-desc mt-1">Tahfidz, Tahsin & Tilawah</div>
                     </div>
                     <div class="col-6 col-lg-3 stats-divider">
-                        <div class="stats-number"><span class="counter" data-target="3">0</span> <span
-                                class="fs-4">Klik</span></div>
-                        <div class="stats-label">Proses Input</div>
-                        <div class="stats-desc mt-1">Setoran via Smartphone</div>
+                        <div class="stats-number"><span class="counter" data-target="5">0</span></div>
+                        <div class="stats-label">Level Akses</div>
+                        <div class="stats-desc mt-1">Peran Pengguna</div>
                     </div>
                     <div class="col-6 col-lg-3">
-                        <div class="stats-number"><span class="counter" data-target="100">0</span>%</div>
-                        <div class="stats-label">Laporan Otomatis</div>
-                        <div class="stats-desc mt-1">Generate PDF & Grafik</div>
+                        <div class="stats-number"><span class="counter" data-target="1">0</span></div>
+                        <div class="stats-label">Sumber Data</div>
+                        <div class="stats-desc mt-1">Terpusat & Terintegrasi</div>
                     </div>
                 </div>
             </div>
@@ -1049,74 +1172,75 @@
     <section id="fitur" class="py-5 my-5">
         <div class="container py-5">
             <div class="text-center mb-5 pb-3 animate__animated animate__fadeInUp">
-                <span class="section-label">Fitur Unggulan</span>
-                <h2 class="display-6 fw-bold mb-4">Kenapa Memilih Pantau Hafalanku?</h2>
-                <p class="text-muted mx-auto fs-5" style="max-width: 650px;">Dibangun dengan pemahaman mendalam
-                    tentang kebutuhan administratif pesantren dan madrasah modern.</p>
+                <span class="section-label">Ekosistem SIMTAQU</span>
+                <h2 class="display-6 fw-bold mb-4">Dari Halaqah hingga Meja Pimpinan</h2>
+                <p class="text-muted mx-auto fs-5" style="max-width: 720px;">Setiap fitur dirancang dari alur kerja
+                    nyata Departemen Al-Qur'an agar pembinaan, evaluasi, dan pengambilan keputusan berada dalam satu
+                    data yang sama.</p>
             </div>
             <div class="row g-4">
                 <div class="col-md-6 col-xl-3">
                     <div class="card feature-card">
-                        <div class="icon-box"><i class="bi bi-shield-lock-fill"></i></div>
-                        <h4 class="fs-5 mb-3">Manajemen Multi-Role</h4>
-                        <p class="text-muted small mb-0 lh-lg">Hak akses terstruktur rapi untuk SuperAdmin, Admin,
-                            Musyrif pembimbing, hingga akun khusus pantauan Wali Santri.</p>
+                        <div class="icon-box"><i class="bi bi-speedometer2"></i></div>
+                        <h4 class="fs-5 mb-3">Dashboard Pimpinan</h4>
+                        <p class="text-muted small mb-0 lh-lg">Ringkasan progres, capaian per juz, dan indikator
+                            evaluasi membantu pimpinan membaca kondisi pembinaan secara cepat.</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-xl-3">
                     <div class="card feature-card">
-                        <div class="icon-box"><i class="bi bi-phone-vibrate-fill"></i></div>
-                        <h4 class="fs-5 mb-3">Tracking Real-time</h4>
-                        <p class="text-muted small mb-0 lh-lg">Input hafalan harian dengan sangat mudah melalui
-                            Floating Action Button (FAB) dari layar HP Musyrif.</p>
+                        <div class="icon-box"><i class="bi bi-journal-check"></i></div>
+                        <h4 class="fs-5 mb-3">Setoran Tahfidz</h4>
+                        <p class="text-muted small mb-0 lh-lg">Catat setoran harian, tahap evaluasi, ujian akhir,
+                            status kelulusan, dan nilai melalui alur yang konsisten.</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-xl-3">
                     <div class="card feature-card">
-                        <div class="icon-box"><i class="bi bi-file-earmark-spreadsheet-fill"></i></div>
-                        <h4 class="fs-5 mb-3">Import Cepat</h4>
-                        <p class="text-muted small mb-0 lh-lg">Migrasi data ribuan santri & musyrif hanya dengan
-                            beberapa klik menggunakan integrasi template file Excel.</p>
+                        <div class="icon-box"><i class="bi bi-book"></i></div>
+                        <h4 class="fs-5 mb-3">Tahsin & Tilawah</h4>
+                        <p class="text-muted small mb-0 lh-lg">Perkembangan kualitas bacaan dan tilawah santri
+                            terdokumentasi berdampingan dengan perjalanan hafalannya.</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-xl-3">
                     <div class="card feature-card">
-                        <div class="icon-box"><i class="bi bi-award-fill"></i></div>
-                        <h4 class="fs-5 mb-3">Database Sertifikasi</h4>
-                        <p class="text-muted small mb-0 lh-lg">Lacak kualifikasi sertifikasi metode baca Qur'an musyrif
-                            (Ummi/Wafa) untuk plotting kelas yang tepat sasaran.</p>
+                        <div class="icon-box"><i class="bi bi-patch-check-fill"></i></div>
+                        <h4 class="fs-5 mb-3">Ujian & Penilaian</h4>
+                        <p class="text-muted small mb-0 lh-lg">Standar nilai dan kelulusan tersimpan rapi sehingga
+                            evaluasi santri tidak lagi tersebar di banyak catatan.</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-xl-3">
                     <div class="card feature-card">
-                        <div class="icon-box"><i class="bi bi-printer-fill"></i></div>
-                        <h4 class="fs-5 mb-3">Generate Laporan</h4>
-                        <p class="text-muted small mb-0 lh-lg">Hasilkan laporan perkembangan tahfidz berupa grafik
-                            analitik dan dokumen PDF instan untuk evaluasi bulanan.</p>
+                        <div class="icon-box"><i class="bi bi-diagram-3-fill"></i></div>
+                        <h4 class="fs-5 mb-3">Santri & Kelas</h4>
+                        <p class="text-muted small mb-0 lh-lg">Kelola kelas, kelompok binaan, musyrif, migrasi
+                            kenaikan kelas, status aktif, dan alumni secara terstruktur.</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-xl-3">
                     <div class="card feature-card">
-                        <div class="icon-box"><i class="bi bi-people-fill"></i></div>
-                        <h4 class="fs-5 mb-3">Portal Wali Santri</h4>
-                        <p class="text-muted small mb-0 lh-lg">Transparansi penuh. Orang tua dapat memantau grafik
-                            hafalan anak dari rumah secara presisi tanpa bisa merubah data.</p>
+                        <div class="icon-box"><i class="bi bi-geo-alt-fill"></i></div>
+                        <h4 class="fs-5 mb-3">Absensi Musyrif</h4>
+                        <p class="text-muted small mb-0 lh-lg">Kehadiran musyrif terdokumentasi dengan validasi lokasi
+                            kampus untuk mendukung kedisiplinan pembinaan.</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-xl-3">
                     <div class="card feature-card">
-                        <div class="icon-box"><i class="bi bi-whatsapp"></i></div>
-                        <h4 class="fs-5 mb-3">Notifikasi WhatsApp</h4>
-                        <p class="text-muted small mb-0 lh-lg">Sistem dapat mengirimkan pesan otomatis ke nomor
-                            WhatsApp orang tua terkait pencapaian atau pengingat setoran.</p>
+                        <div class="icon-box"><i class="bi bi-file-earmark-bar-graph-fill"></i></div>
+                        <h4 class="fs-5 mb-3">Laporan Akademik</h4>
+                        <p class="text-muted small mb-0 lh-lg">Rekap santri, kelas, dan musyrif tersedia dalam grafik,
+                            PDF, serta Excel untuk evaluasi dan dokumentasi.</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-xl-3">
                     <div class="card feature-card">
-                        <div class="icon-box"><i class="bi bi-cloud-check-fill"></i></div>
-                        <h4 class="fs-5 mb-3">Cloud & Backup Data</h4>
-                        <p class="text-muted small mb-0 lh-lg">Data tersimpan aman di server awan berstandar tinggi
-                            dengan sistem enkripsi dan pencadangan berkala.</p>
+                        <div class="icon-box"><i class="bi bi-clock-history"></i></div>
+                        <h4 class="fs-5 mb-3">Semester & Jejak Audit</h4>
+                        <p class="text-muted small mb-0 lh-lg">Siklus semester dan riwayat perubahan data membantu
+                            admin menjaga ketertiban proses dari waktu ke waktu.</p>
                     </div>
                 </div>
             </div>
@@ -1130,14 +1254,14 @@
             <div class="container py-5">
                 <div class="row align-items-end g-4 mb-5">
                     <div class="col-lg-8">
-                        <span class="section-label">Review Pengguna</span>
+                        <span class="section-label">Suara dari Lapangan</span>
                         <h2 class="display-6 fw-bold mb-3">
-                            Pengalaman Nyata dari
-                            <span class="text-gradient">Musyrif Pengguna</span>
+                            Pengalaman Musyrif
+                            <span class="text-gradient">Menggunakan SIMTAQU</span>
                         </h2>
                         <p class="text-muted fs-5 mb-0" style="max-width: 720px;">
-                            Review berikut dikirim langsung dari dashboard Musyrif dan telah melalui moderasi
-                            sebelum dipublikasikan.
+                            Masukan berikut dikirim langsung dari dashboard, lalu dimoderasi sebagai bagian dari
+                            perbaikan sistem yang terus berjalan.
                         </p>
                     </div>
 
@@ -1146,7 +1270,7 @@
                             <div class="d-flex align-items-center justify-content-between gap-3">
                                 <div>
                                     <div class="small text-muted fw-bold text-uppercase mb-1">
-                                        Rating Pengguna
+                                        Kepuasan Pengguna
                                     </div>
                                     <div class="system-review-average">
                                         {{ number_format($reviewStats['average'] ?? 0, 1, ',', '.') }}
@@ -1213,91 +1337,97 @@
         </section>
     @endif
 
-    {{-- PRICING SECTION --}}
-    <section id="harga" class="py-5 bg-alt">
+    {{-- INSTITUTIONAL PRODUCT SECTION --}}
+    <section id="tentang" class="py-5 bg-alt">
         <div class="container py-5">
-            <div class="text-center mb-5 pb-3 animate__animated animate__fadeInUp">
-                <span class="section-label">Paket Langganan</span>
-                <h2 class="display-6 fw-bold mb-4">Pilih Investasi <span class="text-gradient">Terbaik</span></h2>
-                <p class="text-muted mx-auto fs-5" style="max-width: 600px;">Biaya operasional transparan tanpa biaya
-                    tersembunyi. Tingkatkan skala lembaga Anda kapan saja.</p>
-            </div>
-            <div class="row g-4 align-items-center justify-content-center">
-                <div class="col-lg-4 col-md-6">
-                    <div class="card pricing-card">
-                        <h4 class="fw-bold mb-2">Starter</h4>
-                        <p class="text-muted small mb-4">Cocok untuk TPQ / Madrasah Diniyah</p>
-                        <h2 class="display-5 fw-bold mb-4">Rp 149<span class="fs-5 text-muted fw-normal">.000<br><span
-                                    class="fs-6">/ bulan</span></span></h2>
-                        <ul class="list-unstyled mb-5 space-y-3">
-                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Maksimal 100
-                                Santri</li>
-                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Maksimal 5
-                                Musyrif</li>
-                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Pencatatan
-                                Hafalan Harian</li>
-                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Laporan
-                                Bulanan PDF</li>
-                            <li class="mb-3 text-muted"><i class="bi bi-dash-circle me-3"></i> Import Excel Massal
-                            </li>
-                            <li class="text-muted"><i class="bi bi-dash-circle me-3"></i> Notifikasi WhatsApp</li>
-                        </ul>
-                        <a href="{{ route('login') }}" class="btn btn-light border w-100 rounded-pill py-3">Mulai
-                            Gratis 7 Hari</a>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6">
-                    <div class="card pricing-card pricing-pro transform-scale">
-                        <div
-                            class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-warning text-dark px-4 py-2 shadow">
-                            PALING DIMINATI
+            <div class="institution-panel p-4 p-lg-5">
+                <div class="row g-5 align-items-center">
+                    <div class="col-lg-7">
+                        <span class="institution-eyebrow mb-4">
+                            <i class="bi bi-building-check"></i> DARI PESANTREN, UNTUK PESANTREN
+                        </span>
+                        <span class="section-label">Tentang Produk</span>
+                        <h2 class="display-6 fw-bold mb-4">
+                            Teknologi yang Lahir dari
+                            <span class="text-gradient">Kebutuhan Pembinaan Nyata</span>
+                        </h2>
+                        <p class="text-muted fs-5 lh-lg mb-4">
+                            SIMTAQU APPS bukan produk langganan komersial. Sistem ini adalah produk digital
+                            Departemen Al-Qur'an Pondok Pesantren Darut Taqwa Ponorogo untuk menertibkan data,
+                            memudahkan musyrif, dan menghadirkan evaluasi pembinaan yang lebih utuh.
+                        </p>
+                        <p class="institution-quote mb-4">
+                            Digitalisasi bukan menggantikan sentuhan pendidikan, tetapi memastikan setiap proses
+                            tahsin, tahfidz, dan tilawah dapat dijaga dengan data yang amanah.
+                        </p>
+                        <div class="d-flex flex-wrap gap-3">
+                            <a href="https://ppdaruttaqwa.com/" target="_blank" rel="noopener noreferrer"
+                                class="btn rounded-pill px-4 text-white"
+                                style="background-color: var(--islamic-purple-600);">
+                                Profil Pondok <i class="bi bi-box-arrow-up-right ms-2"></i>
+                            </a>
+                            <a href="https://www.youtube.com/@GuardOfQuran" target="_blank" rel="noopener noreferrer"
+                                class="btn btn-outline-purple rounded-pill px-4">
+                                Kanal Dept. Al-Qur'an <i class="bi bi-youtube ms-2"></i>
+                            </a>
                         </div>
-                        <h4 class="fw-bold mb-2 mt-2">Pesantren Pro</h4>
-                        <p class="text-white-50 small mb-4">Untuk Pondok Pesantren / Boarding School</p>
-                        <h2 class="display-5 fw-bold mb-4">Rp 349<span
-                                class="fs-5 text-white-50 fw-normal">.000<br><span class="fs-6">/
-                                    bulan</span></span></h2>
-                        <ul class="list-unstyled mb-5 space-y-3">
-                            <li class="mb-3"><i class="bi bi-check-circle-fill text-warning me-3"></i>
-                                <strong>Unlimited</strong> Santri
-                            </li>
-                            <li class="mb-3"><i class="bi bi-check-circle-fill text-warning me-3"></i>
-                                <strong>Unlimited</strong> Musyrif
-                            </li>
-                            <li class="mb-3"><i class="bi bi-check-circle-fill text-warning me-3"></i> Semua Fitur
-                                Starter</li>
-                            <li class="mb-3"><i class="bi bi-check-circle-fill text-warning me-3"></i> Import/Export
-                                Excel Massal</li>
-                            <li class="mb-3"><i class="bi bi-check-circle-fill text-warning me-3"></i> Manajemen
-                                Multi-Role</li>
-                            <li><i class="bi bi-check-circle-fill text-warning me-3"></i> Integrasi Notifikasi WhatsApp
-                            </li>
-                        </ul>
-                        <a href="{{ route('login') }}" class="btn btn-warning w-100 rounded-pill py-3 shadow">Pilih
-                            Paket Pro</a>
+                    </div>
+
+                    <div class="col-lg-5">
+                        <div class="ownership-card">
+                            <div class="theme-logo theme-logo--owner theme-logo--inverse mb-4">
+                                <img class="logo-light" src="{{ asset('assets/logos-primary.png') }}" alt=""
+                                    aria-hidden="true">
+                                <img class="logo-dark" src="{{ asset('assets/logos.png') }}"
+                                    alt="Logo Departemen Al-Qur'an">
+                            </div>
+                            <div class="small fw-bold text-uppercase mb-2"
+                                style="letter-spacing: .12em; color: var(--brand-gold-400);">Product Owner</div>
+                            <h3 class="h2 mb-3">Departemen Al-Qur'an</h3>
+                            <p class="mb-4 lh-lg">Pondok Pesantren Darut Taqwa · Pintu, Jenangan, Ponorogo</p>
+                            <div class="border-top pt-4" style="border-color: rgba(255,255,255,.14) !important;">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <i class="bi bi-patch-check-fill text-warning fs-5"></i>
+                                    <span class="small fw-semibold">Sistem institusional, bukan marketplace</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <i class="bi bi-people-fill text-warning fs-5"></i>
+                                    <span class="small fw-semibold">Dibangun mengikuti alur kerja pengguna</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-3">
+                                    <i class="bi bi-arrow-repeat text-warning fs-5"></i>
+                                    <span class="small fw-semibold">Dikembangkan secara berkelanjutan</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-lg-4 col-md-6">
-                    <div class="card pricing-card">
-                        <h4 class="fw-bold mb-2">Yayasan Utama</h4>
-                        <p class="text-muted small mb-4">Untuk Yayasan Besar & Multi-Cabang</p>
-                        <h2 class="display-5 fw-bold mb-4 text-gradient">Custom</h2>
-                        <ul class="list-unstyled mb-5 space-y-3">
-                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Semua Fitur
-                                Pesantren Pro</li>
-                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Custom
-                                White-label Logo</li>
-                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Sub-domain
-                                Khusus Institusi</li>
-                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Modul
-                                Keuangan Terintegrasi</li>
-                            <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-3"></i> Dedicated
-                                Server Utama</li>
-                            <li><i class="bi bi-check-circle-fill text-success me-3"></i> Dukungan Teknis Prioritas
-                                24/7</li>
-                        </ul>
-                        <a href="#" class="btn btn-outline-primary w-100 rounded-pill py-3">Hubungi Tim Kami</a>
-                    </div>
+            </div>
+
+            <div class="row g-4 mt-2">
+                <div class="col-md-4">
+                    <article class="institution-card">
+                        <span class="mini-icon mb-4"><i class="bi bi-calendar2-check"></i></span>
+                        <h3 class="h5 mb-3">Berakar Sejak 2010</h3>
+                        <p class="text-muted small lh-lg mb-0">Darut Taqwa resmi berdiri pada 14 Juli 2010 dan terus
+                            bertumbuh sebagai pusat pendidikan Islam modern di Ponorogo.</p>
+                    </article>
+                </div>
+                <div class="col-md-4">
+                    <article class="institution-card">
+                        <span class="mini-icon mb-4"><i class="bi bi-stars"></i></span>
+                        <h3 class="h5 mb-3">Visi Generasi Qur'ani</h3>
+                        <p class="text-muted small lh-lg mb-0">Sistem mendukung visi pondok dalam membentuk generasi
+                            Qur'ani yang mandiri, berprestasi, dan siap memberi manfaat.</p>
+                    </article>
+                </div>
+                <div class="col-md-4">
+                    <article class="institution-card">
+                        <span class="mini-icon mb-4"><i class="bi bi-mortarboard-fill"></i></span>
+                        <h3 class="h5 mb-3">Pembinaan Berkelanjutan</h3>
+                        <p class="text-muted small lh-lg mb-0">Departemen Al-Qur'an mengawal pembelajaran tahfidz dan
+                            tahsin pada jenjang pendidikan pesantren secara terstruktur.</p>
+                    </article>
                 </div>
             </div>
         </div>
@@ -1391,8 +1521,8 @@
                 <div class="col-lg-5 mb-5 mb-lg-0 animate__animated animate__fadeInLeft pe-lg-5">
                     <span class="section-label">Tanya Jawab</span>
                     <h2 class="display-6 fw-bold mb-4">Pertanyaan yang Sering Diajukan</h2>
-                    <p class="text-muted mb-4 fs-5">Masih ragu atau punya pertanyaan teknis seputar Sistem Informasi
-                        Hafalan Santri? Temukan jawabannya di sini.</p>
+                    <p class="text-muted mb-4 fs-5">Kenali fungsi, pengguna, dan posisi SIMTAQU APPS di lingkungan
+                        Pondok Pesantren Darut Taqwa.</p>
                 </div>
                 <div class="col-lg-7 animate__animated animate__fadeInRight">
                     <div class="accordion custom-accordion" id="faqAccordion">
@@ -1400,15 +1530,23 @@
                             <h2 class="accordion-header">
                                 <button class="accordion-button" type="button" data-bs-toggle="collapse"
                                     data-bs-target="#faq1">
-                                    Apakah data santri dan nilai hafalan aman?
+                                    Apakah SIMTAQU APPS dijual untuk umum?
                                 </button>
                             </h2>
                             <div id="faq1" class="accordion-collapse collapse show"
                                 data-bs-parent="#faqAccordion">
                                 <div class="accordion-body">
-                                    Alhamdulillah, ya. Kami menggunakan server cloud yang tangguh dengan enkripsi
-                                    standar industri dan backup data berkala. Hanya pengurus berwenang yang memiliki
-                                    akses.
+                                    Tidak. SIMTAQU APPS diposisikan sebagai produk digital institusional milik
+                                    Departemen Al-Qur'an Pondok Pesantren Darut Taqwa, bukan layanan langganan atau
+                                    paket komersial untuk dijual kepada lembaga lain.
+                                    <br>
+                                    <br>
+                                    Jika ingin membuat produk serupa bisa menghubungi pihak developer <a
+                                        href="https://anzartstudio.id" target="_blank" rel="noopener noreferrer"
+                                        class="fw-bold text-decoration-none"
+                                        style="color: var(--islamic-purple-500);">
+                                        AnzArt Studio.
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -1416,14 +1554,14 @@
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                     data-bs-target="#faq2">
-                                    Apakah Musyrif bisa menginput hafalan lewat HP?
+                                    Siapa saja yang menggunakan SIMTAQU?
                                 </button>
                             </h2>
                             <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                 <div class="accordion-body">
-                                    Sangat bisa! Sistem ini dirancang 100% <em>Mobile-Responsive</em>. Musyrif cukup
-                                    login melalui browser di HP masing-masing dan menggunakan tombol pintar (FAB) untuk
-                                    mencatat setoran santri.
+                                    Hak akses disesuaikan dengan tanggung jawab pengguna, mulai dari pengelola sistem,
+                                    admin Departemen Al-Qur'an, pimpinan, musyrif, hingga santri atau wali yang
+                                    memantau perkembangan melalui akun terkait.
                                 </div>
                             </div>
                         </div>
@@ -1431,13 +1569,42 @@
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                     data-bs-target="#faq3">
-                                    Apakah wali santri bisa memantau perkembangan anaknya?
+                                    Apa saja proses pembinaan yang dikelola?
                                 </button>
                             </h2>
                             <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                 <div class="accordion-body">
-                                    Bisa. Sistem kami memiliki hak akses (Role) khusus untuk Santri/Wali Santri agar
-                                    dapat memantau grafik hafalan anaknya tanpa bisa memanipulasi data nilai.
+                                    SIMTAQU mengelola data tahfidz, tahsin, tilawah, ujian, nilai, absensi musyrif,
+                                    semester, kelas, migrasi santri, analitik capaian, serta laporan dan dokumen
+                                    akademik yang berkaitan.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#faq4">
+                                    Apakah musyrif dapat mencatat setoran melalui HP?
+                                </button>
+                            </h2>
+                            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Bisa. Antarmuka SIMTAQU responsif untuk browser smartphone sehingga musyrif dapat
+                                    mencatat setoran dan evaluasi langsung setelah kegiatan pembinaan.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#faq5">
+                                    Bagaimana memperoleh akses ke sistem?
+                                </button>
+                            </h2>
+                            <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Pengguna dapat melakukan registrasi akun, kemudian menunggu verifikasi dan
+                                    penetapan hak akses oleh pengelola yang berwenang sebelum menggunakan dashboard.
                                 </div>
                             </div>
                         </div>
@@ -1455,22 +1622,39 @@
     {{-- CTA & FOOTER --}}
     <footer class="pt-5" style="background-color: var(--bg-section);">
         <div class="container text-center mb-5 py-5">
-            <h2 class="display-6 fw-bold mb-4">Siap Mendigitalkan Lembaga Anda?</h2>
-            <p class="text-muted mb-5 mx-auto fs-5" style="max-width: 600px;">Bergabunglah dan tingkatkan efisiensi
-                pengelolaan data hafalan santri di lembaga Anda sekarang juga.</p>
-            <a href="{{ route('register') }}" class="btn px-5 py-3 rounded-pill fw-bold text-white shadow-lg"
-                style="background: linear-gradient(135deg, var(--islamic-purple-500), var(--islamic-tosca-400)); border: none;">
-                Daftar Sekarang <i class="bi bi-arrow-right ms-2"></i>
-            </a>
+            <span class="section-label">SIMTAQU APPS</span>
+            <h2 class="display-6 fw-bold mb-4">Satu Data untuk Menjaga Amanah Pembinaan</h2>
+            <p class="text-muted mb-5 mx-auto fs-5" style="max-width: 680px;">Masuk ke sistem untuk melanjutkan
+                pencatatan, pemantauan, dan evaluasi program Al-Qur'an Pondok Pesantren Darut Taqwa.</p>
+            <div class="d-flex flex-wrap justify-content-center gap-3">
+                <a href="{{ route('login') }}" class="btn px-5 py-3 rounded-pill fw-bold text-white shadow-lg"
+                    style="background: linear-gradient(135deg, var(--islamic-purple-500), var(--islamic-purple-700)); border: none;">
+                    Masuk ke Dashboard <i class="bi bi-arrow-right ms-2"></i>
+                </a>
+                <a href="{{ route('register') }}" class="btn btn-outline-purple px-5 py-3 rounded-pill fw-bold">
+                    Registrasi Akun
+                </a>
+            </div>
         </div>
         <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center py-4 border-top border-opacity-10"
             style="border-color: var(--border-color) !important;">
-            <div class="mb-3 mb-md-0 fw-bold d-flex align-items-center gap-2" style="color: var(--text-heading);">
-                <span>Pantau Hafalanku</span>
+            <div class="mb-3 mb-md-0 d-flex align-items-center gap-3" style="color: var(--text-heading);">
+                <span class="theme-logo theme-logo--footer">
+                    <img class="logo-light" src="{{ asset('assets/logos-primary.png') }}" alt="Logo SIMTAQU APPS">
+                    <img class="logo-dark" src="{{ asset('assets/logos.png') }}" alt="" aria-hidden="true">
+                </span>
+                <div>
+                    <div class="fw-bold">SIMTAQU APPS</div>
+                    <div class="small text-muted">Product by Dept. Al-Qur'an · Pondok Pesantren Darut Taqwa</div>
+                </div>
             </div>
-            <div class="small text-muted fw-medium">
-                &copy; {{ date('Y') }} Hak Cipta Dilindungi.
-                Created by <span class="fw-bold" style="color: var(--islamic-purple-500);">AnzArt Studio</span>
+            <div class="small text-muted fw-medium text-center text-md-end">
+                &copy; {{ date('Y') }} Pondok Pesantren Darut Taqwa Ponorogo.<br>
+                Digital experience by
+                <a href="https://anzartstudio.id" target="_blank" rel="noopener noreferrer"
+                    class="fw-bold text-decoration-none" style="color: var(--islamic-purple-500);">
+                    AnzArt Studio
+                </a>
             </div>
         </div>
     </footer>

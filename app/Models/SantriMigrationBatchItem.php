@@ -32,6 +32,34 @@ class SantriMigrationBatchItem extends Model
         'rolled_back_at' => 'datetime',
     ];
 
+    public function sourceHierarchy(): array
+    {
+        $snapshot = $this->source_snapshot ?? [];
+
+        return [
+            'kelas_id' => $snapshot['kelas_id'] ?? $this->from_kelas_id,
+            'kelas_nama' => $snapshot['kelas_nama'] ?? null,
+            'parent_id' => $snapshot['kelas_parent_id'] ?? null,
+            'parent_nama' => $snapshot['kelas_parent_nama'] ?? null,
+            'kelompok' => $snapshot['kelompok'] ?? null,
+            'kode' => $snapshot['kode'] ?? null,
+        ];
+    }
+
+    public function targetHierarchy(): array
+    {
+        $snapshot = $this->target_snapshot ?? [];
+
+        return [
+            'kelas_id' => $snapshot['kelas_id'] ?? $this->to_kelas_id,
+            'kelas_nama' => $snapshot['kelas_nama'] ?? null,
+            'parent_id' => $snapshot['kelas_parent_id'] ?? null,
+            'parent_nama' => $snapshot['kelas_parent_nama'] ?? null,
+            'kelompok' => $snapshot['kelompok'] ?? null,
+            'kode' => $snapshot['kode'] ?? null,
+        ];
+    }
+
     public function batch(): BelongsTo
     {
         return $this->belongsTo(SantriMigrationBatch::class, 'batch_id');

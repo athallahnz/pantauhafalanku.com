@@ -72,6 +72,35 @@
             max-width: 180px;
         }
 
+        .audit-gender-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            border-radius: 999px;
+            padding: .35rem .65rem;
+            font-size: .72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .audit-gender-putra {
+            color: #0a58ca;
+            background: rgba(13, 110, 253, .12);
+            border: 1px solid rgba(13, 110, 253, .2);
+        }
+
+        .audit-gender-putri {
+            color: #a61e4d;
+            background: rgba(214, 51, 132, .12);
+            border: 1px solid rgba(214, 51, 132, .2);
+        }
+
+        .audit-gender-mixed {
+            color: var(--cui-secondary-color);
+            background: var(--cui-tertiary-bg);
+            border: 1px solid var(--cui-border-color);
+        }
+
         .audit-detail-label {
             color: var(--cui-secondary-color);
             font-size: .72rem;
@@ -285,6 +314,15 @@
                     </select>
                 </div>
 
+                <div class="col-md-6 col-xl-2">
+                    <label class="form-label small fw-semibold" for="filterGender">Jenis Kelamin</label>
+                    <select class="form-select" id="filterGender">
+                        <option value="">Semua</option>
+                        <option value="L">Putra / Laki-laki</option>
+                        <option value="P">Putri / Perempuan</option>
+                    </select>
+                </div>
+
                 <div class="col-md-6 col-xl-3">
                     <label class="form-label small fw-semibold" for="filterSemester">Semester</label>
                     <select class="form-select" id="filterSemester">
@@ -348,6 +386,7 @@
                             <th>Batch</th>
                             <th>Semester</th>
                             <th>Cakupan</th>
+                            <th>Jenis Kelamin</th>
                             <th>Progress</th>
                             <th>Status</th>
                             <th>Aktor</th>
@@ -421,6 +460,7 @@
                                     <thead>
                                         <tr>
                                             <th>Santri</th>
+                                            <th>Jenis Kelamin</th>
                                             <th>Asal</th>
                                             <th>Tujuan</th>
                                             <th>Tipe</th>
@@ -484,7 +524,7 @@
                             <div class="p-3 border rounded-4 h-100">
                                 <div class="fw-bold mb-2">Detail Item</div>
                                 <div class="small text-body-secondary">
-                                    Buka Detail lalu pilih tab Item Santri untuk membandingkan kelas dan
+                                    Buka Detail lalu pilih tab Item Santri untuk membandingkan tingkat, kelompok, kelas, dan
                                     musyrif asal–tujuan serta melihat snapshot JSON setiap santri.
                                 </div>
                             </div>
@@ -502,7 +542,7 @@
                             <div class="p-3 border rounded-4 h-100">
                                 <div class="fw-bold mb-2">Export</div>
                                 <div class="small text-body-secondary">
-                                    Export CSV mengikuti filter mode, status, semester, dan tanggal yang
+                                    Export CSV mengikuti filter mode, status, jenis kelamin, semester, dan tanggal yang
                                     sedang dipilih pada halaman.
                                 </div>
                             </div>
@@ -540,11 +580,146 @@
                 document.getElementById('modalBatchDetail')
             );
 
+            function normalizeGender(value) {
+                const normalized = String(value ?? '')
+                    .trim()
+                    .toLowerCase();
+
+                if (['l', 'lk', 'laki-laki', 'laki laki', 'male', 'putra'].includes(normalized)) {
+                    return 'L';
+                }
+
+                if (['p', 'pr', 'perempuan', 'female', 'putri'].includes(normalized)) {
+                    return 'P';
+                }
+
+                if (['campuran', 'mixed', 'semua', 'all'].includes(normalized)) {
+                    return 'MIXED';
+                }
+
+                return '';
+            }
+
+            function resolveGender(row) {
+                return normalizeGender(
+                    row?.jenis_kelamin ??
+                    row?.gender ??
+                    row?.jk ??
+                    row?.santri_jenis_kelamin ??
+                    row?.from_jenis_kelamin ??
+                    row?.metadata?.jenis_kelamin ??
+                    row?.metadata?.gender ??
+                    ''
+                );
+            }
+
+            function genderCounts(row) {
+                const source =
+                    row?.gender_counts ??
+                    row?.jenis_kelamin_counts ??
+                    row?.metadata?.gender_counts ?? {};
+
+                return {
+                    putra: Number(
+                        source.L ??
+                        source.l ??
+                        source.putra ??
+                        row?.putra_count ??
+                        row?.male_count ??
+                        0
+                    ),
+                    putri: Number(
+                        source.P ??
+                        source.p ??
+                        source.putri ??
+                        row?.putri_count ??
+                        row?.female_count ??
+                        0
+                    )
+                };
+            }
+
+            function genderLabel(row) {
+                const counts = genderCounts(row);
+
+                if (counts.putra > 0 && counts.putri > 0) {
+                    return `Campuran — ${counts.putra} Putra, ${counts.putri} Putri`;
+                }
+
+                const gender = resolveGender(row);
+
+                if (gender === 'L' || counts.putra > 0) {
+                    return counts.putra > 0 ?
+                        `Putra (${counts.putra})` :
+                        'Putra / Laki-laki';
+                }
+
+                if (gender === 'P' || counts.putri > 0) {
+                    return counts.putri > 0 ?
+                        `Putri (${counts.putri})` :
+                        'Putri / Perempuan';
+                }
+
+                if (gender === 'MIXED') {
+                    return 'Campuran Putra & Putri';
+                }
+
+                return 'Belum tersedia';
+            }
+
+            function genderBadge(row) {
+                const counts = genderCounts(row);
+                const gender = resolveGender(row);
+
+                if (counts.putra > 0 && counts.putri > 0) {
+                    return `
+                        <span class="audit-gender-badge audit-gender-putra me-1">
+                            <i class="bi bi-gender-male"></i>${counts.putra}
+                        </span>
+                        <span class="audit-gender-badge audit-gender-putri">
+                            <i class="bi bi-gender-female"></i>${counts.putri}
+                        </span>
+                    `;
+                }
+
+                if (gender === 'L' || counts.putra > 0) {
+                    return `
+                        <span class="audit-gender-badge audit-gender-putra">
+                            <i class="bi bi-gender-male"></i>
+                            ${counts.putra > 0 ? counts.putra + ' Putra' : 'Putra'}
+                        </span>
+                    `;
+                }
+
+                if (gender === 'P' || counts.putri > 0) {
+                    return `
+                        <span class="audit-gender-badge audit-gender-putri">
+                            <i class="bi bi-gender-female"></i>
+                            ${counts.putri > 0 ? counts.putri + ' Putri' : 'Putri'}
+                        </span>
+                    `;
+                }
+
+                if (gender === 'MIXED') {
+                    return `
+                        <span class="audit-gender-badge audit-gender-mixed">
+                            <i class="bi bi-people-fill"></i>Campuran
+                        </span>
+                    `;
+                }
+
+                return `
+                    <span class="audit-gender-badge audit-gender-mixed">
+                        <i class="bi bi-question-circle"></i>Belum Diisi
+                    </span>
+                `;
+            }
 
             function filterPayload() {
                 return {
                     mode: $('#filterMode').val(),
                     status: $('#filterStatus').val(),
+                    jenis_kelamin: $('#filterGender').val(),
                     semester_id: $('#filterSemester').val(),
                     date_from: $('#filterDateFrom').val(),
                     date_to: $('#filterDateTo').val()
@@ -590,6 +765,16 @@
                         data: 'cakupan',
                         orderable: false,
                         searchable: false
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        render: function(data, type, row) {
+                            return type === 'display' ?
+                                genderBadge(row) :
+                                genderLabel(row);
+                        }
                     },
                     {
                         data: 'progress',
@@ -663,12 +848,12 @@
 
             $('#btnApplyFilter').on('click', reloadAudit);
 
-            $('#filterMode, #filterStatus, #filterSemester').on('change', function() {
+            $('#filterMode, #filterStatus, #filterGender, #filterSemester').on('change', function() {
                 reloadAudit();
             });
 
             $('#btnResetFilter').on('click', function() {
-                $('#filterMode, #filterStatus, #filterSemester').val('');
+                $('#filterMode, #filterStatus, #filterGender, #filterSemester').val('');
                 $('#filterDateFrom, #filterDateTo').val('');
                 reloadAudit();
             });
@@ -710,6 +895,7 @@
                     detailField('Semester Asal', batch.from_semester),
                     detailField('Semester Tujuan', batch.to_semester),
                     detailField('Mode / Tipe', `${batch.mode_label} / ${batch.transition_label}`),
+                    detailField('Jenis Kelamin', genderLabel(batch)),
                     detailField('Kelas Asal', batch.from_kelas ?? (batch.mode === 'auto' ? 'Multi Kelas' :
                         '-')),
                     detailField('Kelas Tujuan', batch.to_kelas ?? (batch.mode === 'auto' ? 'Multi Mapping' :
@@ -759,6 +945,16 @@
                     columns: [{
                             data: 'santri_info',
                             name: 'santri_id'
+                        },
+                        {
+                            data: null,
+                            orderable: false,
+                            searchable: false,
+                            render: function(data, type, row) {
+                                return type === 'display' ?
+                                    genderBadge(row) :
+                                    genderLabel(row);
+                            }
                         },
                         {
                             data: 'asal',
@@ -915,10 +1111,10 @@
                                     <p>Batch <strong>${escapeHtml(batchCode ?? '')}</strong> tidak memenuhi syarat rollback.</p>
                                     <ul class="mb-0">
                                         ${blockers.map(blocker => `
-                                                    <li class="mb-2">
-                                                        ${escapeHtml(blocker.message ?? '-')}
-                                                    </li>
-                                                `).join('')}
+                                                        <li class="mb-2">
+                                                            ${escapeHtml(blocker.message ?? '-')}
+                                                        </li>
+                                                    `).join('')}
                                     </ul>
                                 </div>
                             `,

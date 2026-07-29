@@ -12,6 +12,8 @@ use App\Exports\ViolationReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
@@ -22,28 +24,36 @@ class SantriController extends Controller
 {
     public function index()
     {
-        $kelasList = Kelas::orderByRaw("
-            CASE
-                WHEN nama_kelas = 'Kelas 7' THEN 1
-                WHEN nama_kelas = 'Kelas 8' THEN 2
-                WHEN nama_kelas = 'Kelas 9' THEN 3
-                WHEN nama_kelas = 'Kelas 10' THEN 4
-                WHEN nama_kelas = 'Kelas 10 INT' THEN 5
-                WHEN nama_kelas = 'Kelas 11' THEN 6
-                WHEN nama_kelas = 'Kelas 11 INT' THEN 7
-                ELSE 99
-            END
-        ")->get();
+        $kelasParents = Kelas::query()
+            ->induk()
+            ->with([
+                'children' => fn ($query) => $query
+                    ->aktif()
+                    ->orderBy('urutan')
+                    ->orderBy('kelompok'),
+            ])
+            ->orderBy('urutan')
+            ->orderBy('nama_kelas')
+            ->get();
+
+        $kelasList = Kelas::query()
+            ->with('parent:id,nama_kelas')
+            ->operasional()
+            ->urutHierarki()
+            ->get();
 
         $musyrifList = Musyrif::query()
             ->withCount([
-                'santris as santris_count' => fn($query) =>
-                $query->active(),
+                'santris as santris_count' => fn ($query) => $query->active(),
             ])
             ->orderBy('nama')
             ->get();
 
-        return view('admin.santri.index', compact('kelasList', 'musyrifList'));
+        return view('admin.santri.index', compact(
+            'kelasParents',
+            'kelasList',
+            'musyrifList'
+        ));
     }
 
     public function getData(Request $request)
@@ -52,6 +62,7 @@ class SantriController extends Controller
 
         $query = Santri::leftJoin('users', 'users.id', '=', 'santris.user_id')
             ->leftJoin('kelas', 'kelas.id', '=', 'santris.kelas_id')
+            ->leftJoin('kelas as kelas_induk', 'kelas_induk.id', '=', 'kelas.parent_id')
             ->leftJoin('musyrifs', 'musyrifs.id', '=', 'santris.musyrif_id')
             ->select([
                 'santris.id',
@@ -65,6 +76,9 @@ class SantriController extends Controller
                 'santris.graduated_semester_id',
                 'santris.graduated_at',
                 'kelas.nama_kelas as kelas_nama',
+                'kelas.parent_id as kelas_parent_id',
+                'kelas.kelompok as kelas_kelompok',
+                'kelas_induk.nama_kelas as kelas_induk_nama',
                 'musyrifs.nama as musyrif_nama',
                 'users.id as user_id',
                 'users.name as user_name',
@@ -101,7 +115,17 @@ class SantriController extends Controller
         }
 
         if ($request->filled('kelas_id')) {
-            $query->where('santris.kelas_id', $request->kelas_id);
+            $filterKelas = Kelas::query()->find((int) $request->kelas_id);
+
+            if ($filterKelas?->isInduk()) {
+                $query->where(function ($kelasQuery) use ($filterKelas): void {
+                    $kelasQuery
+                        ->where('santris.kelas_id', $filterKelas->id)
+                        ->orWhere('kelas.parent_id', $filterKelas->id);
+                });
+            } elseif ($filterKelas) {
+                $query->where('santris.kelas_id', $filterKelas->id);
+            }
         }
 
         $jenisKelamin = $request->input('jenis_kelamin');
@@ -125,7 +149,20 @@ class SantriController extends Controller
                 $contact = $nomor ?: $email;
                 return "<div class='fw-semibold'>{$name}</div><div class='text-muted small'>{$contact}</div>";
             })
-            ->addColumn('kelas', fn($row) => $row->kelas_nama ?: '-')
+            ->addColumn('kelas', function ($row) {
+                if (!$row->kelas_nama) {
+                    return '<span class="text-body-secondary">-</span>';
+                }
+
+                if ($row->kelas_parent_id) {
+                    $group = e($row->kelas_kelompok ?: '-');
+                    return '<div class="fw-semibold">' . e($row->kelas_nama) . '</div>'
+                        . '<span class="badge bg-info-subtle text-info rounded-pill">Kelompok ' . $group . '</span>';
+                }
+
+                return '<div class="fw-semibold">' . e($row->kelas_nama) . '</div>'
+                    . '<span class="badge bg-warning-subtle text-warning rounded-pill">Legacy Induk</span>';
+            })
             ->addColumn('musyrif', fn($row) => $row->musyrif_nama ?: '-')
 
             // Tombol aksi lengkap
@@ -177,6 +214,7 @@ class SantriController extends Controller
                     data-nama="' . e($row->nama) . '"
                     data-nis="' . e($row->nis) . '"
                     data-kelas_id="' . e($row->kelas_id) . '"
+                    data-kelas_legacy="' . ($row->kelas_parent_id ? '0' : '1') . '"
                     data-musyrif_id="' . $row->musyrif_id . '"
                     data-tanggal_lahir="' . e($tgl) . '"
                     data-jenis_kelamin="' . e($row->jenis_kelamin) . '"
@@ -191,114 +229,187 @@ class SantriController extends Controller
 
                 return '<div class="d-flex flex-nowrap gap-1">' . $btnDetail . $btnProgress . $btnUser . $btnEdit . $btnDelete . '</div>';
             })
-            ->rawColumns(['aksi', 'akun'])
+            ->rawColumns(['aksi', 'akun', 'kelas'])
             ->make(true);
     }
 
     public function getByKelas($kelas_id)
     {
-        // Ambil semua musyrif yang kelas_id-nya cocok
-        $musyrifs = Musyrif::where('kelas_id', $kelas_id)->get();
+        $kelas = Kelas::query()
+            ->with('parent:id,nama_kelas,is_active')
+            ->find($kelas_id);
 
-        if ($musyrifs->isEmpty()) {
+        if (!$kelas) {
             return response()->json([
-                'status' => 'empty',
-                'message' => 'Belum ada Musyrif di kelas ini!',
-                'data' => []
-            ]);
+                'status' => 'error',
+                'message' => 'Kelas tidak ditemukan.',
+                'data' => [],
+            ], 404);
         }
 
+        $kelasIndukId = (int) ($kelas->parent_id ?: $kelas->id);
+        $tingkatUtama = $kelas->parent?->nama_kelas ?: $kelas->nama_kelas;
+
+        $musyrifs = Musyrif::query()
+            ->forKelasInduk($kelasIndukId)
+            ->with([
+                'kelas:id,nama_kelas',
+                'kelasBinaan:id,nama_kelas,parent_id,kelompok',
+            ])
+            ->select([
+                'id',
+                'nama',
+                'kode',
+                'jenis_kelamin',
+                'kelas_induk_id',
+                'kelas_id',
+            ])
+            ->withCount([
+                'santris as santris_aktif_count' => fn ($query) => $query->active(),
+            ])
+            ->orderBy('nama')
+            ->get()
+            ->map(function (Musyrif $musyrif) use ($kelas): array {
+                $kelasBinaan = $musyrif->kelasBinaan
+                    ->pluck('nama_kelas')
+                    ->filter()
+                    ->values();
+
+                return [
+                    'id' => (int) $musyrif->id,
+                    'nama' => $musyrif->nama,
+                    'kode' => $musyrif->kode,
+                    'jenis_kelamin' => $musyrif->jenis_kelamin,
+                    'kelas_induk_id' => (int) $musyrif->kelas_induk_id,
+                    'kelas_id' => $musyrif->kelas_id !== null
+                        ? (int) $musyrif->kelas_id
+                        : null,
+                    'kelas_utama' => $musyrif->kelas?->nama_kelas,
+                    'kelas_binaan' => $kelasBinaan->all(),
+                    'santris_aktif_count' => (int) $musyrif->santris_aktif_count,
+                    'sudah_membina_kelas_terpilih' => $musyrif->handlesKelas((int) $kelas->id),
+                    'label' => sprintf(
+                        '%s%s · %d santri aktif',
+                        $musyrif->nama,
+                        $musyrif->kode ? ' — ' . $musyrif->kode : '',
+                        (int) $musyrif->santris_aktif_count
+                    ),
+                ];
+            });
+
         return response()->json([
-            'status' => 'success',
-            'data' => $musyrifs // Mengirimkan array of objects
+            'status' => $musyrifs->isEmpty() ? 'empty' : 'success',
+            'message' => $musyrifs->isEmpty()
+                ? "Belum ada Musyrif dengan tingkat utama {$tingkatUtama}."
+                : "Daftar Musyrif tingkat {$tingkatUtama} berhasil dimuat.",
+            'data' => $musyrifs->values(),
+            'kelas' => [
+                'id' => (int) $kelas->id,
+                'nama' => $kelas->nama_kelas,
+                'kelas_induk_id' => $kelasIndukId,
+                'tingkat_utama' => $tingkatUtama,
+                'is_operational' => $kelas->isKelompok() && (bool) $kelas->is_active,
+                'is_legacy' => $kelas->isInduk(),
+            ],
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'kelas_id' => 'required|exists:kelas,id',
-            'musyrif_id' => 'required|exists:musyrifs,id', // Sebaiknya required jika ingin konsisten
-            'nama' => 'required|string|max:150',
-            'nis' => 'nullable|string|max:50',
-            'tanggal_lahir' => 'nullable|date',
-            'jenis_kelamin' => 'nullable|in:L,P',
+            'kelas_id' => ['required', 'integer', 'exists:kelas,id'],
+            'musyrif_id' => ['required', 'integer', 'exists:musyrifs,id'],
+            'nama' => ['required', 'string', 'max:150'],
+            'nis' => ['nullable', 'string', 'max:50'],
+            'tanggal_lahir' => ['nullable', 'date'],
+            'jenis_kelamin' => ['nullable', Rule::in(['L', 'P'])],
         ]);
 
-        // Tambahkan pengecekan yang sama dengan store
-        $check = Musyrif::where('id', $validated['musyrif_id'])
-            ->where('kelas_id', $validated['kelas_id'])
-            ->exists();
+        $kelas = $this->assertOperationalKelas((int) $validated['kelas_id']);
 
-        if (!$check) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Musyrif yang dipilih tidak bertugas di kelas ini!'
-            ], 422);
-        }
+        $santri = DB::transaction(function () use ($validated, $kelas): Santri {
+            $musyrif = $this->resolveMusyrifForKelasInduk(
+                (int) $validated['musyrif_id'],
+                $kelas
+            );
 
-        $validated['status'] =
-            Santri::STATUS_AKTIF;
+            // Pivot adalah sumber kelas binaan dan ditambah secara additive.
+            $musyrif->ensureKelasBinaan((int) $kelas->id);
 
-        $santri = Santri::query()->create(
-            $validated
-        );
+            return Santri::query()->create([
+                ...$validated,
+                'kelas_id' => (int) $kelas->id,
+                'musyrif_id' => (int) $musyrif->id,
+                'status' => Santri::STATUS_AKTIF,
+            ]);
+        });
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Santri berhasil ditambahkan.',
-            'data' => $santri
+            'message' => 'Santri berhasil ditambahkan ke ' . $kelas->nama_kelas . '.',
+            'data' => $santri,
         ]);
     }
 
     public function update(Request $request, $id)
     {
-        $santri = Santri::query()
-            ->findOrFail($id);
+        $santri = Santri::query()->findOrFail($id);
 
         if (!$santri->isActive()) {
             return response()->json([
                 'status' => 'error',
-                'message' =>
-                'Hanya santri aktif yang dapat diedit dari Data Master Santri.',
+                'message' => 'Hanya santri aktif yang dapat diedit dari Data Master Santri.',
             ], 422);
         }
 
         $validated = $request->validate([
-            'kelas_id' => 'required|exists:kelas,id',
-            'musyrif_id' => 'nullable|exists:musyrifs,id',
-            'nama' => 'required|string|max:150',
-            'nis' => 'nullable|string|max:50',
-            'tanggal_lahir' => 'nullable|date',
-            'jenis_kelamin' => 'nullable|in:L,P',
+            'kelas_id' => ['required', 'integer', 'exists:kelas,id'],
+            'musyrif_id' => ['nullable', 'integer', 'exists:musyrifs,id'],
+            'nama' => ['required', 'string', 'max:150'],
+            'nis' => ['nullable', 'string', 'max:50'],
+            'tanggal_lahir' => ['nullable', 'date'],
+            'jenis_kelamin' => ['nullable', Rule::in(['L', 'P'])],
         ]);
 
-        // Update data Santri
-        $santri->update([
-            'kelas_id' => $validated['kelas_id'],
-            'musyrif_id' => $validated['musyrif_id'] ?? null,
-            'nama' => $validated['nama'],
-            'nis' => $validated['nis'] ?? null,
-            'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
-            'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
+        $kelas = $this->assertOperationalKelas(
+            (int) $validated['kelas_id'],
+            $santri
+        );
+
+        DB::transaction(function () use ($santri, $validated, $kelas): void {
+            $musyrifId = null;
+
+            if (!empty($validated['musyrif_id'])) {
+                $musyrif = $this->resolveMusyrifForKelasInduk(
+                    (int) $validated['musyrif_id'],
+                    $kelas
+                );
+
+                $musyrif->ensureKelasBinaan((int) $kelas->id);
+                $musyrifId = (int) $musyrif->id;
+            }
+
+            $santri->update([
+                'nama' => $validated['nama'],
+                'nis' => $validated['nis'] ?? null,
+                'kelas_id' => (int) $kelas->id,
+                'musyrif_id' => $musyrifId,
+                'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
+                'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
+            ]);
+
+            if ($santri->user) {
+                $santri->user->update([
+                    'name' => $validated['nama'],
+                ]);
+            }
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Data santri berhasil diperbarui.',
+            'data' => $santri->fresh(),
         ]);
-
-        // Update nama di user jika ada
-        if ($santri->user) {
-            $santri->user->update([
-                'name' => $validated['nama'],
-            ]);
-        }
-
-        if ($request->ajax()) {
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Santri berhasil diupdate.',
-                'data' => $santri,
-            ]);
-        }
-
-        return redirect()->route('santri.master.index')->with('success', 'Santri berhasil diupdate.');
     }
 
     public function addUser(Request $request, $id)
@@ -452,7 +563,12 @@ class SantriController extends Controller
 
     public function importIndex()
     {
-        $kelasList = Kelas::orderBy('nama_kelas')->get();
+        $kelasList = Kelas::query()
+            ->with('parent:id,nama_kelas')
+            ->operasional()
+            ->urutHierarki()
+            ->get();
+
         return view('admin.santri.import', compact('kelasList'));
     }
 
@@ -510,14 +626,24 @@ class SantriController extends Controller
 
         $preview = [];
         $errors = [];
+        $kelasCache = [];
 
         foreach ($request->selections as $sheetIndex => $cfg) {
             $sheetIndex = (int) $sheetIndex;
             $kelasId = (int) ($cfg['kelas_id'] ?? 0);
             if (!isset($kelasCache[$kelasId])) {
-                $kelasCache[$kelasId] = Kelas::find($kelasId);
+                $kelasCache[$kelasId] = Kelas::query()
+                    ->operasional()
+                    ->whereKey($kelasId)
+                    ->first();
             }
-            $namaKelas = $kelasCache[$kelasId]->nama_kelas ?? '-';
+
+            if (!$kelasCache[$kelasId]) {
+                $errors[] = 'Sheet ' . ($sheetIndex + 1) . ': kelas tujuan harus berupa kelompok aktif.';
+                continue;
+            }
+
+            $namaKelas = $kelasCache[$kelasId]->nama_kelas;
 
 
             if (!isset($allSheets[$sheetIndex]))
@@ -639,6 +765,13 @@ class SantriController extends Controller
                     continue;
                 }
 
+                $kelasTujuan = Kelas::query()->operasional()->whereKey($kelasId)->first();
+
+                if (!$kelasTujuan) {
+                    $errors[] = "Sheet " . ($sheetIndex + 1) . ": kelas tujuan bukan kelompok aktif.";
+                    continue;
+                }
+
                 if (!isset($allSheets[$sheetIndex])) {
                     $errors[] = "Sheet " . ($sheetIndex + 1) . ": tidak ditemukan.";
                     continue;
@@ -712,6 +845,7 @@ class SantriController extends Controller
                         'nis' => $nis ?: null,
                         'tanggal_lahir' => $tgl ?: null,
                         'jenis_kelamin' => $jk,
+                        'status' => Santri::STATUS_AKTIF,
                     ]);
 
                     $inserted++;
@@ -734,6 +868,59 @@ class SantriController extends Controller
                 'message' => 'Gagal import: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function assertOperationalKelas(int $kelasId, ?Santri $currentSantri = null): Kelas
+    {
+        $kelas = Kelas::query()->with('parent:id,is_active')->findOrFail($kelasId);
+
+        if ($kelas->isKelompok() && $kelas->is_active && $kelas->parent?->is_active) {
+            return $kelas;
+        }
+
+        if (
+            $currentSantri
+            && (int) $currentSantri->kelas_id === $kelasId
+            && $kelas->isInduk()
+        ) {
+            return $kelas;
+        }
+
+        throw ValidationException::withMessages([
+            'kelas_id' => [
+                'Assignment baru hanya boleh menggunakan kelas kelompok aktif. Data legacy hanya boleh mempertahankan kelas induk yang sedang dipakai.',
+            ],
+        ]);
+    }
+
+    private function resolveMusyrifForKelasInduk(
+        int $musyrifId,
+        Kelas $kelas
+    ): Musyrif {
+        $kelasIndukId = (int) ($kelas->parent_id ?: $kelas->id);
+
+        $musyrif = Musyrif::query()
+            ->with([
+                'kelasInduk:id,nama_kelas',
+                'kelasBinaan:id,nama_kelas,parent_id',
+            ])
+            ->find($musyrifId);
+
+        if (!$musyrif) {
+            throw ValidationException::withMessages([
+                'musyrif_id' => ['Musyrif yang dipilih tidak ditemukan.'],
+            ]);
+        }
+
+        if (!$musyrif->handlesKelasInduk($kelasIndukId)) {
+            throw ValidationException::withMessages([
+                'musyrif_id' => [
+                    "Musyrif {$musyrif->nama} tidak memiliki tingkat utama yang sama dengan {$kelas->nama_kelas}.",
+                ],
+            ]);
+        }
+
+        return $musyrif;
     }
 
     /**

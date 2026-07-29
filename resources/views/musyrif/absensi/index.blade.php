@@ -507,11 +507,9 @@
             let currentFacingMode = 'user';
             let stream = null;
 
-            const GEOFENCE_CENTER = {
-                lat: -7.8186683,
-                lng: 111.5244092
-            };
-            const GEOFENCE_RADIUS_M = 150;
+            // Konfigurasi berasal dari controller agar frontend dan server
+            // selalu memakai daftar kampus serta radius yang sama.
+            const GEOFENCE_LOCATIONS = @json($geofenceLocations);
 
             // ==========================================
             // SENSOR SWIPE TO DISMISS (BOTTOM SHEET)
@@ -681,6 +679,28 @@
                 return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             }
 
+            function evaluateGeofences(lat, lng) {
+                const evaluated = GEOFENCE_LOCATIONS.map((location) => {
+                    const distance = haversineMeters(lat, lng, location.lat, location.lng);
+
+                    return {
+                        ...location,
+                        distance
+                    };
+                }).sort((a, b) => a.distance - b.distance);
+
+                if (evaluated.length === 0) return null;
+
+                const insideLocation = evaluated.find((location) =>
+                    location.distance <= location.radius_m
+                );
+
+                return {
+                    inside: Boolean(insideLocation),
+                    location: insideLocation || evaluated[0]
+                };
+            }
+
             function isMobileDevice() {
                 return window.matchMedia("(max-width: 768px)").matches || /Android|iPhone|iPad|iPod/i.test(navigator
                     .userAgent);
@@ -803,10 +823,23 @@
                 const lng = parseFloat(lngInput.value);
                 if (!isNaN(lat) && !isNaN(lng)) {
                     if (thumbLocText) thumbLocText.innerText = `GPS: ${formatCoord(lat, lng)}`;
-                    const dist = Math.round(haversineMeters(lat, lng, GEOFENCE_CENTER.lat, GEOFENCE_CENTER.lng));
-                    const inside = dist <= GEOFENCE_RADIUS_M;
+                    const evaluation = evaluateGeofences(lat, lng);
+
+                    if (!evaluation) {
+                        const noLocationText = 'Belum ada lokasi absensi aktif';
+                        if (geoFenceText) {
+                            geoFenceText.innerText = noLocationText;
+                            geoFenceText.className = 'badge bg-warning text-dark mt-1 text-wrap text-start';
+                        }
+                        if (thumbFenceText) thumbFenceText.innerText = noLocationText;
+                        return;
+                    }
+
+                    const nearest = evaluation.location;
+                    const dist = Math.round(nearest.distance);
+                    const inside = evaluation.inside;
                     const text =
-                        `Radius: ${GEOFENCE_RADIUS_M}m • Jarak: ${dist}m • ${inside ? 'Dalam area' : 'Luar area'}`;
+                        `${nearest.name} • Radius: ${nearest.radius_m}m • Jarak: ${dist}m • ${inside ? 'Dalam area' : 'Luar area'}`;
 
                     if (geoFenceText) {
                         geoFenceText.innerText = text;
@@ -814,7 +847,8 @@
                             "badge bg-danger mt-1 text-wrap text-start";
                     }
                     if (thumbFenceText) {
-                        thumbFenceText.innerText = `Jarak: ${dist} m (${inside ? 'Aman' : 'Luar Area'})`;
+                        thumbFenceText.innerText =
+                            `${nearest.name} • Jarak: ${dist} m (${inside ? 'Aman' : 'Luar Area'})`;
                     }
                 }
             }

@@ -416,7 +416,7 @@
                         <div>
                             <h5 class="mb-1 fw-bold">Daftar Kelas</h5>
                             <div class="small text-body-secondary">
-                                Master tingkat atau kelompok kelas santri.
+                                Kelola tingkat induk dan kelompok/rombel: SMP memakai A–Z, SMA memakai numbering angka.
                             </div>
                         </div>
 
@@ -433,8 +433,12 @@
                             <thead>
                                 <tr>
                                     <th class="ps-4">No.</th>
-                                    <th>Nama Kelas</th>
+                                    <th>Struktur Kelas</th>
+                                    <th>Kode</th>
+                                    <th>Gender</th>
                                     <th>Deskripsi</th>
+                                    <th>Penggunaan</th>
+                                    <th>Status</th>
                                     <th class="text-end pe-4">Aksi</th>
                                 </tr>
                             </thead>
@@ -569,62 +573,105 @@
     {{-- ==================== MODAL KELAS ==================== --}}
     <div class="modal fade academic-modal" id="modalKelas" tabindex="-1" aria-hidden="true"
         data-coreui-backdrop="static">
-
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <form id="formKelas" class="modal-content" novalidate>
                 @csrf
                 <input type="hidden" name="id" id="kelas_id">
 
                 <div class="modal-header px-4 py-3">
                     <div class="d-flex align-items-center gap-3">
-                        <span class="modal-title-icon">
-                            <i class="bi bi-easel2"></i>
-                        </span>
-
+                        <span class="modal-title-icon"><i class="bi bi-diagram-3"></i></span>
                         <div>
-                            <h5 class="modal-title fw-bold mb-0" id="modalKelasTitle">
-                                Tambah Kelas
-                            </h5>
-                            <small class="text-body-secondary">
-                                Lengkapi informasi kelas.
-                            </small>
+                            <h5 class="modal-title fw-bold mb-0" id="modalKelasTitle">Tambah Kelas</h5>
+                            <small class="text-body-secondary">Kelas induk untuk tingkat; SMP memakai kelompok A–Z dan SMA memakai numbering angka.</small>
                         </div>
                     </div>
-
                     <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Tutup"></button>
                 </div>
 
                 <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label for="nama_kelas" class="form-label">
-                            Nama Kelas
-                        </label>
-
-                        <input type="text" class="form-control" name="nama_kelas" id="nama_kelas" maxlength="100"
-                            autocomplete="off" placeholder="Contoh: Kelas 7" required>
+                    <div class="alert alert-info border-0 rounded-4 small">
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                        Assignment Santri dan Musyrif baru hanya diarahkan ke <strong>kelas kelompok</strong>.
                     </div>
 
-                    <div>
-                        <label for="deskripsi" class="form-label">
-                            Deskripsi
-                        </label>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="jenis_kelas" class="form-label">Jenis Data <span class="text-danger">*</span></label>
+                            <select class="form-select" name="jenis_kelas" id="jenis_kelas" required>
+                                <option value="induk">Kelas Induk / Tingkat</option>
+                                <option value="kelompok">Kelompok / Rombel</option>
+                            </select>
+                        </div>
 
-                        <textarea class="form-control" name="deskripsi" id="deskripsi" maxlength="1000" rows="4"
-                            placeholder="Keterangan tambahan kelas (opsional)"></textarea>
+                        <div class="col-md-6 d-none" id="parentField">
+                            <label for="parent_id" class="form-label">Kelas Induk <span class="text-danger">*</span></label>
+                            <select class="form-select" name="parent_id" id="parent_id">
+                                <option value="">Pilih kelas induk...</option>
+                                @foreach ($kelasParents as $parent)
+                                    <option value="{{ $parent->id }}" data-group-mode="{{ $parent->groupMode() }}">{{ $parent->nama_kelas }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-8" id="namaField">
+                            <label for="nama_kelas" class="form-label">Nama Kelas Induk <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="nama_kelas" id="nama_kelas"
+                                maxlength="100" autocomplete="off" placeholder="Contoh: Kelas 12">
+                        </div>
+
+                        <div class="col-md-4 d-none" id="kelompokField">
+                            <label for="kelompok" class="form-label" id="kelompokLabel">Kelompok <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control text-uppercase" name="kelompok" id="kelompok"
+                                maxlength="5" placeholder="A">
+                            <div class="form-text" id="kelompokHelp">SMP memakai A–Z; SMA memakai angka 1, 2, 3, dan seterusnya.</div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="kode" class="form-label">Kode</label>
+                            <input type="text" class="form-control text-uppercase" name="kode" id="kode"
+                                maxlength="30" placeholder="Otomatis bila dikosongkan">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="jenis_kelamin" class="form-label">
+                                Jenis Kelamin Kelas <span class="text-danger" id="kelasGenderRequiredMark">*</span>
+                            </label>
+                            <select class="form-select" name="jenis_kelamin" id="jenis_kelamin">
+                                <option value="">Belum ditentukan</option>
+                                <option value="L">Putra</option>
+                                <option value="P">Putri</option>
+                                <option value="MIXED">Campuran / Semua</option>
+                            </select>
+                            <div class="form-text" id="kelasGenderHelp">
+                                Metadata ini digunakan untuk memfilter kelas asal dan tujuan pada Migrasi Santri.
+                            </div>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label for="urutan" class="form-label">Urutan</label>
+                            <input type="number" class="form-control" name="urutan" id="urutan" min="0" max="65535" value="0">
+                        </div>
+
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="kelas_is_active" value="1" checked>
+                                <label class="form-check-label fw-semibold" for="kelas_is_active">Aktif</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="deskripsi" class="form-label">Deskripsi</label>
+                            <textarea class="form-control" name="deskripsi" id="deskripsi" maxlength="1000" rows="4"
+                                placeholder="Keterangan tambahan kelas (opsional)"></textarea>
+                        </div>
                     </div>
                 </div>
 
                 <div class="modal-footer px-4 py-3">
-                    <button type="button" class="btn btn-light rounded-pill px-3" data-coreui-dismiss="modal">
-                        Batal
-                    </button>
-
-                    <button type="submit" class="btn academic-add-button rounded-pill px-4"
-                        data-submit-text="Simpan Kelas">
-                        <span class="submit-label">
-                            <i class="bi bi-check2-circle me-1"></i>
-                            Simpan Kelas
-                        </span>
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-coreui-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn academic-add-button rounded-pill px-4" data-submit-text="Simpan Kelas">
+                        <span class="submit-label"><i class="bi bi-check2-circle me-1"></i>Simpan Kelas</span>
                     </button>
                 </div>
             </form>
@@ -1001,6 +1048,7 @@
             const endpoints = {
                 kelas: @json(route('kelas.store')),
                 kelasDatatable: @json(route('kelas.datatable')),
+                kelasOptions: @json(route('kelas.options')),
 
                 tahunAjaran: @json(route('tahun-ajaran.store')),
                 tahunAjaranDatatable: @json(route('tahun-ajaran.datatable')),
@@ -1170,44 +1218,40 @@
                     },
                     {
                         data: 'nama_kelas',
-                        name: 'nama_kelas',
-                        render: function(data, type) {
-                            if (type !== 'display') {
-                                return data;
-                            }
-
-                            return `
-                                <span class="fw-semibold">
-                                    ${escapeHtml(data ?? '-')}
-                                </span>
-                            `;
-                        }
+                        name: 'nama_kelas'
+                    },
+                    {
+                        data: 'kode_label',
+                        name: 'kode',
+                        className: 'text-nowrap'
+                    },
+                    {
+                        data: 'gender_badge',
+                        name: 'jenis_kelamin',
+                        className: 'text-nowrap',
+                        orderable: false
                     },
                     {
                         data: 'deskripsi',
                         name: 'deskripsi',
-                        className: 'text-body-secondary',
-                        render: function(data, type) {
-                            if (type !== 'display') {
-                                return data;
-                            }
-
-                            const plainText = stripHtml(data ?? '');
-
-                            return `
-                                <span class="table-description"
-                                    title="${escapeHtml(plainText)}">
-                                    ${data ?? '-'}
-                                </span>
-                            `;
-                        }
+                        className: 'text-body-secondary'
+                    },
+                    {
+                        data: 'penggunaan',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'status_badge',
+                        name: 'is_active',
+                        className: 'text-nowrap'
                     },
                     {
                         data: 'aksi',
                         orderable: false,
                         searchable: false,
                         className: 'text-end pe-4',
-                        width: '110px'
+                        width: '150px'
                     }
                 ]
             });
@@ -1380,22 +1424,125 @@
                 '#semester_tanggal_selesai'
             );
 
+            function applyKelasTypeUi(type) {
+                const isGroup = type === 'kelompok';
+                $('#parentField, #kelompokField').toggleClass('d-none', !isGroup);
+                $('#namaField').toggleClass('col-md-8', !isGroup).toggleClass('col-12', isGroup);
+                $('#namaField').toggleClass('d-none', isGroup);
+                $('#parent_id, #kelompok').prop('required', isGroup);
+                $('#nama_kelas').prop('required', !isGroup);
+                $('#jenis_kelamin').prop('required', isGroup);
+                $('#kelasGenderRequiredMark').toggleClass('d-none', !isGroup);
+                $('#kelasGenderHelp').text(
+                    isGroup ?
+                    'Wajib untuk kelas kelompok. Dipakai memfilter kelas asal/tujuan pada Migrasi Santri.' :
+                    'Opsional untuk kelas induk. Gunakan Campuran bila tingkat menaungi kelas Putra dan Putri.'
+                );
+            }
+
+            async function loadKelasParentOptions(selected = '') {
+                const select = $('#parent_id');
+                const current = String(selected || '');
+
+                try {
+                    const response = await $.get(endpoints.kelasOptions);
+                    select.html('<option value="">Pilih kelas induk...</option>');
+                    (response.data || []).forEach(function(parent) {
+                        const option = new Option(parent.nama_kelas, parent.id);
+                        option.dataset.groupMode = parent.group_mode || 'alpha';
+                        option.dataset.gender = parent.jenis_kelamin || '';
+                        select.append(option);
+                    });
+                    select.val(current);
+                    syncKelompokMode();
+                } catch (error) {
+                    console.error(error);
+                    notifyError('Daftar kelas induk gagal dimuat.');
+                }
+            }
+
+            $('#jenis_kelas').on('change', function() {
+                applyKelasTypeUi($(this).val());
+            });
+
+            function syncKelompokMode() {
+                const option = document.querySelector('#parent_id option:checked');
+                const mode = option?.dataset?.groupMode || 'alpha';
+                const input = document.getElementById('kelompok');
+
+                if (mode === 'numeric') {
+                    input.placeholder = '1';
+                    input.maxLength = 5;
+                    $('#kelompokLabel').html('Nomor Kelompok <span class="text-danger">*</span>');
+                    $('#kelompokHelp').text('Kelas SMA (10–12) menggunakan numbering angka: 1, 2, 3, dan seterusnya.');
+                } else {
+                    input.placeholder = 'A';
+                    input.maxLength = 1;
+                    $('#kelompokLabel').html('Kelompok <span class="text-danger">*</span>');
+                    $('#kelompokHelp').text('Kelas SMP (7–9) menggunakan huruf A sampai Z.');
+                }
+
+                input.value = '';
+
+                const parentGender = option?.dataset?.gender || '';
+                const genderSelect = document.getElementById('jenis_kelamin');
+
+                if (
+                    genderSelect &&
+                    !genderSelect.value &&
+                    ['L', 'P'].includes(parentGender)
+                ) {
+                    genderSelect.value = parentGender;
+                }
+            }
+
+            $('#parent_id').on('change', syncKelompokMode);
+
+            $('#kelompok').on('input', function() {
+                const option = document.querySelector('#parent_id option:checked');
+                const mode = option?.dataset?.groupMode || 'alpha';
+
+                if (mode === 'numeric') {
+                    this.value = this.value.replace(/[^0-9]/g, '').replace(/^0+/, '').slice(0, 5);
+                } else {
+                    this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 1);
+                }
+            });
+
+            $('#kode').on('input', function() {
+                this.value = this.value.toUpperCase().replace(/\s+/g, '');
+            });
+
             /*
             |--------------------------------------------------------------------------
             | Tombol Tambah
             |--------------------------------------------------------------------------
             */
-            $('#btnAddKelas').on('click', function() {
+            $('#btnAddKelas').on('click', async function() {
                 resetForm('#formKelas');
-
                 $('#kelas_id').val('');
-                $('#modalKelasTitle').text('Tambah Kelas');
+                $('#jenis_kelas').val('induk').prop('disabled', false);
+                $('#kelas_is_active').prop('checked', true);
+                $('#jenis_kelamin').val('MIXED');
+                $('#urutan').val(0);
+                applyKelasTypeUi('induk');
+                await loadKelasParentOptions();
+                $('#modalKelasTitle').text('Tambah Kelas Induk');
+                setSubmitLabel('#formKelas', 'Simpan Kelas');
+                modalKelas.show();
+            });
 
-                setSubmitLabel(
-                    '#formKelas',
-                    'Simpan Kelas'
-                );
-
+            $(document).on('click', '.btn-add-kelompok', async function() {
+                resetForm('#formKelas');
+                $('#kelas_id').val('');
+                $('#jenis_kelas').val('kelompok').prop('disabled', false);
+                $('#kelas_is_active').prop('checked', true);
+                $('#jenis_kelamin').val('');
+                $('#urutan').val(0);
+                applyKelasTypeUi('kelompok');
+                await loadKelasParentOptions(this.dataset.parentId || '');
+                $('#modalKelasTitle').text(`Tambah Kelompok ${this.dataset.parentName || ''}`);
+                setSubmitLabel('#formKelas', 'Simpan Kelompok');
                 modalKelas.show();
             });
 
@@ -1439,21 +1586,22 @@
             $(document).on(
                 'click',
                 '.btn-edit-kelas',
-                function() {
+                async function() {
                     const data = this.dataset;
-
                     resetForm('#formKelas');
-
                     $('#kelas_id').val(data.id ?? '');
+                    $('#jenis_kelas').val(data.jenis ?? 'induk').prop('disabled', true);
+                    applyKelasTypeUi(data.jenis ?? 'induk');
+                    await loadKelasParentOptions(data.parentId ?? '');
                     $('#nama_kelas').val(data.nama ?? '');
+                    $('#kelompok').val(data.kelompok ?? '');
+                    $('#jenis_kelamin').val(data.gender ?? '');
+                    $('#kode').val(data.kode ?? '');
+                    $('#urutan').val(data.urutan ?? 0);
+                    $('#kelas_is_active').prop('checked', Number(data.active) === 1);
                     $('#deskripsi').val(data.deskripsi ?? '');
-                    $('#modalKelasTitle').text('Edit Kelas');
-
-                    setSubmitLabel(
-                        '#formKelas',
-                        'Simpan Perubahan'
-                    );
-
+                    $('#modalKelasTitle').text(data.jenis === 'kelompok' ? 'Edit Kelompok Kelas' : 'Edit Kelas Induk');
+                    setSubmitLabel('#formKelas', 'Simpan Perubahan');
                     modalKelas.show();
                 }
             );
@@ -1540,6 +1688,14 @@
             | AJAX Form CRUD
             |--------------------------------------------------------------------------
             */
+            $('#formKelas').on('submit.kelasType', function() {
+                $('#jenis_kelas').prop('disabled', false);
+            });
+
+            document.getElementById('modalKelas')?.addEventListener('hidden.coreui.modal', function() {
+                $('#jenis_kelas').prop('disabled', false);
+            });
+
             bindAjaxForm({
                 formSelector: '#formKelas',
                 baseUrl: endpoints.kelas,

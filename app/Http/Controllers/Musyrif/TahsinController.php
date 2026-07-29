@@ -18,15 +18,71 @@ class TahsinController extends Controller
 {
     use ResolvesActiveSemester;
 
-    // Mapping Target Syarat Tilawah (Minimal mencapai Juz berapa untuk bisa masuk buku ini)
+    /*
+     * Mapping target syarat Tilawah.
+     *
+     * Nilai target tidak hanya berarti santri pernah tercatat pada Juz
+     * tersebut. Santri wajib memiliki Tilawah berstatus "hadir" pada setiap
+     * Juz secara berurutan, mulai Juz 1 sampai Juz target.
+     *
+     * Buku yang tidak tercantum di mapping ini, termasuk Ummi 1–3, tidak
+     * memiliki syarat Tilawah.
+     */
     private const TARGET_TILAWAH = [
-        'ummi_1'   => 1, // Harus sudah mulai Tilawah Juz 1
-        'ummi_2'   => 2, // Harus sudah mulai Tilawah Juz 2
-        'ummi_3'   => 3,
-        'gharib_1' => 4,
-        'gharib_2' => 5,
-        'tajwid'   => 6,
+        'gharib_1' => 5,
+        'gharib_2' => 10,
+        'tajwid'   => 15,
     ];
+
+    private const DRILL_MATERI_CATATAN = 'Mengulang Materi Bersama';
+
+    /**
+     * Mengambil jumlah Juz Tilawah yang sudah tercatat hadir secara unik
+     * untuk setiap santri dalam rentang Juz 1 sampai Juz target.
+     *
+     * Karena query dibatasi ke rentang 1..$targetJuz, jumlah yang sama dengan
+     * $targetJuz berarti tidak ada Juz yang terlewat di dalam rentang wajib.
+     */
+    private function completedTilawahJuzCounts($santriIds, int $targetJuz)
+    {
+        return DB::table('tilawahs')
+            ->join(
+                'hafalan_templates',
+                'tilawahs.hafalan_template_id',
+                '=',
+                'hafalan_templates.id'
+            )
+            ->whereIn('tilawahs.santri_id', $santriIds)
+            ->where('tilawahs.status', 'hadir')
+            ->whereBetween('hafalan_templates.juz', [1, $targetJuz])
+            ->select(
+                'tilawahs.santri_id',
+                DB::raw(
+                    'COUNT(DISTINCT hafalan_templates.juz) as completed_juz_count'
+                )
+            )
+            ->groupBy('tilawahs.santri_id')
+            ->pluck('completed_juz_count', 'tilawahs.santri_id');
+    }
+
+    /**
+     * Buku NULL digunakan secara khusus untuk pencatatan Drill Materi.
+     */
+    private function tahsinBookLabel(?string $buku): string
+    {
+        if ($buku === null || $buku === '') {
+            return 'Drill Materi';
+        }
+
+        return [
+            'ummi_1'   => 'Ummi Jilid 1',
+            'ummi_2'   => 'Ummi Jilid 2',
+            'ummi_3'   => 'Ummi Jilid 3',
+            'gharib_1' => 'Gharib 1',
+            'gharib_2' => 'Gharib 2',
+            'tajwid'   => 'Tajwid',
+        ][$buku] ?? ucfirst(str_replace('_', ' ', $buku));
+    }
 
     /**
      * TAMPILAN UTAMA
@@ -75,6 +131,7 @@ class TahsinController extends Controller
             ->select('santri_id', DB::raw('MAX(id) as max_id'))
             ->where('musyrif_id', $musyrif->id)
             ->where('status', 'hadir')
+            ->whereNotNull('buku')
             ->groupBy('santri_id');
 
         $mayoritasBukuData = DB::table('tahsins as t')
@@ -87,15 +144,9 @@ class TahsinController extends Controller
             ->orderByDesc('total')
             ->first();
 
-        $bukuLabels = [
-            'ummi_1'   => 'Ummi Jilid 1',
-            'ummi_2'   => 'Ummi Jilid 2',
-            'ummi_3'   => 'Ummi Jilid 3',
-            'gharib_1' => 'Gharib 1',
-            'gharib_2' => 'Gharib 2',
-            'tajwid'   => 'Tajwid'
-        ];
-        $mayoritasBuku = $mayoritasBukuData ? ($bukuLabels[$mayoritasBukuData->buku] ?? $mayoritasBukuData->buku) : 'Belum Ada';
+        $mayoritasBuku = $mayoritasBukuData
+            ? $this->tahsinBookLabel($mayoritasBukuData->buku)
+            : 'Belum Ada';
 
         return view('musyrif.tahsin.index', compact(
             'santriBinaan',
@@ -130,8 +181,16 @@ class TahsinController extends Controller
         return DataTables::of($query)
             ->addIndexColumn()
             ->addColumn('santri', fn($row) => $row->santri->nama)
-            ->addColumn('buku_label', fn($row) => $row->buku_label ?? ucfirst(str_replace('_', ' ', $row->buku)))
-            ->addColumn('halaman', fn($row) => 'Hal. ' . $row->halaman)
+            ->addColumn(
+                'buku_label',
+                fn($row) => $this->tahsinBookLabel($row->buku)
+            )
+            ->addColumn(
+                'halaman',
+                fn($row) => $row->halaman === null
+                    ? '<span class="text-muted">—</span>'
+                    : 'Hal. ' . $row->halaman
+            )
             ->addColumn('tanggal', fn($row) => \Carbon\Carbon::parse($row->tanggal)->format('d M Y'))
             ->addColumn('nilai_format', function ($row) {
                 if (!$row->nilai_label) return '<span class="text-muted small fst-italic">-</span>';
@@ -156,12 +215,15 @@ class TahsinController extends Controller
                 return '<span class="badge bg-' . $color . '-subtle text-' . $color . ' rounded-pill px-3">' . ucfirst($row->status) . '</span>';
             })
             ->addColumn('aksi', function ($row) {
+                $bukuLabel = $this->tahsinBookLabel($row->buku);
+                $halaman = $row->halaman === null ? '' : (string) $row->halaman;
+
                 return '
         <div class="d-flex gap-2 flex-nowrap justify-content-end">
             <button type="button" class="btn btn-sm btn-info btn-detail"
                 data-santri_nama="' . e($row->santri->nama) . '"
-                data-buku_label="' . e($row->buku_label ?? ucfirst(str_replace('_', ' ', $row->buku))) . '"
-                data-halaman="' . e($row->halaman) . '"
+                data-buku_label="' . e($bukuLabel) . '"
+                data-halaman="' . e($halaman) . '"
                 data-tanggal_label="' . \Carbon\Carbon::parse($row->tanggal)->format('d M Y') . '"
                 data-status_text="' . $row->status . '"
                 data-nilai_label="' . $row->nilai_label . '"
@@ -174,8 +236,8 @@ class TahsinController extends Controller
                 data-id="' . $row->id . '"
                 data-santri_nama="' . e($row->santri->nama) . '"
                 data-status="' . $row->status . '"
-                data-buku_label="' . e($row->buku_label ?? ucfirst(str_replace('_', ' ', $row->buku))) . '"
-                data-halaman="' . $row->halaman . '"
+                data-buku_label="' . e($bukuLabel) . '"
+                data-halaman="' . e($halaman) . '"
                 data-nilai_label="' . $row->nilai_label . '"
                 data-catatan="' . e($row->catatan) . '"
                 data-coreui-toggle="tooltip" title="Edit Status">
@@ -189,7 +251,7 @@ class TahsinController extends Controller
             </button>
         </div>';
             })
-            ->rawColumns(['status_label', 'nilai_format', 'aksi'])
+            ->rawColumns(['halaman', 'status_label', 'nilai_format', 'aksi'])
             ->make(true);
     }
 
@@ -208,29 +270,41 @@ class TahsinController extends Controller
             ->pluck('id');
         $total = $santris->count();
 
-        // Ambil syarat dari konstanta TARGET_TILAWAH
-        $syaratJuz = self::TARGET_TILAWAH[$buku] ?? 1;
+        // Buku yang tidak ada di mapping, termasuk Ummi 1–3, bebas syarat Tilawah.
+        $syaratJuz = self::TARGET_TILAWAH[$buku] ?? null;
 
-        $tilawahProgress = DB::table('tilawahs')
-            ->join('hafalan_templates', 'tilawahs.hafalan_template_id', '=', 'hafalan_templates.id')
-            ->whereIn('santri_id', $santris)
-            ->where('tilawahs.status', 'hadir')
-            ->select('santri_id', DB::raw('MAX(hafalan_templates.juz) as max_juz'))
-            ->groupBy('santri_id')
-            ->pluck('max_juz', 'santri_id');
+        if ($syaratJuz === null) {
+            return response()->json([
+                'eligible'         => $total,
+                'total'            => $total,
+                'requires_tilawah' => false,
+                'syarat_juz'       => null,
+                'syarat_label'     => 'Tanpa syarat Tilawah',
+            ]);
+        }
+
+        $completedJuzCounts = $this->completedTilawahJuzCounts(
+            $santris,
+            $syaratJuz
+        );
 
         $eligible = 0;
         foreach ($santris as $id) {
-            $juzDicapai = $tilawahProgress[$id] ?? 0;
-            if ($juzDicapai >= $syaratJuz) {
+            $completedJuzCount = (int) ($completedJuzCounts[$id] ?? 0);
+
+            if ($completedJuzCount === $syaratJuz) {
                 $eligible++;
             }
         }
 
         return response()->json([
-            'eligible'   => $eligible,
-            'total'      => $total,
-            'syarat_juz' => $syaratJuz
+            'eligible'         => $eligible,
+            'total'            => $total,
+            'requires_tilawah' => true,
+            'syarat_juz'       => $syaratJuz,
+            'syarat_label'     => $syaratJuz === 1
+                ? 'Juz 1'
+                : "Juz 1–{$syaratJuz}",
         ]);
     }
 
@@ -252,10 +326,18 @@ class TahsinController extends Controller
                     'gharib_1',
                     'gharib_2',
                     'tajwid',
+                    'drill_materi',
                 ]),
             ],
-            'halaman' => ['required', 'array', 'min:1'],
-            'halaman.*' => ['required', 'integer', 'min:1'],
+            'halaman' => [
+                Rule::requiredIf(
+                    fn() => $request->input('buku') !== 'drill_materi'
+                ),
+                'nullable',
+                'array',
+                'min:1',
+            ],
+            'halaman.*' => ['nullable', 'integer', 'min:1'],
             'nilai_label' => [
                 'nullable',
                 Rule::in([
@@ -288,33 +370,30 @@ class TahsinController extends Controller
                 ], 422);
             }
 
-            $bukuTujuan = $validated['buku'];
-            $syaratJuz = self::TARGET_TILAWAH[$bukuTujuan] ?? 1;
+            $isDrillMateri = $validated['buku'] === 'drill_materi';
+            $bukuTujuan = $isDrillMateri ? null : $validated['buku'];
+            $syaratJuz = $bukuTujuan === null
+                ? null
+                : (self::TARGET_TILAWAH[$bukuTujuan] ?? null);
+            $halamanTujuan = $isDrillMateri
+                ? [null]
+                : $validated['halaman'];
+            $catatanTujuan = $isDrillMateri
+                ? self::DRILL_MATERI_CATATAN
+                : ($validated['catatan'] ?? null);
 
             /*
-             * Progress Tilawah bersifat kumulatif sehingga tidak dibatasi
-             * semester. Syarat buku Tahsin tetap mengikuti capaian tertinggi.
+             * Progress Tilawah bersifat kumulatif dan tidak dibatasi semester.
+             * Santri harus memiliki data hadir pada setiap Juz dalam rentang
+             * 1 sampai target; Juz yang terlewat membuat santri tidak lolos.
+             * Query ini hanya diperlukan untuk Gharib 1–2 dan Tajwid.
              */
-            $tilawahProgress = DB::table('tilawahs')
-                ->join(
-                    'hafalan_templates',
-                    'tilawahs.hafalan_template_id',
-                    '=',
-                    'hafalan_templates.id'
-                )
-                ->whereIn(
-                    'tilawahs.santri_id',
-                    $santris->pluck('id')
-                )
-                ->where('tilawahs.status', 'hadir')
-                ->select(
-                    'tilawahs.santri_id',
-                    DB::raw(
-                        'MAX(hafalan_templates.juz) as max_juz'
-                    )
-                )
-                ->groupBy('tilawahs.santri_id')
-                ->pluck('max_juz', 'tilawahs.santri_id');
+            $completedJuzCounts = $syaratJuz === null
+                ? collect()
+                : $this->completedTilawahJuzCounts(
+                    $santris->pluck('id'),
+                    $syaratJuz
+                );
 
             $insertedCount = 0;
             $skippedNames = [];
@@ -323,8 +402,10 @@ class TahsinController extends Controller
                 $santris,
                 $validated,
                 $bukuTujuan,
+                $halamanTujuan,
+                $catatanTujuan,
                 $syaratJuz,
-                $tilawahProgress,
+                $completedJuzCounts,
                 $tanggal,
                 $semesterId,
                 $musyrif,
@@ -332,30 +413,34 @@ class TahsinController extends Controller
                 &$skippedNames
             ): void {
                 foreach ($santris as $santri) {
-                    $juzDicapai =
-                        (int) ($tilawahProgress[$santri->id] ?? 0);
+                    $completedJuzCount =
+                        (int) ($completedJuzCounts[$santri->id] ?? 0);
 
-                    if ($juzDicapai < $syaratJuz) {
+                    if (
+                        $syaratJuz !== null
+                        && $completedJuzCount !== $syaratJuz
+                    ) {
                         $skippedNames[] = $santri->nama;
                         continue;
                     }
 
-                    foreach ($validated['halaman'] as $halaman) {
+                    foreach ($halamanTujuan as $halaman) {
                         Tahsin::query()->updateOrCreate(
                             [
                                 'santri_id' => $santri->id,
                                 'semester_id' => $semesterId,
                                 'tanggal' => $tanggal,
                                 'buku' => $bukuTujuan,
-                                'halaman' => (int) $halaman,
+                                'halaman' => $halaman === null
+                                    ? null
+                                    : (int) $halaman,
                             ],
                             [
                                 'musyrif_id' => $musyrif->id,
                                 'status' => 'hadir',
                                 'nilai_label' =>
                                 $validated['nilai_label'] ?? null,
-                                'catatan' =>
-                                $validated['catatan'] ?? null,
+                                'catatan' => $catatanTujuan,
                             ]
                         );
                     }
@@ -368,7 +453,7 @@ class TahsinController extends Controller
                 return response()->json([
                     'ok' => false,
                     'icon' => 'error',
-                    'message' => "Gagal! Semua santri belum mencapai target Tilawah Juz {$syaratJuz}.",
+                    'message' => "Gagal! Semua santri belum menuntaskan Tilawah lengkap dari Juz 1 sampai Juz {$syaratJuz}.",
                 ], 422);
             }
 
@@ -379,7 +464,7 @@ class TahsinController extends Controller
                     'message' =>
                     "Berhasil untuk {$insertedCount} santri. Namun, "
                         . count($skippedNames)
-                        . " santri dilewati karena Tilawah belum mencapai Juz {$syaratJuz}.",
+                        . " santri dilewati karena Tilawah Juz 1 sampai Juz {$syaratJuz} belum lengkap.",
                     'skipped_santri' => $skippedNames,
                 ]);
             }
@@ -387,7 +472,9 @@ class TahsinController extends Controller
             return response()->json([
                 'ok' => true,
                 'icon' => 'success',
-                'message' => 'Berhasil! Materi diterapkan ke semua santri.',
+                'message' => $isDrillMateri
+                    ? 'Berhasil! Drill Materi diterapkan ke semua santri.'
+                    : 'Berhasil! Materi diterapkan ke semua santri.',
             ]);
         } catch (\Throwable $exception) {
             report($exception);
@@ -446,6 +533,10 @@ class TahsinController extends Controller
          */
         $validated['semester_id'] =
             (int) $activeSemester->id;
+
+        if ($tahsin->buku === null && $tahsin->halaman === null) {
+            $validated['catatan'] = self::DRILL_MATERI_CATATAN;
+        }
 
         $tahsin->update($validated);
 
@@ -588,17 +679,10 @@ class TahsinController extends Controller
         return datatables()->of($query)
             ->addIndexColumn()
             ->addColumn('tanggal', fn($row) => \Carbon\Carbon::parse($row->created_at)->translatedFormat('d M Y'))
-            ->addColumn('buku_label', function ($row) {
-                $labels = [
-                    'ummi_1'   => 'Ummi Jilid 1',
-                    'ummi_2'   => 'Ummi Jilid 2',
-                    'ummi_3'   => 'Ummi Jilid 3',
-                    'gharib_1' => 'Gharib 1',
-                    'gharib_2' => 'Gharib 2',
-                    'tajwid'   => 'Tajwid'
-                ];
-                return $labels[$row->buku] ?? strtoupper($row->buku);
-            })
+            ->addColumn(
+                'buku_label',
+                fn($row) => $this->tahsinBookLabel($row->buku)
+            )
             ->addColumn('status', function ($row) {
                 $colors = [
                     'hadir' => 'success',

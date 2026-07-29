@@ -2,6 +2,8 @@
 
 namespace App\Support\Academic;
 
+use App\Models\Kelas;
+use App\Models\KelasGroupAssignmentBatch;
 use App\Models\Santri;
 use App\Models\SantriMigrationBatch;
 use App\Models\SantriMigrationBatchItem;
@@ -49,6 +51,7 @@ class SantriSemesterPlacementService
             }
 
             $metadata = $placement->metadata ?? [];
+            $previousMetadata = $metadata;
 
             $metadata['closed_by_migration'] = [
                 'batch_id' => $batch->id,
@@ -56,6 +59,16 @@ class SantriSemesterPlacementService
                 'batch_item_id' => $batchItem->id,
                 'closed_at' =>
                     $executedAt->toIso8601String(),
+                'previous_state' => [
+                    'status' => $placement->status,
+                    'placement_type' =>
+                        $placement->placement_type,
+                    'ended_at' =>
+                        $placement->ended_at
+                            ?->toIso8601String(),
+                    'note' => $placement->note,
+                    'metadata' => $previousMetadata,
+                ],
             ];
 
             $placement->forceFill([
@@ -66,6 +79,11 @@ class SantriSemesterPlacementService
 
             return $placement;
         }
+
+        $initialMetadata = [
+            'source' =>
+                'migration_source_snapshot',
+        ];
 
         return SantriSemesterPlacement::query()
             ->create([
@@ -87,8 +105,7 @@ class SantriSemesterPlacementService
                 'note' =>
                     'Placement semester asal dibuat otomatis saat migrasi.',
                 'metadata' => [
-                    'source' =>
-                        'migration_source_snapshot',
+                    ...$initialMetadata,
                     'closed_by_migration' => [
                         'batch_id' => $batch->id,
                         'batch_code' => $batch->code,
@@ -97,6 +114,16 @@ class SantriSemesterPlacementService
                         'closed_at' =>
                             $executedAt
                                 ->toIso8601String(),
+                        'previous_state' => [
+                            'status' =>
+                                SantriSemesterPlacement::STATUS_AKTIF,
+                            'placement_type' =>
+                                SantriSemesterPlacement::TYPE_BACKFILL,
+                            'ended_at' => null,
+                            'note' =>
+                                'Placement semester asal dibuat otomatis saat migrasi.',
+                            'metadata' => $initialMetadata,
+                        ],
                     ],
                 ],
                 'created_by' => $userId,
@@ -272,4 +299,164 @@ class SantriSemesterPlacementService
                 'created_by' => $userId,
             ]);
     }
+
+    public function applyHierarchyClassAssignment(
+        SantriSemesterPlacement $placement,
+        Kelas $targetClass,
+        KelasGroupAssignmentBatch $batch,
+        ?int $userId,
+        CarbonInterface $executedAt
+    ): SantriSemesterPlacement {
+        $targetClass->loadMissing('parent');
+
+        if (!$targetClass->isOperational()) {
+            throw ValidationException::withMessages([
+                'kelas_id' => [
+                    'Target placement harus berupa kelas kelompok aktif.',
+                ],
+            ]);
+        }
+
+        $sourceClassId = $placement->kelas_id
+            ? (int) $placement->kelas_id
+            : null;
+
+        $sourceClass = $sourceClassId
+            ? Kelas::query()->find($sourceClassId)
+            : null;
+
+        if (
+            $sourceClass
+            && $sourceClass->isInduk()
+            && (int) $targetClass->parent_id
+                !== (int) $sourceClass->id
+        ) {
+            throw ValidationException::withMessages([
+                'kelas_id' => [
+                    'Target placement tidak berada di bawah kelas induk asal.',
+                ],
+            ]);
+        }
+
+        $metadata = $placement->metadata ?? [];
+
+        $metadata['hierarchy_group_assignment'] = [
+            'batch_id' => $batch->id,
+            'batch_code' => $batch->code,
+            'from_kelas_id' => $sourceClassId,
+            'to_kelas_id' => (int) $targetClass->id,
+            'assigned_at' =>
+                $executedAt->toIso8601String(),
+            'assigned_by' => $userId,
+            'previous_placement_type' =>
+                $placement->placement_type,
+        ];
+
+        $placement->forceFill([
+            'kelas_id' => $targetClass->id,
+            'placement_type' =>
+                SantriSemesterPlacement::TYPE_HIERARCHY_ASSIGNMENT,
+            'metadata' => $metadata,
+            'updated_by' => $userId,
+        ])->saveQuietly();
+
+        return $placement->refresh();
+    }
+
+    /**
+     * Mengembalikan placement ke snapshot sebelum Tahap 4.
+     *
+     * @param array<string, mixed> $snapshot
+     */
+    public function restoreHierarchyClassAssignment(
+        SantriSemesterPlacement $placement,
+        array $snapshot,
+        KelasGroupAssignmentBatch $batch,
+        ?int $userId,
+        CarbonInterface $rolledBackAt
+    ): SantriSemesterPlacement {
+        $metadata = $placement->metadata ?? [];
+
+        $markerBatchId = data_get(
+            $metadata,
+            'hierarchy_group_assignment.batch_id'
+        );
+
+        if (
+            $markerBatchId
+            && (string) $markerBatchId
+                !== (string) $batch->id
+        ) {
+            throw ValidationException::withMessages([
+                'batch' => [
+                    'Placement sudah ditandai oleh batch assignment yang berbeda.',
+                ],
+            ]);
+        }
+
+        $restoredMetadata =
+            data_get(
+                $snapshot,
+                'metadata',
+                []
+            );
+
+        if (!is_array($restoredMetadata)) {
+            $restoredMetadata = [];
+        }
+
+        $placement->forceFill([
+            'kelas_id' =>
+                data_get(
+                    $snapshot,
+                    'kelas_id'
+                ),
+            'musyrif_id' =>
+                data_get(
+                    $snapshot,
+                    'musyrif_id'
+                ),
+            'status' =>
+                data_get(
+                    $snapshot,
+                    'status',
+                    SantriSemesterPlacement::STATUS_AKTIF
+                ),
+            'placement_type' =>
+                data_get(
+                    $snapshot,
+                    'placement_type',
+                    SantriSemesterPlacement::TYPE_PENEMPATAN
+                ),
+            'started_at' =>
+                data_get(
+                    $snapshot,
+                    'started_at'
+                ),
+            'ended_at' =>
+                data_get(
+                    $snapshot,
+                    'ended_at'
+                ),
+            'note' =>
+                data_get(
+                    $snapshot,
+                    'note'
+                ),
+            'metadata' => $restoredMetadata,
+            'created_by' =>
+                data_get(
+                    $snapshot,
+                    'created_by'
+                ),
+            'updated_by' =>
+                data_get(
+                    $snapshot,
+                    'updated_by'
+                ),
+        ])->saveQuietly();
+
+        return $placement->refresh();
+    }
+
 }

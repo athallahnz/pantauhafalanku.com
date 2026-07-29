@@ -103,6 +103,7 @@ class SantriMigrationRollbackService
                 $rolledBackAt = now();
                 $rolledBackItems = 0;
                 $restoredGraduates = 0;
+                $restoredExited = 0;
 
                 $santris = Santri::query()
                     ->whereIn('id', $santriIds)
@@ -134,6 +135,9 @@ class SantriMigrationRollbackService
                         $source['status']
                         ?? Santri::STATUS_AKTIF
                     );
+                    $isExit =
+                        $item->transition_type
+                        === 'keluar';
 
                     $sourcePlacementKey =
                         $santri->id
@@ -150,15 +154,38 @@ class SantriMigrationRollbackService
                         $sourcePlacementKey
                     );
 
-                    /** @var SantriSemesterPlacement $targetPlacement */
+                    /** @var SantriSemesterPlacement|null $targetPlacement */
                     $targetPlacement = $placements->get(
                         $targetPlacementKey
                     );
 
-                    $targetPlacement->delete();
+                    if (!$isExit) {
+                        $targetPlacement->delete();
+                    }
 
                     $sourceMetadata =
                         $sourcePlacement->metadata ?? [];
+
+                    $previousPlacementState =
+                        data_get(
+                            $sourceMetadata,
+                            'closed_by_migration.previous_state',
+                            []
+                        );
+
+                    if (!is_array($previousPlacementState)) {
+                        $previousPlacementState = [];
+                    }
+
+                    $previousMetadata =
+                        $previousPlacementState['metadata']
+                        ?? $sourceMetadata;
+
+                    if (!is_array($previousMetadata)) {
+                        $previousMetadata = [];
+                    }
+
+                    $sourceMetadata = $previousMetadata;
 
                     unset(
                         $sourceMetadata[
@@ -178,12 +205,27 @@ class SantriMigrationRollbackService
                     ];
 
                     $sourcePlacement->forceFill([
-                        'status' => $sourceStatus,
+                        'status' =>
+                            $previousPlacementState['status']
+                            ?? $sourceStatus,
+                        'placement_type' =>
+                            $previousPlacementState[
+                                'placement_type'
+                            ]
+                            ?? $sourcePlacement
+                                ->placement_type,
                         'kelas_id' =>
                             $item->from_kelas_id,
                         'musyrif_id' =>
                             $item->from_musyrif_id,
-                        'ended_at' => null,
+                        'ended_at' =>
+                            $previousPlacementState[
+                                'ended_at'
+                            ]
+                            ?? null,
+                        'note' =>
+                            $previousPlacementState['note']
+                            ?? $sourcePlacement->note,
                         'metadata' => $sourceMetadata,
                         'updated_by' => $userId,
                     ])->save();
@@ -233,8 +275,11 @@ class SantriMigrationRollbackService
                                 'to_status' =>
                                     $sourceStatus,
                                 'semester_id' =>
-                                    $lockedBatch
-                                        ->to_semester_id,
+                                    $isExit
+                                        ? $lockedBatch
+                                            ->from_semester_id
+                                        : $lockedBatch
+                                            ->to_semester_id,
                                 'kelas_id' =>
                                     $item->from_kelas_id,
                                 'musyrif_id' =>
@@ -262,6 +307,10 @@ class SantriMigrationRollbackService
                         $restoredGraduates++;
                     }
 
+                    if ($isExit) {
+                        $restoredExited++;
+                    }
+
                     $item->forceFill([
                         'status' =>
                             SantriMigrationBatchItem::STATUS_ROLLED_BACK,
@@ -281,6 +330,8 @@ class SantriMigrationRollbackService
                         $rolledBackItems,
                     'restored_graduates' =>
                         $restoredGraduates,
+                    'restored_exited' =>
+                        $restoredExited,
                     'strict_transaction_check' =>
                         $inspection[
                             'transaction_counts'
@@ -314,6 +365,8 @@ class SantriMigrationRollbackService
                         $rolledBackItems,
                     'restored_graduates' =>
                         $restoredGraduates,
+                    'restored_exited' =>
+                        $restoredExited,
                     'rolled_back_at' =>
                         $rolledBackAt
                             ->toIso8601String(),
@@ -562,16 +615,21 @@ class SantriMigrationRollbackService
             $isGraduation =
                 $item->transition_type
                 === 'lulus';
+            $isExit =
+                $item->transition_type
+                === 'keluar';
 
-            $expectedStatus = $isGraduation
-                ? Santri::STATUS_LULUS
-                : Santri::STATUS_AKTIF;
+            $expectedStatus = match (true) {
+                $isGraduation => Santri::STATUS_LULUS,
+                $isExit => Santri::STATUS_KELUAR,
+                default => Santri::STATUS_AKTIF,
+            };
 
-            $expectedClassId = $isGraduation
+            $expectedClassId = $isGraduation || $isExit
                 ? $item->from_kelas_id
                 : $item->to_kelas_id;
 
-            $expectedMusyrifId = $isGraduation
+            $expectedMusyrifId = $isGraduation || $isExit
                 ? null
                 : $item->to_musyrif_id;
 
@@ -632,26 +690,42 @@ class SantriMigrationRollbackService
                 && $sourcePlacement->kelas_id
                     === $item->from_kelas_id
                 && $sourcePlacement->musyrif_id
-                    === $item->from_musyrif_id
+                    === (
+                        $isExit
+                            ? null
+                            : $item->from_musyrif_id
+                    )
                 && $sourcePlacement->ended_at
                     !== null
                 && $sourceClosedBy
                     === $batch->id;
 
-            $targetMatches =
-                $targetPlacement
-                && $targetPlacement
-                    ->migration_batch_id
-                    === $batch->id
-                && $targetPlacement
-                    ->migration_batch_item_id
-                    === $item->id
-                && $targetPlacement->kelas_id
-                    === $expectedClassId
-                && $targetPlacement->musyrif_id
-                    === $expectedMusyrifId
-                && $targetPlacement->status
-                    === $expectedStatus;
+            $targetMatches = $isExit
+                ? $targetPlacement === null
+                : (
+                    $targetPlacement
+                    && $targetPlacement
+                        ->migration_batch_id
+                        === $batch->id
+                    && $targetPlacement
+                        ->migration_batch_item_id
+                        === $item->id
+                    && $targetPlacement->kelas_id
+                        === $expectedClassId
+                    && $targetPlacement->musyrif_id
+                        === $expectedMusyrifId
+                    && $targetPlacement->status
+                        === $expectedStatus
+                );
+
+            if ($isExit) {
+                $sourceMatches = $sourceMatches
+                    && $sourcePlacement->status
+                        === SantriSemesterPlacement::STATUS_KELUAR
+                    && $sourcePlacement->placement_type
+                        === SantriSemesterPlacement::TYPE_KELUAR
+                    && $sourcePlacement->musyrif_id === null;
+            }
 
             if (
                 !$sourceMatches

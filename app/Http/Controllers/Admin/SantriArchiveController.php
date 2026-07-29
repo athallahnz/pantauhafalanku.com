@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
@@ -23,41 +24,42 @@ class SantriArchiveController extends Controller
 {
     public function index()
     {
-        $kelasList = Kelas::query()
+        $kelasParents = Kelas::query()
+            ->induk()
+            ->with([
+                'children' => fn ($query) => $query
+                    ->aktif()
+                    ->orderBy('urutan')
+                    ->orderBy('kelompok'),
+            ])
+            ->orderBy('urutan')
             ->orderBy('nama_kelas')
-            ->get(['id', 'nama_kelas']);
+            ->get();
+
+        $kelasList = Kelas::query()
+            ->with('parent:id,nama_kelas')
+            ->operasional()
+            ->urutHierarki()
+            ->get();
 
         $semesterList = Semester::query()
-            ->with('tahunAjaran:id,nama')
+            ->with('tahunAjaran')
             ->orderByDesc('tanggal_mulai')
             ->orderByDesc('id')
-            ->get([
-                'id',
-                'tahun_ajaran_id',
-                'nama',
-                'tanggal_mulai',
-                'status',
-            ]);
+            ->get();
 
         $activeSantriList = Santri::query()
             ->active()
             ->with('kelas:id,nama_kelas')
             ->orderBy('nama')
-            ->get([
-                'id',
-                'nama',
-                'nis',
-                'kelas_id',
-            ]);
+            ->get(['id', 'nama', 'nis', 'kelas_id']);
 
-        return view(
-            'admin.santri.archive.index',
-            compact(
-                'kelasList',
-                'semesterList',
-                'activeSantriList'
-            )
-        );
+        return view('admin.santri.archive.index', compact(
+            'kelasParents',
+            'kelasList',
+            'semesterList',
+            'activeSantriList'
+        ));
     }
 
     public function data(Request $request)
@@ -95,11 +97,9 @@ class SantriArchiveController extends Controller
                 fn(Santri $santri): string => e($santri->kelas?->nama_kelas ?? '-')
             )
             ->addColumn('graduation_period', function (Santri $santri): string {
-                if (!$santri->isGraduated()) {
-                    return '<span class="text-body-secondary">-</span>';
-                }
-
-                $semester = $santri->graduatedSemester;
+                $semester = $santri->isGraduated()
+                    ? $santri->graduatedSemester
+                    : $santri->latestStatusHistory?->semester;
 
                 if (!$semester) {
                     return '<span class="text-warning">Semester tidak tersedia</span>';
@@ -205,19 +205,34 @@ class SantriArchiveController extends Controller
             )
             ->filterColumn(
                 'graduation_period',
-                fn(Builder $query, string $keyword) =>
-                $query->whereHas(
-                    'graduatedSemester',
-                    function (Builder $semesterQuery) use ($keyword): void {
-                        $semesterQuery
-                            ->where('nama', 'like', "%{$keyword}%")
+                fn(Builder $query, string $keyword) => $query
+                    ->where(function (Builder $periodQuery) use ($keyword): void {
+                        $periodQuery
+                            ->whereHas(
+                                'graduatedSemester',
+                                function (Builder $semesterQuery) use ($keyword): void {
+                                    $semesterQuery
+                                        ->where('nama', 'like', "%{$keyword}%")
+                                        ->orWhereHas(
+                                            'tahunAjaran',
+                                            fn(Builder $tahunQuery) => $tahunQuery
+                                                ->where('nama', 'like', "%{$keyword}%")
+                                        );
+                                }
+                            )
                             ->orWhereHas(
-                                'tahunAjaran',
-                                fn(Builder $tahunQuery) =>
-                                $tahunQuery->where('nama', 'like', "%{$keyword}%")
+                                'latestStatusHistory.semester',
+                                function (Builder $semesterQuery) use ($keyword): void {
+                                    $semesterQuery
+                                        ->where('nama', 'like', "%{$keyword}%")
+                                        ->orWhereHas(
+                                            'tahunAjaran',
+                                            fn(Builder $tahunQuery) => $tahunQuery
+                                                ->where('nama', 'like', "%{$keyword}%")
+                                        );
+                                }
                             );
-                    }
-                )
+                    })
             )
             ->filterColumn(
                 'reason',
@@ -303,6 +318,7 @@ class SantriArchiveController extends Controller
             'user:id,name,nomor,email',
             'kelas:id,nama_kelas',
             'graduatedSemester.tahunAjaran:id,nama',
+            'latestStatusHistory.semester.tahunAjaran:id,nama',
             'statusChangedBy:id,name',
             'statusHistories' => fn($query) =>
             $query
@@ -319,6 +335,12 @@ class SantriArchiveController extends Controller
             'tahsins',
             'tilawahs',
         ]);
+
+        $latestHistory = $santri->latestStatusHistory
+            ?? $santri->statusHistories->first();
+        $latestExitDetails = $santri->status === Santri::STATUS_KELUAR
+            ? data_get($latestHistory?->metadata, 'exit')
+            : null;
 
         return response()->json([
             'ok' => true,
@@ -340,10 +362,20 @@ class SantriArchiveController extends Controller
                             . ($santri->graduatedSemester->tahunAjaran?->nama ?? '-')
                     )
                     : null,
+                'status_period_label' => $latestHistory?->semester
+                    ? trim(
+                        $latestHistory->semester->nama
+                            . ' — '
+                            . ($latestHistory->semester->tahunAjaran?->nama ?? '-')
+                    )
+                    : null,
                 'graduated_at' => $santri->graduated_at?->toIso8601String(),
                 'status_changed_at' => $santri->status_changed_at?->toIso8601String(),
                 'status_reason' => $santri->status_reason,
                 'status_changed_by' => $santri->statusChangedBy?->name,
+                'exit_details' => is_array($latestExitDetails)
+                    ? $latestExitDetails
+                    : null,
                 'user' => $santri->user
                     ? [
                         'name' => $santri->user->name,
@@ -379,6 +411,7 @@ class SantriArchiveController extends Controller
                         'reason' => $history->reason,
                         'changed_by' => $history->changedBy?->name,
                         'changed_at' => $history->changed_at?->toIso8601String(),
+                        'metadata' => $history->metadata,
                     ];
                 })
                 ->values(),
@@ -489,7 +522,9 @@ class SantriArchiveController extends Controller
             'kelas_id' => [
                 'required',
                 'integer',
-                'exists:kelas,id',
+                Rule::exists('kelas', 'id')->where(fn ($query) => $query
+                    ->whereNotNull('parent_id')
+                    ->where('is_active', 1)),
             ],
             'musyrif_id' => [
                 'required',
@@ -506,6 +541,16 @@ class SantriArchiveController extends Controller
                 'date',
             ],
         ]);
+
+        $kelasReaktivasi = Kelas::query()
+            ->with('parent:id,is_active')
+            ->findOrFail((int) $data['kelas_id']);
+
+        if (!$kelasReaktivasi->isKelompok() || !$kelasReaktivasi->is_active || !$kelasReaktivasi->parent?->is_active) {
+            throw ValidationException::withMessages([
+                'kelas_id' => ['Kelas reaktivasi harus berupa kelompok aktif dengan kelas induk aktif.'],
+            ]);
+        }
 
         $musyrifValid = Musyrif::query()
             ->whereKey($data['musyrif_id'])
@@ -603,9 +648,13 @@ class SantriArchiveController extends Controller
                     'Nama',
                     'Status',
                     'Kelas Terakhir',
-                    'Semester Kelulusan',
+                    'Semester Status',
                     'Tanggal Status',
                     'Alasan',
+                    'Kategori Keluar',
+                    'Tanggal Efektif Keluar',
+                    'Tujuan Pindah',
+                    'Nomor Dokumen',
                     'Diubah Oleh',
                     'Jumlah Hafalan',
                     'Jumlah Tahsin',
@@ -614,17 +663,29 @@ class SantriArchiveController extends Controller
 
                 $query->chunkById(500, function ($santris) use ($handle): void {
                     foreach ($santris as $santri) {
-                        $semesterLabel = $santri->graduatedSemester
+                        $statusSemester = $santri->isGraduated()
+                            ? $santri->graduatedSemester
+                            : $santri->latestStatusHistory?->semester;
+
+                        $semesterLabel = $statusSemester
                             ? trim(
-                                $santri->graduatedSemester->nama
+                                $statusSemester->nama
                                     . ' — '
-                                    . ($santri->graduatedSemester->tahunAjaran?->nama ?? '-')
+                                    . ($statusSemester->tahunAjaran?->nama ?? '-')
                             )
                             : '-';
 
                         $statusDate = $santri->isGraduated()
                             ? ($santri->graduated_at ?? $santri->status_changed_at)
                             : $santri->status_changed_at;
+
+                        $exit = $santri->status === Santri::STATUS_KELUAR
+                            ? data_get($santri->latestStatusHistory?->metadata, 'exit', [])
+                            : [];
+
+                        if (!is_array($exit)) {
+                            $exit = [];
+                        }
 
                         fputcsv($handle, [
                             $santri->nis,
@@ -634,6 +695,10 @@ class SantriArchiveController extends Controller
                             $semesterLabel,
                             $statusDate?->format('Y-m-d H:i:s'),
                             $santri->status_reason,
+                            $exit['reason_code'] ?? null,
+                            $exit['effective_at'] ?? null,
+                            $exit['destination'] ?? null,
+                            $exit['document_number'] ?? null,
                             $santri->statusChangedBy?->name,
                             $santri->hafalans_count,
                             $santri->tahsins_count,
@@ -660,6 +725,7 @@ class SantriArchiveController extends Controller
             ->with([
                 'kelas:id,nama_kelas',
                 'graduatedSemester.tahunAjaran:id,nama',
+                'latestStatusHistory.semester.tahunAjaran:id,nama',
                 'statusChangedBy:id,name',
             ])
             ->withCount([
@@ -696,23 +762,32 @@ class SantriArchiveController extends Controller
         }
 
         if ($request->filled('kelas_id')) {
-            $query->where(
-                'santris.kelas_id',
-                (int) $request->input('kelas_id')
-            );
+            $kelas = Kelas::query()->find((int) $request->input('kelas_id'));
+
+            if ($kelas?->isInduk()) {
+                $childIds = Kelas::query()
+                    ->where('parent_id', $kelas->id)
+                    ->pluck('id')
+                    ->push($kelas->id);
+
+                $query->whereIn('santris.kelas_id', $childIds);
+            } elseif ($kelas) {
+                $query->where('santris.kelas_id', $kelas->id);
+            }
         }
 
-        if (
-            $request->filled(
-                'graduated_semester_id'
-            )
-        ) {
-            $query->where(
-                'santris.graduated_semester_id',
-                (int) $request->input(
-                    'graduated_semester_id'
-                )
-            );
+        if ($request->filled('graduated_semester_id')) {
+            $semesterId = (int) $request->input('graduated_semester_id');
+
+            $query->where(function (Builder $semesterQuery) use ($semesterId): void {
+                $semesterQuery
+                    ->where('santris.graduated_semester_id', $semesterId)
+                    ->orWhereHas(
+                        'latestStatusHistory',
+                        fn(Builder $historyQuery) => $historyQuery
+                            ->where('semester_id', $semesterId)
+                    );
+            });
         }
 
         if ($request->filled('date_start')) {
@@ -806,9 +881,13 @@ class SantriArchiveController extends Controller
                 $santri->changeStatus(
                     $status,
                     $reason,
-                    $semester,
+                    $placementSemester,
                     (int) auth()->id(),
-                    $changedAtValue
+                    $changedAtValue,
+                    [
+                        'source' => 'santri_archive_status_change',
+                        'placement_semester_id' => (int) $placementSemester->id,
+                    ]
                 );
 
                 app(

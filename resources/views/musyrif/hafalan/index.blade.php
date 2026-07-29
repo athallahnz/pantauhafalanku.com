@@ -463,6 +463,10 @@
                                     class="form-select border-primary border-opacity-25 adaptive-select">
                                     <option value="">-- Pilih Juz & Tahapan dulu --</option>
                                 </select>
+                                <small class="text-body-secondary d-block mt-2">
+                                    <i class="bi bi-funnel me-1"></i>Target yang sudah Lulus disembunyikan. Target
+                                    berstatus Ulang tetap tersedia.
+                                </small>
                             </div>
 
                             <div class="col-md-6">
@@ -557,6 +561,10 @@
                                 <label class="form-label small fw-bold text-primary">SURAH : AYAT</label>
                                 <select name="hafalan_template_id" id="edit_template_id"
                                     class="form-select border-primary border-opacity-25"></select>
+                                <small class="text-body-secondary d-block mt-2">
+                                    <i class="bi bi-funnel me-1"></i>Daftar mengikuti progres Hafalan santri yang
+                                    dipilih.
+                                </small>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">STATUS</label>
@@ -728,9 +736,23 @@
                 })[v] || '-';
             }
 
-            async function fetchTemplates(juz, tahap) {
-                const url =
-                    `${ROUTE_TEMPLATES}?juz=${encodeURIComponent(juz)}&tahap=${encodeURIComponent(tahap)}`;
+            async function fetchTemplates(
+                juz,
+                tahap,
+                santriId,
+                currentHafalanId = ''
+            ) {
+                const params = new URLSearchParams({
+                    juz,
+                    tahap,
+                    santri_id: santriId,
+                });
+
+                if (currentHafalanId) {
+                    params.set('current_hafalan_id', currentHafalanId);
+                }
+
+                const url = `${ROUTE_TEMPLATES}?${params.toString()}`;
                 const res = await fetch(url, {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
@@ -747,32 +769,62 @@
                 const juzEl = document.getElementById(`${mode}_juz_ui`);
                 const tahapEl = document.getElementById(`${mode}_tahap_ui`);
                 const tplEl = document.getElementById(`${mode}_template_id`);
+                const santriEl = document.getElementById(`${mode}_santri_id`);
                 if (!tplEl) return;
 
                 const juz = juzEl?.value;
                 const tahap = tahapEl?.value;
+                const santriId = santriEl?.value;
+                const currentHafalanId = mode === 'edit' ?
+                    document.getElementById('edit_id')?.value :
+                    '';
+
                 tplEl.innerHTML = `<option value="">-- Memuat... --</option>`;
+
+                if (!santriId) {
+                    tplEl.innerHTML = `<option value="">-- Pilih Santri terlebih dahulu --</option>`;
+                    return;
+                }
 
                 if (!juz || !tahap) {
                     tplEl.innerHTML = `<option value="">-- Pilih Juz & Tahapan dulu --</option>`;
                     return;
                 }
 
-                const json = await fetchTemplates(juz, tahap);
+                const json = await fetchTemplates(
+                    juz,
+                    tahap,
+                    santriId,
+                    currentHafalanId
+                );
+
                 if (!json.ok) {
                     tplEl.innerHTML = `<option value="">-- Gagal memuat template --</option>`;
                     return;
                 }
+
                 if (!json.templates || json.templates.length === 0) {
-                    tplEl.innerHTML = `<option value="">-- Template tidak ditemukan --</option>`;
+                    tplEl.innerHTML = json.all_completed ?
+                        `<option value="">-- Semua target pada tahapan ini sudah Lulus --</option>` :
+                        `<option value="">-- Template tidak ditemukan --</option>`;
                     return;
                 }
 
-                tplEl.innerHTML = `<option value="">-- Pilih Surah:Ayat --</option>`;
+                tplEl.innerHTML =
+                    `<option value="">-- Pilih target yang belum Lulus --</option>`;
+
                 json.templates.forEach(t => {
                     const opt = document.createElement('option');
                     opt.value = t.id;
-                    opt.textContent = `${t.urutan}. ${t.label}`;
+                    opt.textContent = t.is_ulang ?
+                        `↻ ULANG · ${t.urutan}. ${t.label}` :
+                        `${t.urutan}. ${t.label}`;
+
+                    if (t.is_ulang) {
+                        opt.classList.add('text-warning');
+                        opt.dataset.progressStatus = 'ulang';
+                    }
+
                     tplEl.appendChild(opt);
                 });
             }
@@ -971,6 +1023,9 @@
             $('#create_juz_ui, #create_tahap_ui').on('change', function() {
                 loadTemplateOptions('create');
             });
+            $('#create_santri_id').on('change', function() {
+                loadTemplateOptions('create');
+            });
             $('#create_status').on('change', function() {
                 syncRules('create');
             });
@@ -1042,6 +1097,9 @@
             });
 
             $('#edit_juz_ui, #edit_tahap_ui').on('change', function() {
+                loadTemplateOptions('edit');
+            });
+            $('#edit_santri_id').on('change', function() {
                 loadTemplateOptions('edit');
             });
             $('#edit_status').on('change', function() {

@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
@@ -56,10 +57,29 @@ class MusyrifController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'email', 'role']);
 
-        // TAMBAHKAN INI: Ambil data kelas untuk dropdown
-        $listKelas = Kelas::orderBy('nama_kelas')->get();
+        $kelasParents = Kelas::query()
+            ->induk()
+            ->with([
+                'children' => fn($query) => $query
+                    ->aktif()
+                    ->orderBy('urutan')
+                    ->orderBy('kelompok'),
+            ])
+            ->orderBy('urutan')
+            ->orderBy('nama_kelas')
+            ->get();
 
-        return view('admin.musyrif.index', compact('musyrifUserCandidates', 'listKelas'));
+        $listKelas = Kelas::query()
+            ->with('parent:id,nama_kelas')
+            ->operasional()
+            ->urutHierarki()
+            ->get();
+
+        return view('admin.musyrif.index', compact(
+            'musyrifUserCandidates',
+            'kelasParents',
+            'listKelas'
+        ));
     }
 
     public function getByKelas(
@@ -82,17 +102,23 @@ class MusyrifController extends Controller
         }
 
         $musyrifs = Musyrif::query()
-            ->where(
-                'kelas_id',
-                $kelas->id
-            )
+            ->forKelas((int) $kelas->id)
+            ->with('kelasBinaan:id,nama_kelas')
             ->orderBy('nama')
             ->get([
                 'id',
                 'nama',
                 'kode',
                 'kelas_id',
-            ]);
+            ])
+            ->map(function (Musyrif $musyrif): Musyrif {
+                $musyrif->setAttribute(
+                    'kelas_ids',
+                    $musyrif->allKelasIds()
+                );
+
+                return $musyrif;
+            });
 
         return response()->json([
             'status' => $musyrifs->isEmpty()
@@ -137,6 +163,18 @@ class MusyrifController extends Controller
             ->groupBy('musyrif_id');
 
         $query = Musyrif::query()
+            ->with([
+                'kelasInduk:id,nama_kelas,kode',
+                'kelasBinaan' => fn($query) => $query
+                    ->select([
+                        'kelas.id',
+                        'kelas.nama_kelas',
+                        'kelas.parent_id',
+                        'kelas.kelompok',
+                    ])
+                    ->orderBy('kelas.urutan')
+                    ->orderBy('kelas.kelompok'),
+            ])
             ->leftJoinSub($todayAgg, 'today_att', function ($join) {
                 $join->on('musyrifs.id', '=', 'today_att.musyrif_id');
             })
@@ -144,12 +182,17 @@ class MusyrifController extends Controller
                 $join->on('musyrifs.id', '=', 'month_att.musyrif_id');
             })
             ->leftJoin('users', 'users.id', '=', 'musyrifs.user_id')
-            ->leftJoin('kelas', 'kelas.id', '=', 'musyrifs.kelas_id')
+            ->leftJoin('kelas as kelas_utama', 'kelas_utama.id', '=', 'musyrifs.kelas_id')
+            ->leftJoin('kelas as kelas_induk', 'kelas_induk.id', '=', 'musyrifs.kelas_induk_id')
             ->select([
                 'musyrifs.*',
                 'users.name as akun_nama',
                 'users.email as akun_email',
-                'kelas.nama_kelas as nama_kelas',
+                'users.nomor as akun_nomor',
+                'kelas_utama.nama_kelas as nama_kelas',
+                'kelas_utama.parent_id as kelas_parent_id',
+                'kelas_utama.kelompok as kelas_kelompok',
+                'kelas_induk.nama_kelas as kelas_induk_nama',
 
                 'today_att.morning_time',
                 'today_att.morning_status',
@@ -185,15 +228,49 @@ class MusyrifController extends Controller
             })
 
             ->addColumn('akun', function ($row) {
-                if (!$row->akun_nama && !$row->akun_email)
-                    return '-';
+                if (!$row->akun_nama && !$row->akun_email && !$row->akun_nomor) {
+                    return "<span class='badge bg-secondary-subtle text-secondary rounded-pill'>Belum ada akun</span>";
+                }
+
                 $name = e($row->akun_nama ?? '-');
-                $email = e($row->akun_email ?? '');
-                return "<div class='fw-semibold'>{$name}</div><div class='text-muted small'>{$email}</div>";
+                $email = e($row->akun_email ?? '-');
+                $nomor = e($row->akun_nomor ?? '-');
+
+                return <<<HTML
+                    <div class="fw-semibold">{$name}</div>
+                    <div class="text-muted small"><i class="bi bi-envelope me-1"></i>{$email}</div>
+                    <div class="text-muted small"><i class="bi bi-telephone me-1"></i>{$nomor}</div>
+                HTML;
             })
 
             ->addColumn('kelas', function ($row) {
-                return $row->nama_kelas ? e($row->nama_kelas) : '-';
+                $kelasBinaan = $row->kelasBinaan
+                    ->pluck('nama_kelas')
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                if ($kelasBinaan->isEmpty() && $row->nama_kelas) {
+                    $kelasBinaan = collect([$row->nama_kelas]);
+                }
+
+                if ($kelasBinaan->isEmpty()) {
+                    return '<span class="text-body-secondary">Belum ditugaskan</span>';
+                }
+
+                $primary = e($row->nama_kelas ?: $kelasBinaan->first());
+                $badges = $kelasBinaan
+                    ->map(fn(string $nama) =>
+                    '<span class="badge bg-info-subtle text-info rounded-pill me-1 mb-1">'
+                        . e($nama)
+                        . '</span>')
+                    ->implode('');
+
+                $tingkat = e($row->kelas_induk_nama ?: '-');
+
+                return '<div class="small text-body-secondary">Tingkat: ' . $tingkat . '</div>'
+                    . '<div class="fw-semibold mb-1">Operasional utama: ' . $primary . '</div>'
+                    . '<div>' . $badges . '</div>';
             })
 
             ->addColumn('absen_pagi', function ($row) {
@@ -226,149 +303,364 @@ class MusyrifController extends Controller
                 return "<div class='d-flex gap-1'>{$btnAbsensi}{$btnDetail}{$btnEdit}{$btnDelete}</div>";
             })
 
-            ->rawColumns(['nama', 'akun', 'absen_pagi', 'absen_sore', 'rekap_bulan', 'aksi'])
+            ->rawColumns(['nama', 'akun', 'kelas', 'absen_pagi', 'absen_sore', 'rekap_bulan', 'aksi'])
             ->make(true);
     }
 
     public function store(Request $request)
     {
-        // 1. Validasi Input
-        $validated = $request->validate([
-            'nama'                => ['required', 'string', 'max:150'],
-            'jenis_kelamin'       => ['nullable', Rule::in(['L', 'P'])],
-            'kode'                => ['nullable', 'string', 'max:50'],
-            'kelas_id'            => ['nullable', 'exists:kelas,id'],
-            'alamat'              => ['nullable', 'string'],
-            'pendidikan_terakhir' => ['nullable', 'string'],
-            'domisili'            => ['nullable', 'string'],
-            'halaqah'             => ['nullable', 'string'],
-            'metode_alquran'      => ['nullable', 'string'],
-            'tahun_sertifikasi'   => ['nullable', 'integer'],
-            'keterangan'          => ['nullable', 'string'],
-            'email'               => ['nullable', 'required_if:create_user,1', 'email', 'unique:users,email'],
-            'password'            => ['nullable', 'required_if:create_user,1', 'string', 'min:8'],
-        ]);
+        [$validated, $kelasIndukId, $primaryKelasId, $kelasIds] =
+            $this->validatedMusyrifPayload($request);
 
-        return DB::transaction(function () use ($request, $validated) {
+        $createUser = $request->boolean('create_user');
+
+        return DB::transaction(function () use (
+            $request,
+            $validated,
+            $createUser,
+            $kelasIndukId,
+            $primaryKelasId,
+            $kelasIds
+        ) {
             $userId = null;
 
-            // 2. Logika Pembuatan User Otomatis
-            if ($request->boolean('create_user')) {
-                $user = User::create([
-                    'name'     => $validated['nama'],
-                    'email'    => $validated['email'],
-                    'role'     => 'musyrif',
+            if ($createUser) {
+                $user = new User();
+                $user->forceFill([
+                    'name' => $validated['nama'],
+                    'email' => $validated['email'],
+                    'nomor' => $validated['nomor'],
+                    'role' => 'musyrif',
                     'password' => Hash::make($validated['password']),
-                ]);
+                ])->save();
+
                 $userId = $user->id;
             }
 
-            // 3. Simpan Data Musyrif
-            Musyrif::create([
-                'user_id'             => $userId,
-                'kelas_id'            => $validated['kelas_id'],
-                'nama'                => $validated['nama'],
-                'jenis_kelamin'       => $validated['jenis_kelamin'] ?? null,
-                'kode'                => $validated['kode'],
-                'alamat'              => $validated['alamat'],
-                'pendidikan_terakhir' => $validated['pendidikan_terakhir'],
-                'domisili'            => $validated['domisili'],
-                'halaqah'             => $validated['halaqah'],
-                'metode_alquran'      => $validated['metode_alquran'],
-                'is_sertifikasi_ummi' => $request->boolean('is_sertifikasi_ummi'), // Aman & Clean
-                'tahun_sertifikasi'   => $validated['tahun_sertifikasi'],
-                'keterangan'          => $request->input('keterangan'), // Solusi Error Undefined Key
+            $musyrif = Musyrif::query()->create([
+                'user_id' => $userId,
+                'kelas_induk_id' => $kelasIndukId,
+                'kelas_id' => $primaryKelasId,
+                'nama' => $validated['nama'],
+                'jenis_kelamin' => $validated['jenis_kelamin'],
+                'kode' => $validated['kode'] ?? null,
+                'alamat' => $validated['alamat'] ?? null,
+                'pendidikan_terakhir' => $validated['pendidikan_terakhir'] ?? null,
+                'domisili' => $validated['domisili'] ?? null,
+                'halaqah' => $validated['halaqah'] ?? null,
+                'metode_alquran' => $validated['metode_alquran'] ?? null,
+                'is_sertifikasi_ummi' => $request->boolean('is_sertifikasi_ummi'),
+                'tahun_sertifikasi' => $validated['tahun_sertifikasi'] ?? null,
+                'keterangan' => $validated['keterangan'] ?? null,
             ]);
 
-            return response()->json(['message' => 'Musyrif berhasil ditambahkan.']);
+            /* Pivot adalah sumber utama seluruh kelas binaan. */
+            $musyrif->kelasBinaan()->sync($kelasIds);
+
+            return response()->json([
+                'message' => $createUser
+                    ? 'Musyrif dan akun login berhasil ditambahkan.'
+                    : 'Musyrif berhasil ditambahkan tanpa akun login.',
+            ]);
         });
     }
 
     public function update(Request $request, $id)
     {
-        $musyrif = Musyrif::findOrFail($id);
+        $musyrif = Musyrif::query()
+            ->with(['user', 'kelasBinaan'])
+            ->findOrFail($id);
 
-        $validated = $request->validate([
-            'nama'                => ['required', 'string', 'max:150'],
-            'jenis_kelamin'       => ['nullable', Rule::in(['L', 'P'])],
-            'kode'                => ['nullable', 'string', 'max:50'],
-            'kelas_id'            => ['nullable', 'exists:kelas,id'],
-            'alamat'              => ['nullable', 'string'],
-            'pendidikan_terakhir' => ['nullable', 'string'],
-            'domisili'            => ['nullable', 'string'],
-            'halaqah'             => ['nullable', 'string'],
-            'metode_alquran'      => ['nullable', 'string'],
-            'tahun_sertifikasi'   => ['nullable', 'integer'],
-            'keterangan'          => ['nullable', 'string'],
-        ]);
+        [$validated, $kelasIndukId, $primaryKelasId, $kelasIds] =
+            $this->validatedMusyrifPayload($request, $musyrif);
 
-        DB::transaction(function () use ($request, $validated, $musyrif) {
-            // 1. Update Musyrif
+        $createUser = $request->boolean('create_user');
+        $existingUser = $musyrif->user;
+
+        DB::transaction(function () use (
+            $request,
+            $validated,
+            $musyrif,
+            $existingUser,
+            $createUser,
+            $kelasIndukId,
+            $primaryKelasId,
+            $kelasIds
+        ): void {
             $musyrif->update([
-                'kelas_id'            => $validated['kelas_id'],
-                'nama'                => $validated['nama'],
-                'jenis_kelamin'       => $validated['jenis_kelamin'] ?? null,
-                'kode'                => $validated['kode'],
-                'alamat'              => $request->input('alamat'),
-                'pendidikan_terakhir' => $request->input('pendidikan_terakhir'),
+                'kelas_induk_id' => $kelasIndukId,
+                'kelas_id' => $primaryKelasId,
+                'nama' => $validated['nama'],
+                'jenis_kelamin' => $validated['jenis_kelamin'],
+                'kode' => $validated['kode'] ?? null,
+                'alamat' => $validated['alamat'] ?? null,
+                'pendidikan_terakhir' => $validated['pendidikan_terakhir'] ?? null,
                 'is_sertifikasi_ummi' => $request->boolean('is_sertifikasi_ummi'),
-                'keterangan'          => $request->input('keterangan'),
-                'domisili'            => $request->input('domisili'),
-                'halaqah'             => $request->input('halaqah'),
-                'metode_alquran'      => $request->input('metode_alquran'),
-                'tahun_sertifikasi'   => $request->input('tahun_sertifikasi'),
+                'keterangan' => $validated['keterangan'] ?? null,
+                'domisili' => $validated['domisili'] ?? null,
+                'halaqah' => $validated['halaqah'] ?? null,
+                'metode_alquran' => $validated['metode_alquran'] ?? null,
+                'tahun_sertifikasi' => $validated['tahun_sertifikasi'] ?? null,
             ]);
 
-            // 2. Update Akun User Jika Ada
-            if ($musyrif->user) {
-                $updateUser = [
-                    'name'  => $validated['nama'],
-                    'email' => $request->input('email', $musyrif->user->email),
-                ];
+            $musyrif->kelasBinaan()->sync($kelasIds);
 
-                if ($request->filled('password')) {
-                    $updateUser['password'] = Hash::make($request->password);
+            if ($existingUser) {
+                $updateUser = ['name' => $validated['nama']];
+
+                if ($createUser) {
+                    $updateUser['email'] = $validated['email'];
+                    $updateUser['nomor'] = $validated['nomor'];
+                    $updateUser['role'] = 'musyrif';
                 }
 
-                $musyrif->user->update($updateUser);
+                if ($request->filled('password')) {
+                    $updateUser['password'] = Hash::make($validated['password']);
+                }
+
+                $existingUser->forceFill($updateUser)->save();
+                return;
+            }
+
+            if ($createUser) {
+                $user = new User();
+                $user->forceFill([
+                    'name' => $validated['nama'],
+                    'email' => $validated['email'],
+                    'nomor' => $validated['nomor'],
+                    'role' => 'musyrif',
+                    'password' => Hash::make($validated['password']),
+                ])->save();
+
+                $musyrif->forceFill(['user_id' => $user->id])->save();
             }
         });
 
-        return response()->json(['message' => 'Data musyrif diperbarui!']);
+        return response()->json([
+            'message' => $createUser
+                ? 'Data musyrif dan akun login berhasil diperbarui.'
+                : 'Data musyrif berhasil diperbarui.',
+        ]);
+    }
+
+    /**
+     * @return array{0:array<string,mixed>,1:?int,2:?int,3:array<int,int>}
+     */
+    private function validatedMusyrifPayload(
+        Request $request,
+        ?Musyrif $musyrif = null
+    ): array {
+        $createUser = $request->boolean('create_user');
+        $existingUserId = $musyrif?->user_id;
+        $isCreatingNewAccount = $createUser && !$existingUserId;
+        $requestedKelasIds = collect($request->input('kelas_ids', []))
+            ->filter()
+            ->values();
+        $hasAssignment = $request->filled('kelas_induk_id')
+            || $request->filled('kelas_id')
+            || $requestedKelasIds->isNotEmpty();
+
+        $validated = $request->validate([
+            'nama' => ['required', 'string', 'max:150'],
+            'jenis_kelamin' => ['required', Rule::in(['L', 'P'])],
+            'kode' => ['nullable', 'string', 'max:50'],
+            'kelas_induk_id' => [
+                Rule::requiredIf($hasAssignment),
+                'nullable',
+                'integer',
+                'exists:kelas,id',
+            ],
+            'kelas_id' => [
+                Rule::requiredIf($hasAssignment),
+                'nullable',
+                'integer',
+                'exists:kelas,id',
+            ],
+            'kelas_ids' => [
+                Rule::requiredIf($hasAssignment),
+                'nullable',
+                'array',
+                $hasAssignment ? 'min:1' : 'min:0',
+            ],
+            'kelas_ids.*' => ['integer', 'distinct', 'exists:kelas,id'],
+            'alamat' => ['nullable', 'string'],
+            'pendidikan_terakhir' => ['nullable', 'string'],
+            'domisili' => ['nullable', 'string'],
+            'halaqah' => ['nullable', 'string'],
+            'metode_alquran' => ['nullable', 'string', 'max:255'],
+            'tahun_sertifikasi' => ['nullable', 'integer', 'between:1900,' . (now()->year + 1)],
+            'keterangan' => ['nullable', 'string'],
+            'create_user' => ['nullable', 'boolean'],
+            'email' => [
+                Rule::requiredIf($createUser),
+                'nullable',
+                'email:rfc',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($existingUserId),
+            ],
+            'nomor' => [
+                Rule::requiredIf($createUser),
+                'nullable',
+                'string',
+                'max:25',
+                'regex:/^[0-9+()\-\s]{8,25}$/',
+                Rule::unique('users', 'nomor')->ignore($existingUserId),
+            ],
+            'password' => [
+                Rule::requiredIf($isCreatingNewAccount),
+                'nullable',
+                'string',
+                'min:8',
+                'confirmed',
+            ],
+        ], $this->musyrifValidationMessages());
+
+        if (!$hasAssignment) {
+            return [$validated, null, null, []];
+        }
+
+        $kelasInduk = Kelas::query()
+            ->induk()
+            ->aktif()
+            ->find((int) $validated['kelas_induk_id']);
+
+        if (!$kelasInduk) {
+            throw ValidationException::withMessages([
+                'kelas_induk_id' => ['Tingkat utama harus berupa kelas induk aktif.'],
+            ]);
+        }
+
+        $kelasIds = collect($validated['kelas_ids'] ?? [])
+            ->push($validated['kelas_id'] ?? null)
+            ->filter()
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $kelasBinaan = Kelas::query()
+            ->with('parent:id,is_active')
+            ->whereIn('id', $kelasIds)
+            ->get()
+            ->keyBy('id');
+
+        if ($kelasBinaan->count() !== $kelasIds->count()) {
+            throw ValidationException::withMessages([
+                'kelas_ids' => ['Salah satu kelas binaan tidak ditemukan.'],
+            ]);
+        }
+
+        foreach ($kelasBinaan as $kelas) {
+            if (!$kelas->isOperational()) {
+                throw ValidationException::withMessages([
+                    'kelas_ids' => ["{$kelas->nama_kelas} bukan kelas operasional aktif."],
+                ]);
+            }
+
+            if ((int) $kelas->parent_id !== (int) $kelasInduk->id) {
+                throw ValidationException::withMessages([
+                    'kelas_ids' => [
+                        "{$kelas->nama_kelas} tidak berada di bawah tingkat utama {$kelasInduk->nama_kelas}.",
+                    ],
+                ]);
+            }
+        }
+
+        $primaryKelasId = (int) $validated['kelas_id'];
+
+        if (!$kelasIds->contains($primaryKelasId)) {
+            throw ValidationException::withMessages([
+                'kelas_id' => ['Kelas operasional utama wajib termasuk dalam kelas yang dibina.'],
+            ]);
+        }
+
+        return [
+            $validated,
+            (int) $kelasInduk->id,
+            $primaryKelasId,
+            $kelasIds->all(),
+        ];
+    }
+
+    private function musyrifValidationMessages(): array
+    {
+        return [
+            'nama.required' => 'Nama lengkap wajib diisi.',
+            'jenis_kelamin.required' => 'Jenis kelamin wajib dipilih.',
+            'jenis_kelamin.in' => 'Pilihan jenis kelamin tidak valid.',
+            'kelas_induk_id.required' => 'Tingkat utama wajib dipilih ketika Musyrif memiliki kelas binaan.',
+            'kelas_id.required' => 'Kelas operasional utama wajib dipilih.',
+            'kelas_ids.required' => 'Pilih minimal satu kelas yang dibina.',
+            'kelas_ids.array' => 'Daftar kelas binaan harus berupa pilihan kelas.',
+            'kelas_ids.min' => 'Pilih minimal satu kelas yang dibina.',
+            'kelas_ids.*.distinct' => 'Kelas binaan tidak boleh dipilih dua kali.',
+            'kelas_ids.*.exists' => 'Salah satu kelas binaan tidak ditemukan.',
+            'email.required' => 'Email login wajib diisi saat akun login diaktifkan.',
+            'email.email' => 'Format email login tidak valid.',
+            'email.unique' => 'Email tersebut sudah digunakan akun lain.',
+            'nomor.required' => 'Nomor HP/WhatsApp wajib diisi saat akun login diaktifkan.',
+            'nomor.regex' => 'Format nomor HP tidak valid. Gunakan angka, awalan 08 atau +62.',
+            'nomor.unique' => 'Nomor HP tersebut sudah digunakan akun lain.',
+            'password.required' => 'Password wajib diisi untuk membuat akun login baru.',
+            'password.min' => 'Password minimal harus terdiri dari 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak sama.',
+            'tahun_sertifikasi.between' => 'Tahun sertifikasi harus berada pada rentang yang valid.',
+        ];
     }
 
     public function show($id)
     {
-        // Gunakan Eloquent with() agar relasi 'user' dan 'kelas' terload otomatis
-        $musyrif = Musyrif::with(['user', 'kelas'])->find($id);
+        $musyrif = Musyrif::with([
+            'user',
+            'kelasInduk:id,nama_kelas,kode',
+            'kelas:id,nama_kelas,parent_id,kelompok',
+            'kelasBinaan:id,nama_kelas,parent_id,kelompok',
+        ])->find($id);
 
         if (!$musyrif) {
             return response()->json(['message' => 'Data tidak ditemukan'], 404);
         }
 
         return response()->json([
-            'id'                => $musyrif->id,
-            'nama'              => $musyrif->nama,
-            'jenis_kelamin'     => $musyrif->jenis_kelamin,
+            'id' => $musyrif->id,
+            'user_id' => $musyrif->user_id,
+            'has_user' => (bool) $musyrif->user,
+            'nama' => $musyrif->nama,
+            'jenis_kelamin' => $musyrif->jenis_kelamin,
             'jenis_kelamin_label' => match ($musyrif->jenis_kelamin) {
                 'L' => 'Putra / Laki-laki',
                 'P' => 'Putri / Perempuan',
                 default => '-',
             },
-            'kode'              => $musyrif->kode ?? '-',
-            'kelas_id'          => $musyrif->kelas_id, // Penting untuk Edit Mode
-            'nama_kelas'        => $musyrif->kelas->nama_kelas ?? '-', // Untuk Detail Mode
-            'alamat'            => $musyrif->alamat ?? '-',
-            'nomor'             => $musyrif->user->nomor ?? '-',
-            'email'             => $musyrif->user->email ?? '-',
-            'pendidikan_terakhir' => $musyrif->pendidikan_terakhir ?? '-',
-            'domisili'          => $musyrif->domisili ?? '-',
-            'halaqah'           => $musyrif->halaqah ?? '-',
-            'amanah_lain'       => $musyrif->amanah_lain ?? '-',
-            'metode_alquran'    => $musyrif->metode_alquran ?? '-',
-            'is_sertifikasi_ummi' => $musyrif->is_sertifikasi_ummi,
-            'tahun_sertifikasi' => $musyrif->tahun_sertifikasi ?? '-',
-            'keterangan'        => $musyrif->keterangan ?? '-',
+            'kode' => $musyrif->kode,
+            'kelas_induk_id' => $musyrif->kelas_induk_id,
+            'nama_kelas_induk' => $musyrif->kelasInduk?->nama_kelas ?? '-',
+            'kelas_id' => $musyrif->kelas_id,
+            'kelas_ids' => $musyrif->allKelasIds(),
+            'nama_kelas' => $musyrif->kelas?->nama_kelas ?? '-',
+            'nama_kelas_binaan' => $musyrif->kelasBinaan
+                ->pluck('nama_kelas')
+                ->filter()
+                ->unique()
+                ->values()
+                ->implode(', ') ?: '-',
+            'kelas_binaan' => $musyrif->kelasBinaan
+                ->map(fn(Kelas $kelas) => [
+                    'id' => (int) $kelas->id,
+                    'nama_kelas' => (string) $kelas->nama_kelas,
+                    'kelompok' => $kelas->kelompok,
+                ])
+                ->values(),
+            'alamat' => $musyrif->alamat,
+            'nomor' => $musyrif->user?->nomor,
+            'email' => $musyrif->user?->email,
+            'pendidikan_terakhir' => $musyrif->pendidikan_terakhir,
+            'domisili' => $musyrif->domisili,
+            'halaqah' => $musyrif->halaqah,
+            'amanah_lain' => $musyrif->amanah_lain,
+            'metode_alquran' => $musyrif->metode_alquran,
+            'is_sertifikasi_ummi' => (bool) $musyrif->is_sertifikasi_ummi,
+            'tahun_sertifikasi' => $musyrif->tahun_sertifikasi,
+            'keterangan' => $musyrif->keterangan,
         ]);
     }
 
@@ -428,9 +720,27 @@ class MusyrifController extends Controller
                     return "<div class='mb-1'>{$sesi}</div><span class='badge {$badge} px-3 py-1 rounded-pill' style='font-size: 0.7rem;'>{$status}</span>";
                 })
                 ->addColumn('lokasi', function ($row) {
-                    $latlng = "{$row->latitude},{$row->longitude}";
+                    $locationName = e($row->address_text ?: 'Lokasi belum teridentifikasi');
+                    $accuracy = $row->accuracy !== null
+                        ? number_format((float) $row->accuracy, 0, ',', '.') . ' m'
+                        : '-';
+
+                    if ($row->latitude === null || $row->longitude === null) {
+                        return "
+                            <div class='fw-semibold'>{$locationName}</div>
+                            <div class='text-warning small mt-1'>
+                                <i class='bi bi-exclamation-triangle me-1'></i>GPS tidak tersedia
+                            </div>
+                        ";
+                    }
+
+                    $lat = (float) $row->latitude;
+                    $lng = (float) $row->longitude;
+                    $latlng = "{$lat},{$lng}";
                     $gmapsLink = "https://maps.google.com/?q={$latlng}";
+
                     return "
+                        <div class='fw-semibold'>{$locationName}</div>
                         <div class='d-flex gap-2 align-items-center mt-1'>
                             <a href='{$gmapsLink}' target='_blank' class='text-decoration-none small fw-semibold'>
                                 <i class='bi bi-geo-alt text-danger'></i> {$latlng}
@@ -440,6 +750,7 @@ class MusyrifController extends Controller
                                 <i class='bi bi-map'></i>
                             </button>
                         </div>
+                        <div class='text-muted mt-1' style='font-size: 11px;'>Akurasi GPS: {$accuracy}</div>
                     ";
                 })
                 ->addColumn('foto', function ($row) {
@@ -579,12 +890,13 @@ class MusyrifController extends Controller
     public function downloadImportTemplate()
     {
         $kelasList = Kelas::query()
-            ->orderBy('nama_kelas')
+            ->operasional()
+            ->urutHierarki()
             ->pluck('nama_kelas')
             ->filter()
             ->values();
 
-        $sampleKelas = $kelasList->first() ?: 'Kelas 7';
+        $sampleKelas = $kelasList->first() ?: 'Kelas 7 A';
 
         $spreadsheet = new Spreadsheet();
         $spreadsheet->getProperties()
@@ -750,9 +1062,9 @@ class MusyrifController extends Controller
 
         $guideRows = [
             ['nama', 'Ya', 'Ahmad Fauzan', 'Teks', 'Nama lengkap musyrif.'],
-            ['jenis_kelamin', 'Tidak', 'Laki-laki', 'Laki-laki / Perempuan', 'Dropdown. Sistem otomatis menyimpan ke database sebagai L atau P.'],
+            ['jenis_kelamin', 'Ya', 'Laki-laki', 'Laki-laki / Perempuan', 'Dropdown. Sistem otomatis menyimpan ke database sebagai L atau P.'],
             ['kode', 'Tidak', 'MSY-001', 'Teks', 'Kode atau NIP internal musyrif.'],
-            ['kelas', 'Tidak', $sampleKelas, 'Dropdown kelas aktif di database', 'Harus sama dengan nama kelas yang tersedia di sistem.'],
+            ['kelas', 'Tidak', $sampleKelas, 'Dropdown kelas kelompok aktif', 'Gunakan nama lengkap seperti Kelas 7 A; kelas induk tidak dapat dipakai untuk assignment baru.'],
             ['pendidikan_terakhir', 'Tidak', 'S1', 'SMA / D3 / S1 / S2', 'Pendidikan terakhir musyrif.'],
             ['domisili', 'Tidak', 'Dalam Pondok (Mukim)', 'Dalam Pondok (Mukim) / Luar Pondok (Pulang-Pergi)', 'Pilih salah satu nilai pada dropdown.'],
             ['halaqah', 'Tidak', 'Reguler', 'Reguler / Takhassus / Pengganti', 'Program halaqah musyrif.'],
@@ -1141,6 +1453,7 @@ class MusyrifController extends Controller
             }
 
             $kelasCache = Kelas::query()
+                ->operasional()
                 ->get(['id', 'nama_kelas'])
                 ->mapWithKeys(fn($kelas) => [strtolower(trim($kelas->nama_kelas)) => $kelas->id]);
 
@@ -1178,8 +1491,8 @@ class MusyrifController extends Controller
                 ]);
                 $jenisKelamin = $this->mapJenisKelaminForDatabase($jenisKelaminRaw);
 
-                if ($jenisKelaminRaw !== null && $jenisKelamin === null) {
-                    $errors[] = "Baris {$excelRowNumber}: jenis_kelamin harus Laki-laki atau Perempuan.";
+                if ($jenisKelaminRaw === null || $jenisKelamin === null) {
+                    $errors[] = "Baris {$excelRowNumber}: jenis_kelamin wajib diisi Laki-laki atau Perempuan.";
                     $skipped++;
                     continue;
                 }
@@ -1192,7 +1505,7 @@ class MusyrifController extends Controller
                     $kelasId = $kelasCache[$kelasKey] ?? null;
 
                     if ($kelasId === null) {
-                        $errors[] = "Baris {$excelRowNumber}: kelas '{$kelasNama}' tidak ditemukan di database.";
+                        $errors[] = "Baris {$excelRowNumber}: kelas '{$kelasNama}' tidak ditemukan atau bukan kelompok aktif.";
                         $skipped++;
                         continue;
                     }

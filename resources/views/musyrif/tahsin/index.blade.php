@@ -671,7 +671,9 @@
                             class="alert alert-warning border-0 rounded-4 shadow-sm mb-4 bg-warning-subtle text-warning-emphasis">
                             <div class="d-flex align-items-start">
                                 <i class="bi bi-info-circle-fill fs-5 me-3 mt-1"></i>
-                                <small>Sistem akan otomatis melewati santri yang belum memenuhi syarat Juz Tilawah.</small>
+                                <small>Ummi Jilid 1–3 tidak memiliki syarat Tilawah. Khusus Gharib dan Tajwid, sistem
+                                    akan melewati santri yang belum menuntaskan Tilawah dari Juz 1 sampai target
+                                    buku.</small>
                             </div>
                         </div>
 
@@ -690,15 +692,15 @@
                                         <option value="gharib_1">Gharib Jilid 1</option>
                                         <option value="gharib_2">Gharib Jilid 2</option>
                                         <option value="tajwid">Tajwid Ummi</option>
+                                        <option value="drill_materi">Drill Materi</option>
                                     </select>
                                 </div>
                                 {{-- Eligibility Container --}}
                                 <div id="eligibility-container" class="mt-3 p-3 bg-light rounded-3 border"
                                     style="display: none;">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <small class="fw-bold text-muted"
-                                            style="font-size: 9px; letter-spacing: 0.5px;">MEMENUHI SYARAT (JUZ <span
-                                                id="req-juz"></span>)</small>
+                                        <small class="fw-bold text-muted" id="elig-rule-label"
+                                            style="font-size: 9px; letter-spacing: 0.5px;">MEMENUHI SYARAT</small>
                                         <small class="fw-bold text-primary" style="font-size: 10px;"><span
                                                 id="elig-count">0</span> / <span id="elig-total">0</span> SANTRI</small>
                                     </div>
@@ -707,7 +709,7 @@
                                             class="progress-bar progress-bar-striped progress-bar-animated"
                                             role="progressbar" style="width: 0%;"></div>
                                     </div>
-                                    <small id="elig-warning" class="text-danger fw-bold d-block mt-1"
+                                    <small id="elig-warning" class="text-danger fw-bold mt-1"
                                         style="font-size: 10px; display: none; line-height: 1.2;"></small>
                                 </div>
                                 <div class="mt-3">
@@ -728,7 +730,7 @@
                             <div class="col-12 col-md-7">
                                 <label
                                     class="form-label small fw-bold text-body-secondary text-uppercase d-flex justify-content-between mb-3">
-                                    <span>PILIH HALAMAN</span>
+                                    <span id="label-pilih-halaman">PILIH HALAMAN</span>
                                     <span id="counter-materi-selected" class="badge bg-primary rounded-pill">0
                                         Terpilih</span>
                                 </label>
@@ -743,8 +745,8 @@
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-body-secondary text-uppercase">Catatan
                                     Umum</label>
-                                <textarea name="catatan" class="form-control bg-body-tertiary border-0 rounded-4 text-body" rows="2"
-                                    placeholder="Tulis catatan jika perlu..."></textarea>
+                                <textarea name="catatan" id="catatan_tahsin" class="form-control bg-body-tertiary border-0 rounded-4 text-body"
+                                    rows="2" placeholder="Tulis catatan jika perlu..."></textarea>
                             </div>
                         </div>
                     </div>
@@ -1208,6 +1210,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             let filterTanggal = 'today';
             let tilawahTemplates = [];
+            const DRILL_MATERI_CATATAN = 'Mengulang Materi Bersama';
 
             const filterLabels = {
                 all: 'Semua Riwayat',
@@ -1464,7 +1467,10 @@
                 );
                 $('#counter-materi-selected').text('0 Terpilih').removeClass('bg-primary text-white')
                     .addClass('bg-secondary-subtle text-secondary');
+                $('#label-pilih-halaman').text('PILIH HALAMAN');
+                $('#catatan_tahsin').prop('readonly', false);
                 $('#eligibility-container').hide();
+                $('#elig-warning').stop(true, true).hide().text('');
                 modalTahsin.show();
             });
 
@@ -1472,36 +1478,70 @@
             $('#buku').on('change', function() {
                 const bukuKey = $(this).val();
                 const $container = $('#container-materi-checkbox');
+                const $catatan = $('#catatan_tahsin');
+                const isDrillMateri = bukuKey === 'drill_materi';
 
                 $container.empty();
                 $('#counter-materi-selected').text('0 Terpilih').removeClass('bg-primary text-white')
                     .addClass('bg-secondary-subtle text-secondary');
+                $('#label-pilih-halaman').text('PILIH HALAMAN');
                 $('#eligibility-container').hide();
+                $('#elig-warning').stop(true, true).hide().text('');
 
-                if (!bukuKey || !DATA_MATERI[bukuKey]) {
+                if (isDrillMateri) {
+                    $('#label-pilih-halaman').text('HALAMAN TIDAK DIGUNAKAN');
+                    $('#counter-materi-selected')
+                        .text('Nonaktif')
+                        .removeClass('bg-primary text-white')
+                        .addClass('bg-secondary-subtle text-secondary');
+                    $container.html(`
+                        <div class="text-center py-5 px-3 text-body-secondary">
+                            <i class="bi bi-arrow-repeat fs-2 d-block mb-2 text-primary"></i>
+                            <div class="fw-bold text-body">Drill Materi Bersama</div>
+                            <small>Pilihan halaman dinonaktifkan untuk pencatatan ini.</small>
+                        </div>
+                    `);
+                    $catatan.val(DRILL_MATERI_CATATAN).prop('readonly', true);
+                } else {
+                    if ($catatan.val() === DRILL_MATERI_CATATAN) {
+                        $catatan.val('');
+                    }
+                    $catatan.prop('readonly', false);
+                }
+
+                if (!bukuKey) {
                     $container.html(
                         '<p class="text-muted small text-center my-4">-- Silakan Pilih Buku/Jilid Terlebih Dahulu --</p>'
                     );
                     return;
                 }
 
-                // Render Hardcoded Checkbox berdasarkan dataset di atas
-                DATA_MATERI[bukuKey].forEach(item => {
-                    $container.append(`
-                        <div class="materi-item-box" id="box-materi-${item.halaman}">
-                            <div class="form-check w-100 cursor-pointer">
-                                <input class="form-check-input checkbox-materi-item" type="checkbox"
-                                    name="halaman[]"
-                                    value="${item.halaman}"
-                                    id="materi-${item.halaman}"
-                                    data-materi-name="${item.materi}">
-                                <label class="form-check-label d-block cursor-pointer fw-semibold w-100 text-body" for="materi-${item.halaman}">
-                                    <span class="text-primary me-2">[Hal. ${item.halaman}]</span> ${item.materi}
-                                </label>
+                if (!isDrillMateri) {
+                    if (!DATA_MATERI[bukuKey]) {
+                        $container.html(
+                            '<p class="text-danger small text-center my-4">Materi buku tidak ditemukan.</p>'
+                        );
+                        return;
+                    }
+
+                    // Render Hardcoded Checkbox berdasarkan dataset di atas
+                    DATA_MATERI[bukuKey].forEach(item => {
+                        $container.append(`
+                            <div class="materi-item-box" id="box-materi-${item.halaman}">
+                                <div class="form-check w-100 cursor-pointer">
+                                    <input class="form-check-input checkbox-materi-item" type="checkbox"
+                                        name="halaman[]"
+                                        value="${item.halaman}"
+                                        id="materi-${item.halaman}"
+                                        data-materi-name="${item.materi}">
+                                    <label class="form-check-label d-block cursor-pointer fw-semibold w-100 text-body" for="materi-${item.halaman}">
+                                        <span class="text-primary me-2">[Hal. ${item.halaman}]</span> ${item.materi}
+                                    </label>
+                                </div>
                             </div>
-                        </div>
-                    `);
-                });
+                        `);
+                    });
+                }
 
                 // Fetch Eligibility Check (Sinkronisasi Validasi Tilawah)
                 $.ajax({
@@ -1514,11 +1554,22 @@
                         $('#eligibility-container').fadeIn('fast');
                         $('#elig-progress').removeClass('bg-success bg-warning').addClass(
                             'bg-primary').css('width', '100%');
-                        $('#req-juz').text('...');
-                        $('#elig-warning').hide();
+                        $('#elig-rule-label').text('MEMERIKSA SYARAT...');
+                        $('#elig-count').text('0');
+                        $('#elig-total').text('0');
+                        $('#elig-warning').stop(true, true).hide().text('');
                     },
                     success: function(res) {
-                        $('#req-juz').text(res.syarat_juz);
+                        const requiresTilawah = res.requires_tilawah !== false;
+                        const syaratLabel = res.syarat_label ||
+                            (requiresTilawah ? `Juz 1–${res.syarat_juz}` :
+                                'Tanpa syarat Tilawah');
+
+                        $('#elig-rule-label').text(
+                            requiresTilawah ?
+                            `MEMENUHI SYARAT (${syaratLabel} LENGKAP)` :
+                            'TANPA SYARAT TILAWAH'
+                        );
                         $('#elig-count').text(res.eligible);
                         $('#elig-total').text(res.total);
 
@@ -1529,13 +1580,16 @@
                             $('#elig-progress').removeClass('bg-primary bg-success').addClass(
                                 'bg-warning');
                             let selisih = res.total - res.eligible;
-                            $('#elig-warning').text(
-                                `*Ada ${selisih} santri yang otomatis terlewati karena Tilawah belum sampai Juz ${res.syarat_juz}.`
-                            ).slideDown('fast');
+                            $('#elig-warning')
+                                .stop(true, true)
+                                .text(
+                                    `*Ada ${selisih} santri yang otomatis terlewati karena Tilawah ${syaratLabel} belum lengkap.`
+                                )
+                                .slideDown('fast');
                         } else {
                             $('#elig-progress').removeClass('bg-primary bg-warning').addClass(
                                 'bg-success');
-                            $('#elig-warning').hide();
+                            $('#elig-warning').stop(true, true).hide().text('');
                         }
                     }
                 });
@@ -1572,7 +1626,14 @@
                 e.preventDefault();
 
                 // Validasi Client-side: Minimal wajib memilih 1 materi/halaman
-                if ($('.checkbox-materi-item:checked').length === 0 && $('#buku').val() !== "") {
+                const bukuDipilih = $('#buku').val();
+                const isDrillMateri = bukuDipilih === 'drill_materi';
+
+                if (
+                    !isDrillMateri &&
+                    $('.checkbox-materi-item:checked').length === 0 &&
+                    bukuDipilih !== ''
+                ) {
                     Swal.fire('Perhatian',
                         'Silakan pilih minimal 1 halaman/materi materi sebelum menyimpan!', 'warning');
                     return;
@@ -1620,7 +1681,11 @@
                 const d = $(this).data();
                 $('#edit_id').val(d.id);
                 $('#edit_nama_santri').text(d.santri_nama);
-                $('#edit_info_materi').text(d.buku_label + ' - Halaman ' + d.halaman);
+                $('#edit_info_materi').text(
+                    d.halaman === '' ?
+                    d.buku_label :
+                    d.buku_label + ' - Halaman ' + d.halaman
+                );
                 $('#edit_status').val(d.status);
                 $('#edit_nilai_label').val(d.nilai_label || ''); // Setel nilai jika ada
                 $('#edit_catatan').val(d.catatan);
@@ -1651,7 +1716,11 @@
             $(document).on('click', '.btn-detail', function() {
                 const d = $(this).data();
                 $('#det_santri_nama').text(d.santri_nama);
-                $('#det_buku_halaman').text(d.buku_label + ' - Hal ' + d.halaman);
+                $('#det_buku_halaman').text(
+                    d.halaman === '' ?
+                    d.buku_label :
+                    d.buku_label + ' - Hal ' + d.halaman
+                );
                 $('#det_tanggal_label').text(d.tanggal_label);
                 $('#det_catatan_val').text(d.catatan || 'Tidak ada catatan khusus.');
 

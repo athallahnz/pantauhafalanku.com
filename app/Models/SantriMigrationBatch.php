@@ -133,6 +133,15 @@ class SantriMigrationBatch extends Model
         return $this->belongsTo(User::class, 'rolled_back_by');
     }
 
+    public function isHierarchyAware(): bool
+    {
+        return (int) data_get(
+            $this->metadata,
+            'hierarchy_version',
+            0
+        ) >= 2;
+    }
+
     public function canRequestRollback(): bool
     {
         return $this->status === self::STATUS_COMPLETED

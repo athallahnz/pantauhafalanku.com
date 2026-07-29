@@ -5,7 +5,9 @@ namespace App\Support\Academic;
 use App\Models\Santri;
 use App\Models\SantriMigrationBatch;
 use App\Models\SantriMigrationBatchItem;
+use App\Models\SantriSemesterPlacement;
 use App\Models\Semester;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +46,9 @@ trait HandlesSantriMigrationBatches
             'mode' => $batch->mode,
             'from_semester_id' => (int) $batch->from_semester_id,
             'to_semester_id' => (int) $batch->to_semester_id,
+            'transition_type' => $batch->transition_type,
+            'note' => $batch->note,
+            'metadata' => $batch->metadata,
             'items' => $items
                 ->sortBy('santri_id')
                 ->values()
@@ -61,6 +66,7 @@ trait HandlesSantriMigrationBatches
                             : null,
                         'transition_type' => $item->transition_type,
                         'source_hash' => $item->source_hash,
+                        'target_snapshot' => $item->target_snapshot,
                     ]
                 )
                 ->all(),
@@ -327,15 +333,15 @@ trait HandlesSantriMigrationBatches
                     ->sort()
                     ->values();
 
-                if ($expectedItemIds->all() !== $submittedItemIds->all()) {
-                    throw ValidationException::withMessages([
-                        'items' => [
-                            'Daftar item tidak sama dengan batch Preview. Jalankan Preview ulang.',
-                        ],
-                    ]);
-                }
-
-                $storedHash = $this->calculateBatchSnapshotHash($batch, $batchItems);
+                /*
+                 * Hash batch asli selalu diverifikasi sebelum subset diproses.
+                 * Dengan demikian checkbox tidak dapat dipakai untuk menyisipkan
+                 * item di luar Preview atau mengubah snapshot yang tersimpan.
+                 */
+                $storedHash = $this->calculateBatchSnapshotHash(
+                    $batch,
+                    $batchItems
+                );
 
                 if (
                     !$batch->snapshot_hash
@@ -346,6 +352,90 @@ trait HandlesSantriMigrationBatches
                             'Isi batch berubah setelah Preview. Jalankan Preview ulang.',
                         ],
                     ]);
+                }
+
+                $unknownItemIds = $submittedItemIds
+                    ->diff($expectedItemIds)
+                    ->values();
+
+                if ($unknownItemIds->isNotEmpty()) {
+                    throw ValidationException::withMessages([
+                        'items' => [
+                            'Terdapat item yang tidak termasuk dalam batch Preview.',
+                        ],
+                    ]);
+                }
+
+                if (
+                    $expectedMode !== SantriMigrationBatch::MODE_MANUAL
+                    && $expectedItemIds->all() !== $submittedItemIds->all()
+                ) {
+                    throw ValidationException::withMessages([
+                        'items' => [
+                            'Auto-Mapping wajib mengeksekusi seluruh item Preview.',
+                        ],
+                    ]);
+                }
+
+                /*
+                 * Mode manual mendukung eksekusi parsial. Item yang tidak dicentang
+                 * dikeluarkan dari batch final, sementara santrinya tetap berada pada
+                 * kelas asal dan dapat dibuatkan Preview menuju target lain.
+                 */
+                if (
+                    $expectedMode === SantriMigrationBatch::MODE_MANUAL
+                    && $expectedItemIds->all() !== $submittedItemIds->all()
+                ) {
+                    $selectedIds = $submittedItemIds
+                        ->map(fn ($id) => (int) $id)
+                        ->all();
+
+                    $excludedItems = $batchItems
+                        ->reject(
+                            fn (SantriMigrationBatchItem $item) =>
+                                in_array((int) $item->id, $selectedIds, true)
+                        )
+                        ->values();
+
+                    $excludedSantriIds = $excludedItems
+                        ->pluck('santri_id')
+                        ->filter()
+                        ->map(fn ($id) => (int) $id)
+                        ->values()
+                        ->all();
+
+                    if ($excludedItems->isNotEmpty()) {
+                        SantriMigrationBatchItem::query()
+                            ->where('batch_id', $batch->id)
+                            ->whereIn('id', $excludedItems->pluck('id'))
+                            ->delete();
+                    }
+
+                    $batchItems = $batchItems
+                        ->filter(
+                            fn (SantriMigrationBatchItem $item) =>
+                                in_array((int) $item->id, $selectedIds, true)
+                        )
+                        ->values();
+
+                    $metadata = $batch->metadata ?? [];
+                    $metadata['partial_execution'] = [
+                        'preview_count' => $expectedItemIds->count(),
+                        'selected_count' => $batchItems->count(),
+                        'excluded_count' => count($excludedSantriIds),
+                        'excluded_santri_ids' => $excludedSantriIds,
+                        'pruned_at' => now()->toIso8601String(),
+                        'note' => 'Santri yang tidak dipilih tetap berada pada kelas asal.',
+                    ];
+
+                    $batch->forceFill([
+                        'items_count' => $batchItems->count(),
+                        'metadata' => $metadata,
+                        'snapshot_hash' => $this->calculateBatchSnapshotHash(
+                            $batch,
+                            $batchItems
+                        ),
+                    ])->save();
                 }
 
                 $santriIds = $batchItems
@@ -429,6 +519,70 @@ trait HandlesSantriMigrationBatches
 
                 $executedAt = now();
 
+                $batchMetadata = $batch->metadata ?? [];
+                $exitMetadata = data_get($batchMetadata, 'exit', []);
+                $hasExitItems = $batchItems->contains(
+                    fn (SantriMigrationBatchItem $item) =>
+                        $item->transition_type === 'keluar'
+                );
+
+                if (!is_array($exitMetadata)) {
+                    $exitMetadata = [];
+                }
+
+                if (
+                    $hasExitItems
+                    && (
+                        empty($exitMetadata['reason_code'])
+                        || empty($exitMetadata['effective_at'])
+                        || blank($batch->note)
+                    )
+                ) {
+                    throw ValidationException::withMessages([
+                        'batch_id' => [
+                            'Data keluar pada batch tidak lengkap. Jalankan Preview ulang.',
+                        ],
+                    ]);
+                }
+
+                $exitEffectiveAt = $hasExitItems
+                    ? Carbon::parse($exitMetadata['effective_at'])
+                    : $executedAt;
+
+                if ($hasExitItems) {
+                    $existingTargetPlacementIds =
+                        SantriSemesterPlacement::query()
+                            ->where('semester_id', $toSemester->id)
+                            ->whereIn('santri_id', $santriIds)
+                            ->lockForUpdate()
+                            ->pluck('santri_id');
+
+                    if ($existingTargetPlacementIds->isNotEmpty()) {
+                        throw ValidationException::withMessages([
+                            'batch_id' => [
+                                $existingTargetPlacementIds->count()
+                                    . ' santri sudah memiliki placement pada semester tujuan. Koreksi placement tersebut lalu jalankan Preview ulang.',
+                            ],
+                        ]);
+                    }
+
+                    $semesterStart = $fromSemester->tanggal_mulai
+                        ?->copy()->startOfDay();
+                    $semesterEnd = $fromSemester->tanggal_selesai
+                        ?->copy()->endOfDay();
+
+                    if (
+                        ($semesterStart && $exitEffectiveAt->lt($semesterStart))
+                        || ($semesterEnd && $exitEffectiveAt->gt($semesterEnd))
+                    ) {
+                        throw ValidationException::withMessages([
+                            'batch_id' => [
+                                'Tanggal efektif keluar tidak lagi sesuai rentang semester asal. Jalankan Preview ulang.',
+                            ],
+                        ]);
+                    }
+                }
+
                 $placementService = app(
                     SantriSemesterPlacementService::class
                 );
@@ -456,7 +610,9 @@ trait HandlesSantriMigrationBatches
                             $batch,
                             $batchItem,
                             (int) auth()->id(),
-                            $executedAt
+                            $batchItem->transition_type === 'keluar'
+                                ? $exitEffectiveAt
+                                : $executedAt
                         );
                 }
 
@@ -467,6 +623,20 @@ trait HandlesSantriMigrationBatches
                 foreach ($batchItems as $batchItem) {
                     $santri = $santris->get((int) $batchItem->santri_id);
                     $effectiveMusyrifId = $resolvedAssignments[(int) $batchItem->id];
+                    $isExit = $batchItem->transition_type === 'keluar';
+                    $transitionAt = $isExit
+                        ? $exitEffectiveAt
+                        : $executedAt;
+
+                    $statusMetadata = $isExit
+                        ? [
+                            'source' => 'manual_migration_exit',
+                            'migration_batch_id' => $batch->id,
+                            'migration_batch_code' => $batch->code,
+                            'migration_batch_item_id' => $batchItem->id,
+                            'exit' => $exitMetadata,
+                        ]
+                        : [];
 
                     $this->applyTransition(
                         $santri,
@@ -478,7 +648,10 @@ trait HandlesSantriMigrationBatches
                         $effectiveMusyrifId,
                         $batch->note,
                         (int) auth()->id(),
-                        "items.{$batchItem->id}.to_musyrif_id"
+                        "items.{$batchItem->id}.to_musyrif_id",
+                        $fromSemester,
+                        $transitionAt,
+                        $statusMetadata
                     );
 
                     /*
@@ -486,16 +659,39 @@ trait HandlesSantriMigrationBatches
                     | Placement semester tujuan menjadi historical source of truth
                     |--------------------------------------------------------------------------
                     */
-                    $placementService
-                        ->writeTargetPlacement(
+                    if ($isExit) {
+                        /*
+                         * Santri keluar berhenti pada semester asal.
+                         * Tidak dibuatkan placement pada semester tujuan.
+                         */
+                        $placementService->recordStatusChange(
                             $santri,
-                            $toSemester,
-                            $batch,
-                            $batchItem,
-                            $effectiveMusyrifId,
+                            $fromSemester,
+                            SantriSemesterPlacement::STATUS_KELUAR,
+                            SantriSemesterPlacement::TYPE_KELUAR,
+                            $batchItem->from_kelas_id !== null
+                                ? (int) $batchItem->from_kelas_id
+                                : null,
+                            $batchItem->from_musyrif_id !== null
+                                ? (int) $batchItem->from_musyrif_id
+                                : null,
+                            $batch->note,
                             (int) auth()->id(),
-                            $executedAt
+                            $transitionAt,
+                            $statusMetadata
                         );
+                    } else {
+                        $placementService
+                            ->writeTargetPlacement(
+                                $santri,
+                                $toSemester,
+                                $batch,
+                                $batchItem,
+                                $effectiveMusyrifId,
+                                (int) auth()->id(),
+                                $executedAt
+                            );
+                    }
 
                     $batchItem->forceFill([
                         'to_musyrif_id' => $effectiveMusyrifId,
@@ -509,7 +705,7 @@ trait HandlesSantriMigrationBatches
                     $summaryKey = sprintf(
                         '%s->%s:%s',
                         $batchItem->from_kelas_id ?? 'null',
-                        $batchItem->to_kelas_id ?? 'lulus',
+                        $batchItem->to_kelas_id ?? 'terminal',
                         $batchItem->transition_type
                     );
 
@@ -517,9 +713,11 @@ trait HandlesSantriMigrationBatches
                         $summary[$summaryKey] = [
                             'from' => $source['kelas_nama'] ?? $batchItem->from_kelas_id,
                             'to' => $target['kelas_nama'] ?? (
-                                $batchItem->transition_type === 'lulus'
-                                    ? 'LULUS'
-                                    : $batchItem->to_kelas_id
+                                match ($batchItem->transition_type) {
+                                    'lulus' => 'LULUS',
+                                    'keluar' => 'ARSIP — KELUAR',
+                                    default => $batchItem->to_kelas_id,
+                                }
                             ),
                             'tipe' => $batchItem->transition_type,
                             'affected' => 0,

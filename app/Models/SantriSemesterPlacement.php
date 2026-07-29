@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SantriSemesterPlacement extends Model
 {
@@ -19,8 +20,10 @@ class SantriSemesterPlacement extends Model
     public const TYPE_NAIK_KELAS = 'naik_kelas';
     public const TYPE_TINGGAL_KELAS = 'tinggal_kelas';
     public const TYPE_LULUS = 'lulus';
+    public const TYPE_KELUAR = 'keluar';
     public const TYPE_REAKTIVASI = 'reaktivasi';
     public const TYPE_KOREKSI_STATUS = 'koreksi_status';
+    public const TYPE_HIERARCHY_ASSIGNMENT = 'hierarchy_assignment';
 
     protected $fillable = [
         'santri_id',
@@ -40,9 +43,15 @@ class SantriSemesterPlacement extends Model
     ];
 
     protected $casts = [
+        'santri_id' => 'integer',
+        'semester_id' => 'integer',
+        'kelas_id' => 'integer',
+        'musyrif_id' => 'integer',
         'started_at' => 'datetime',
         'ended_at' => 'datetime',
         'metadata' => 'array',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
     ];
 
     public function scopeForSemester(
@@ -82,6 +91,43 @@ class SantriSemesterPlacement extends Model
             'musyrif_id',
             $musyrifId
         );
+    }
+
+    public function scopeUsingLegacyClass(
+        Builder $query
+    ): Builder {
+        return $query->whereHas(
+            'kelas',
+            fn (Builder $kelasQuery) =>
+                $kelasQuery->whereNull('parent_id')
+        );
+    }
+
+    public function scopeUsingOperationalClass(
+        Builder $query
+    ): Builder {
+        return $query->whereHas(
+            'kelas',
+            fn (Builder $kelasQuery) =>
+                $kelasQuery
+                    ->whereNotNull('parent_id')
+                    ->where('is_active', true)
+        );
+    }
+
+    public function usesLegacyParentClass(): bool
+    {
+        if (!$this->kelas_id) {
+            return false;
+        }
+
+        if ($this->relationLoaded('kelas')) {
+            return (bool) $this->kelas?->isInduk();
+        }
+
+        return $this->kelas()
+            ->whereNull('parent_id')
+            ->exists();
     }
 
     public function santri(): BelongsTo
@@ -130,6 +176,14 @@ class SantriSemesterPlacement extends Model
             SantriMigrationBatchItem::class,
             'migration_batch_item_id'
         );
+    }
+
+    public function kelasGroupAssignmentItems(): HasMany
+    {
+        return $this->hasMany(
+            KelasGroupAssignmentItem::class,
+            'placement_id'
+        )->latest('id');
     }
 
     public function createdBy(): BelongsTo

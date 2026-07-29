@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -89,7 +90,8 @@ class Santri extends Model
         ?string $reason = null,
         ?Semester $semester = null,
         ?int $changedBy = null,
-        CarbonInterface|string|null $changedAt = null
+        CarbonInterface|string|null $changedAt = null,
+        array $metadata = []
     ): void {
         if (!in_array($toStatus, self::inactiveStatuses(), true)) {
             throw new InvalidArgumentException('Status tujuan arsip tidak valid.');
@@ -113,7 +115,8 @@ class Santri extends Model
             $reason,
             $semester,
             $actorId,
-            $changedAtValue
+            $changedAtValue,
+            $metadata
         ): void {
             $fromStatus = $this->status;
             $oldKelasId = $this->kelas_id;
@@ -142,18 +145,17 @@ class Santri extends Model
             $this->statusHistories()->create([
                 'from_status' => $fromStatus,
                 'to_status' => $toStatus,
-                'semester_id' => $toStatus === self::STATUS_LULUS
-                    ? $semester?->id
-                    : null,
+                // Semester juga dicatat untuk keluar/nonaktif agar arsip kontekstual.
+                'semester_id' => $semester?->id,
                 'kelas_id' => $oldKelasId,
                 'musyrif_id' => $oldMusyrifId,
                 'reason' => $reason,
                 'changed_by' => $actorId,
                 'changed_at' => $changedAtValue,
-                'metadata' => [
+                'metadata' => array_merge([
                     'previous_graduated_semester_id' => $oldGraduatedSemesterId,
                     'previous_graduated_at' => $oldGraduatedAt?->toIso8601String(),
-                ],
+                ], $metadata),
             ]);
         });
     }
@@ -269,6 +271,14 @@ class Santri extends Model
             ->latest('changed_at');
     }
 
+    public function latestStatusHistory(): HasOne
+    {
+        return $this->hasOne(
+            SantriStatusHistory::class,
+            'santri_id'
+        )->latestOfMany();
+    }
+
     public function semesterPlacements(): HasMany
     {
         return $this->hasMany(
@@ -318,6 +328,52 @@ class Santri extends Model
                 'document_type',
                 AcademicDocument::TYPE_RAPORT
             );
+    }
+
+
+    public function kelasGroupAssignmentItems(): HasMany
+    {
+        return $this->hasMany(
+            KelasGroupAssignmentItem::class,
+            'santri_id'
+        )->latest('id');
+    }
+
+    public function scopeUsingLegacyClass(
+        Builder $query
+    ): Builder {
+        return $query->whereHas(
+            'kelas',
+            fn (Builder $kelasQuery) =>
+                $kelasQuery->whereNull('parent_id')
+        );
+    }
+
+    public function scopeUsingOperationalClass(
+        Builder $query
+    ): Builder {
+        return $query->whereHas(
+            'kelas',
+            fn (Builder $kelasQuery) =>
+                $kelasQuery
+                    ->whereNotNull('parent_id')
+                    ->where('is_active', true)
+        );
+    }
+
+    public function usesLegacyParentClass(): bool
+    {
+        if (!$this->kelas_id) {
+            return false;
+        }
+
+        if ($this->relationLoaded('kelas')) {
+            return (bool) $this->kelas?->isInduk();
+        }
+
+        return $this->kelas()
+            ->whereNull('parent_id')
+            ->exists();
     }
 
     private array $namaAliases = [

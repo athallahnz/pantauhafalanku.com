@@ -35,6 +35,50 @@
             border-bottom-color: var(--islamic-purple-600);
         }
 
+        /* Sub Tabs Kelompok / Rombel */
+        .kelompok-filter-wrap {
+            padding: 0.85rem 0 0.15rem;
+        }
+
+        .kelompok-filter-label {
+            color: var(--cui-secondary-color);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .kelompok-filter-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .kelompok-filter-tabs .nav-link {
+            border: 1px solid var(--cui-border-color);
+            border-radius: 999px;
+            padding: 0.45rem 0.9rem;
+            color: var(--cui-secondary-color);
+            background: var(--cui-body-bg);
+            font-size: 0.82rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+
+        .kelompok-filter-tabs .nav-link:hover {
+            color: var(--islamic-purple-700, #59359d);
+            border-color: rgba(111, 66, 193, 0.45);
+            background: rgba(111, 66, 193, 0.06);
+        }
+
+        .kelompok-filter-tabs .nav-link.active {
+            color: #ffffff;
+            border-color: var(--islamic-purple-600, #6f42c1);
+            background: var(--islamic-purple-600, #6f42c1);
+            box-shadow: 0 8px 18px rgba(89, 53, 157, 0.2);
+        }
+
         /* Form Controls */
         .form-control,
         .form-select {
@@ -415,7 +459,7 @@
                     <li class="nav-item">
                         <button class="nav-link active" data-kelas="" type="button">Semua Kelas</button>
                     </li>
-                    @foreach ($kelasList as $kelas)
+                    @foreach ($kelasParents as $kelas)
                         <li class="nav-item">
                             <button class="nav-link" data-kelas="{{ $kelas->id }}" type="button">
                                 {{ $kelas->nama_kelas }}
@@ -423,6 +467,32 @@
                         </li>
                     @endforeach
                 </ul>
+
+                {{-- SUB-TABS FILTER KELOMPOK: tampil sesuai kelas induk aktif --}}
+                <div class="kelompok-filter-wrap d-none" id="kelompokFilterWrap">
+                    <div class="kelompok-filter-label">
+                        <i class="bi bi-diagram-3-fill me-1"></i> Filter Kelompok
+                    </div>
+
+                    @foreach ($kelasParents as $parent)
+                        <ul class="nav kelompok-filter-tabs d-none" data-parent-kelas="{{ $parent->id }}" role="tablist"
+                            aria-label="Filter kelompok {{ $parent->nama_kelas }}">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-kelas="{{ $parent->id }}" type="button">
+                                    Semua Kelompok
+                                </button>
+                            </li>
+
+                            @foreach ($parent->children as $child)
+                                <li class="nav-item">
+                                    <button class="nav-link" data-kelas="{{ $child->id }}" type="button">
+                                        Kelompok {{ $child->kelompok ?: $child->nama_kelas }}
+                                    </button>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endforeach
+                </div>
             </div>
 
             <div class="table-responsive">
@@ -463,7 +533,7 @@
                 <input type="hidden" name="id" id="santri_id">
                 <div class="modal-content border-0 shadow rounded-4 overflow-hidden">
                     <div class="modal-header border-bottom-0 px-4">
-                        <h5 class="modal-title fw-bold text-white d-flex align-items-center gap-2">
+                        <h5 class="modal-title fw-bold text-white d-flex align-items-center gap-2" id="modalSantriTitle">
                             <i class="bi bi-person-plus-fill"></i> Tambah Santri
                         </h5>
                         <button type="button" class="btn-close bg-light rounded-circle p-2"
@@ -507,17 +577,29 @@
                             <div class="col-md-6">
                                 <label class="form-label">Kelas</label>
                                 <select class="form-select" name="kelas_id" id="kelas_id" required>
-                                    <option value="">-- Pilih Kelas --</option>
-                                    @foreach ($kelasList as $kelas)
-                                        <option value="{{ $kelas->id }}">{{ $kelas->nama_kelas }}</option>
+                                    <option value="">-- Pilih Kelompok Kelas --</option>
+                                    @foreach ($kelasParents as $parent)
+                                        <optgroup label="{{ $parent->nama_kelas }}">
+                                            <option value="{{ $parent->id }}" data-legacy-parent="1" disabled>
+                                                {{ $parent->nama_kelas }} — Legacy Induk
+                                            </option>
+                                            @foreach ($parent->children as $child)
+                                                <option value="{{ $child->id }}">{{ $child->nama_kelas }}</option>
+                                            @endforeach
+                                        </optgroup>
                                     @endforeach
                                 </select>
+                                <div class="form-text">Santri baru wajib ditempatkan pada kelas kelompok.</div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Musyrif</label>
                                 <select class="form-select" name="musyrif_id" id="musyrif_id">
-                                    <option value="">-- Pilih Kelas Terlebih Dahulu --</option>
+                                    <option value="">-- Pilih kelas untuk memuat Musyrif satu tingkat --</option>
                                 </select>
+                                <div class="form-text">
+                                    Pilihan Musyrif mengikuti <strong>tingkat utama/kelas induk</strong>.
+                                    Kelas kelompok santri otomatis ditambahkan ke pivot kelas binaan Musyrif.
+                                </div>
                                 <div class="invalid-feedback" id="error-musyrif"></div>
                             </div>
                         </div>
@@ -1120,7 +1202,37 @@
             $('#kelasTabs').on('click', '.nav-link', function() {
                 $('#kelasTabs .nav-link').removeClass('active');
                 $(this).addClass('active');
-                selectedKelas = $(this).data('kelas') || '';
+
+                const parentKelasId = String($(this).data('kelas') || '');
+                const kelompokWrap = $('#kelompokFilterWrap');
+                const kelompokTabs = $('.kelompok-filter-tabs');
+
+                kelompokTabs.addClass('d-none');
+                kelompokTabs.find('.nav-link').removeClass('active');
+                kelompokTabs.find('.nav-link:first').addClass('active');
+
+                if (parentKelasId) {
+                    kelompokWrap.removeClass('d-none');
+                    kelompokTabs
+                        .filter('[data-parent-kelas="' + parentKelasId + '"]')
+                        .removeClass('d-none');
+                } else {
+                    kelompokWrap.addClass('d-none');
+                }
+
+                // ID parent menampilkan seluruh santri dari semua child/kelompok.
+                selectedKelas = parentKelasId;
+                table.ajax.reload();
+            });
+
+            // Filter kelompok memakai ID kelas operasional (child).
+            $('#kelompokFilterWrap').on('click', '.kelompok-filter-tabs .nav-link', function() {
+                const currentTabs = $(this).closest('.kelompok-filter-tabs');
+
+                currentTabs.find('.nav-link').removeClass('active');
+                $(this).addClass('active');
+
+                selectedKelas = String($(this).data('kelas') || '');
                 table.ajax.reload();
             });
 
@@ -1136,12 +1248,23 @@
 
             // === 3. CORE FUNCTIONS (SANTRI CRUD) ===
 
+            function resetLegacyKelasOptions() {
+                $('#kelas_id option[data-legacy-parent="1"]').prop('disabled', true);
+            }
+
+            function enableCurrentLegacyKelas(kelasId) {
+                resetLegacyKelasOptions();
+                $('#kelas_id option[data-legacy-parent="1"][value="' + kelasId + '"]').prop('disabled', false);
+            }
+
             // Trigger Add Modal
             $('#btnAddSantri').on('click', () => {
                 $('#formSantri')[0].reset();
+                resetLegacyKelasOptions();
                 $('#santri_id').val('');
                 $('#modalSantriTitle').html('<i class="bi bi-person-plus-fill"></i> Tambah Santri Baru');
-                $('#musyrif_id').html('<option value="">-- Pilih Kelas Terlebih Dahulu --</option>');
+                $('#musyrif_id').html(
+                    '<option value="">-- Pilih kelas untuk memuat Musyrif satu tingkat --</option>');
                 modalSantri.show();
             });
 
@@ -1157,11 +1280,17 @@
                 $('#nis').val(d.nis);
                 $('#tanggal_lahir').val(d.tanggal_lahir);
                 $('#jenis_kelamin').val(d.jenis_kelamin);
+                if (Number(d.kelas_legacy) === 1) {
+                    enableCurrentLegacyKelas(d.kelas_id);
+                } else {
+                    resetLegacyKelasOptions();
+                }
                 $('#kelas_id').val(d.kelas_id);
 
                 // Populate Dynamic Dropdown (Musyrif)
                 const musyrifSelect = $('#musyrif_id');
-                musyrifSelect.html('<option value="">-- Memuat Musyrif... --</option>');
+                musyrifSelect.html(
+                    '<option value="">-- Memuat Musyrif berdasarkan tingkat utama... --</option>');
 
                 $.get("{{ route('santri.master.get_by_kelas', '') }}/" + d.kelas_id)
                     .done(function(res) {
@@ -1169,7 +1298,7 @@
                         if (res.data) {
                             res.data.forEach(m => {
                                 musyrifSelect.append(
-                                    `<option value="${m.id}">${m.nama}</option>`);
+                                    `<option value="${m.id}">${m.label ?? m.nama}</option>`);
                             });
                             // SET VALUE MUSYRIF setelah data dipastikan termuat
                             musyrifSelect.val(d.musyrif_id);
@@ -1184,17 +1313,20 @@
                 const kelasId = $(this).val();
                 const musyrifSelect = $('#musyrif_id');
                 if (!kelasId) return musyrifSelect.html(
-                    '<option value="">-- Pilih Kelas Terlebih Dahulu --</option>');
+                    '<option value="">-- Pilih kelas untuk memuat Musyrif satu tingkat --</option>');
 
-                musyrifSelect.html('<option value="">-- Memuat Musyrif... --</option>');
+                musyrifSelect.html(
+                    '<option value="">-- Memuat Musyrif berdasarkan tingkat utama... --</option>');
                 $.get("{{ route('santri.master.get_by_kelas', '') }}/" + kelasId).done(function(res) {
                     musyrifSelect.empty();
                     if (res.status === 'empty') {
-                        musyrifSelect.append('<option value="">-- Tidak ada Musyrif --</option>');
+                        musyrifSelect.append(
+                            '<option value="">-- Tidak ada Musyrif pada tingkat ini --</option>'
+                            );
                     } else {
                         musyrifSelect.append('<option value="">-- Pilih Musyrif --</option>');
                         res.data.forEach(m => musyrifSelect.append(
-                            `<option value="${m.id}">${m.nama}</option>`));
+                            `<option value="${m.id}">${m.label ?? m.nama}</option>`));
                     }
                 });
             });

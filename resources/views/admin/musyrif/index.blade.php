@@ -99,6 +99,215 @@
             border-color: #dc3545 !important;
         }
 
+        /* ================= FORM TAMBAH / EDIT MUSYRIF ================= */
+        .musyrif-form-modal .modal-dialog {
+            width: min(1120px, calc(100% - 2rem));
+            max-width: 1120px;
+            height: calc(100% - 2rem);
+            margin: 1rem auto;
+        }
+
+        .musyrif-form-modal .modal-content {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-height: 100%;
+            overflow: hidden;
+            color: var(--cui-body-color, #212529);
+            background-color: var(--cui-body-bg, #ffffff) !important;
+        }
+
+        .musyrif-form-modal .modal-header,
+        .musyrif-form-modal .modal-footer {
+            flex: 0 0 auto;
+        }
+
+        .musyrif-form-modal .modal-body {
+            min-height: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            background-color: var(--cui-body-bg, #ffffff);
+        }
+
+        .musyrif-form-modal .modal-footer {
+            position: relative;
+            z-index: 2;
+            border-top: 1px solid var(--cui-border-color, #dee2e6) !important;
+            background-color: var(--cui-body-bg, #ffffff);
+        }
+
+        .musyrif-form-modal .modal-header {
+            color: #fff;
+            background:
+                radial-gradient(circle at 92% 12%, rgba(255, 255, 255, .18), transparent 25%),
+                linear-gradient(135deg,
+                    var(--islamic-purple-700, #59359d),
+                    var(--islamic-purple-600, #6f42c1));
+        }
+
+        .musyrif-form-intro {
+            border: 1px solid rgba(111, 66, 193, .18);
+            border-radius: 16px;
+            background-color: color-mix(in srgb, var(--cui-body-bg, #ffffff) 94%, #6f42c1 6%);
+        }
+
+        .musyrif-form-section {
+            height: 100%;
+            padding: 1rem;
+            border: 1px solid var(--cui-border-color, #dee2e6);
+            border-radius: 16px;
+            background-color: var(--cui-body-bg, #ffffff);
+        }
+
+        .musyrif-form-section-title {
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+            margin-bottom: 1rem;
+            color: var(--cui-body-color);
+            font-weight: 800;
+        }
+
+        .musyrif-form-section-icon {
+            width: 38px;
+            height: 38px;
+            flex: 0 0 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            color: var(--islamic-purple-700, #59359d);
+            background: rgba(111, 66, 193, .12);
+        }
+
+        .required-mark {
+            margin-left: .2rem;
+            color: var(--cui-danger, #dc3545);
+            font-weight: 900;
+        }
+
+        .required-note {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .42rem .7rem;
+            border-radius: 999px;
+            color: var(--cui-danger, #dc3545);
+            background: rgba(220, 53, 69, .08);
+            font-size: .75rem;
+            font-weight: 700;
+        }
+
+        .form-field .form-text {
+            margin-top: .35rem;
+            font-size: .74rem;
+        }
+
+        .account-config-card {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(13, 110, 253, .25);
+            border-radius: 18px;
+            background-color: color-mix(in srgb, var(--cui-body-bg, #ffffff) 95%, #0d6efd 5%);
+            transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+        }
+
+        .account-config-card.is-enabled {
+            border-color: rgba(25, 135, 84, .4);
+            background-color: color-mix(in srgb, var(--cui-body-bg, #ffffff) 93%, #198754 7%);
+            box-shadow: 0 .65rem 1.6rem rgba(25, 135, 84, .08);
+        }
+
+        .account-config-header {
+            padding: 1rem 1.1rem;
+            border-bottom: 1px solid transparent;
+        }
+
+        .account-config-card.is-enabled .account-config-header {
+            border-bottom-color: var(--cui-border-color);
+        }
+
+        .account-config-icon {
+            width: 44px;
+            height: 44px;
+            flex: 0 0 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 14px;
+            color: #0d6efd;
+            background: rgba(13, 110, 253, .12);
+            font-size: 1.15rem;
+        }
+
+        .account-config-card.is-enabled .account-config-icon {
+            color: #198754;
+            background: rgba(25, 135, 84, .12);
+        }
+
+        .account-fields {
+            padding: 1.1rem;
+        }
+
+        .account-security-note {
+            border: 1px dashed rgba(255, 193, 7, .45);
+            border-radius: 13px;
+            background: rgba(255, 193, 7, .08);
+        }
+
+        .input-group .form-control.is-invalid {
+            z-index: 3;
+        }
+
+        [data-coreui-theme="dark"] .musyrif-form-modal .modal-content,
+        [data-coreui-theme="dark"] .musyrif-form-modal .modal-body,
+        [data-coreui-theme="dark"] .musyrif-form-modal .modal-footer {
+            background-color: var(--cui-body-bg, #212631) !important;
+        }
+
+        [data-coreui-theme="dark"] .musyrif-form-intro,
+        [data-coreui-theme="dark"] .musyrif-form-section,
+        [data-coreui-theme="dark"] .account-config-card {
+            background-color: var(--cui-tertiary-bg, #2a303d);
+        }
+
+        [data-coreui-theme="dark"] .musyrif-form-section-icon {
+            color: #d8c6ff;
+            background: rgba(147, 108, 246, .18);
+        }
+
+        @media (max-width: 767.98px) {
+            .musyrif-form-modal .modal-dialog {
+                width: calc(100% - 1rem);
+                height: calc(100% - 1rem);
+                margin: .5rem auto;
+            }
+
+            .musyrif-form-modal .modal-header,
+            .musyrif-form-modal .modal-footer {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            .musyrif-form-modal .modal-body {
+                padding: 1rem !important;
+            }
+
+            .musyrif-form-modal .modal-footer {
+                padding-top: .85rem !important;
+                padding-bottom: .85rem !important;
+            }
+
+            .musyrif-form-modal .modal-footer .btn {
+                flex: 1 1 auto;
+            }
+
+            .account-config-header {
+                align-items: flex-start !important;
+            }
+        }
+
 
         /* ================= GENDER FILTER TABS ================= */
         .gender-filter-tabs {
@@ -476,144 +685,324 @@
 
 
     {{-- ===================== MODAL CREATE & EDIT ===================== --}}
-    <div class="modal fade" id="modalMusyrif" tabindex="-1" data-coreui-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered">
-            <form id="formMusyrif" class="w-100">
+    <div class="modal fade musyrif-form-modal" id="modalMusyrif" tabindex="-1" data-coreui-backdrop="static"
+        aria-labelledby="modalMusyrifTitle" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <form id="formMusyrif" class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
                 @csrf
                 <input type="hidden" id="musyrif_id">
-                <div class="modal-content border-0 shadow rounded-4 overflow-hidden">
-                    <div class="modal-header border-bottom-0 px-4">
-                        <h5 class="modal-title fw-bold text-white d-flex align-items-center gap-2" id="modalMusyrifTitle">
-                            <i class="bi bi-person-badge-fill"></i> Tambah Musyrif
-                        </h5>
-                        <button type="button" class="btn-close bg-light rounded-circle p-2"
-                            data-coreui-dismiss="modal"></button>
+                    <div class="modal-header border-0 px-4 py-3">
+                        <div>
+                            <div class="small text-white-50 text-uppercase fw-bold mb-1">Master Data Musyrif</div>
+                            <h5 class="modal-title fw-bold text-white d-flex align-items-center gap-2 mb-0"
+                                id="modalMusyrifTitle">
+                                <i class="bi bi-person-badge-fill"></i> Tambah Musyrif
+                            </h5>
+                        </div>
+
+                        <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal"
+                            aria-label="Tutup"></button>
                     </div>
+
                     <div class="modal-body p-4">
+                        <div class="musyrif-form-intro p-3 mb-4">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                                <div class="d-flex align-items-start gap-3">
+                                    <span class="musyrif-form-section-icon">
+                                        <i class="bi bi-info-circle-fill"></i>
+                                    </span>
+                                    <div>
+                                        <div class="fw-bold mb-1">Lengkapi profil dan akun akses</div>
+                                        <div class="small text-body-secondary">
+                                            Akun login bersifat opsional. Aktifkan pengaturan akun untuk membuat akses
+                                            musyrif menggunakan email, nomor HP/WhatsApp, dan password.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <span class="required-note flex-shrink-0">
+                                    <span class="required-mark m-0">*</span> Wajib diisi
+                                </span>
+                            </div>
+                        </div>
+
                         <div class="row g-3">
-                            {{-- BAGIAN 1: IDENTITAS UTAMA --}}
-                            <div class="col-md-6">
-                                <label class="form-label">Nama Lengkap</label>
-                                <input type="text" class="form-control" name="nama" id="nama" required>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Kode/NIP</label>
-                                <input type="text" class="form-control" name="kode" id="kode">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Jenis Kelamin</label>
-                                <select class="form-select" name="jenis_kelamin" id="jenis_kelamin">
-                                    <option value="">-- Pilih --</option>
-                                    <option value="L">Putra / Laki-laki</option>
-                                    <option value="P">Putri / Perempuan</option>
-                                </select>
-                            </div>
+                            {{-- IDENTITAS & PENUGASAN --}}
+                            <div class="col-lg-7">
+                                <div class="musyrif-form-section">
+                                    <div class="musyrif-form-section-title">
+                                        <span class="musyrif-form-section-icon">
+                                            <i class="bi bi-person-vcard-fill"></i>
+                                        </span>
+                                        <div>
+                                            <div>Identitas & Penugasan</div>
+                                            <div class="small text-body-secondary fw-normal">Data utama pembimbing santri</div>
+                                        </div>
+                                    </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label">Tugas di Kelas</label>
-                                <select class="form-select" name="kelas_id" id="kelas_id">
-                                    <option value="">-- Pilih Kelas --</option>
-                                    @foreach ($listKelas as $k)
-                                        <option value="{{ $k->id }}">{{ $k->nama_kelas }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Pendidikan Terakhir</label>
-                                <select class="form-select" name="pendidikan_terakhir" id="pendidikan_terakhir">
-                                    <option value="">-- Pilih --</option>
-                                    <option value="SMA">SMA/Sederajat</option>
-                                    <option value="D3">D3</option>
-                                    <option value="S1">S1</option>
-                                    <option value="S2">S2</option>
-                                </select>
-                            </div>
+                                    <div class="row g-3">
+                                        <div class="col-md-7 form-field">
+                                            <label class="form-label" for="nama">
+                                                Nama Lengkap <span class="required-mark">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" name="nama" id="nama"
+                                                maxlength="150" autocomplete="name" required>
+                                        </div>
 
-                            {{-- BAGIAN 2: DETAIL TUGAS & DOMISILI --}}
-                            <div class="col-md-6">
-                                <label class="form-label">Program Halaqah</label>
-                                <select class="form-select" name="halaqah" id="halaqah">
-                                    <option value="Reguler">Reguler</option>
-                                    <option value="Takhassus">Takhassus</option>
-                                    <option value="Pengganti">Pengganti</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Domisili</label>
-                                <select class="form-select" name="domisili" id="domisili">
-                                    <option value="Dalam Pondok (Mukim)">Dalam Pondok (Mukim)</option>
-                                    <option value="Luar Pondok (Pulang-Pergi)">Luar Pondok (Pulang-Pergi)</option>
-                                </select>
-                            </div>
+                                        <div class="col-md-5 form-field">
+                                            <label class="form-label" for="kode">Kode / NIP</label>
+                                            <input type="text" class="form-control" name="kode" id="kode"
+                                                maxlength="50" placeholder="Contoh: MSR-001">
+                                        </div>
 
-                            <div class="col-12">
-                                <label class="form-label">Alamat Lengkap</label>
-                                <textarea class="form-control" name="alamat" id="alamat" rows="2"></textarea>
-                            </div>
-                            {{-- BAGIAN BARU: KETERANGAN --}}
-                            <div class="col-12">
-                                <label class="form-label">Keterangan Tambahan</label>
-                                <textarea class="form-control" name="keterangan" id="keterangan" rows="2"
-                                    placeholder="Catatan khusus tentang musyrif ini..."></textarea>
-                            </div>
-                            {{-- BAGIAN 3: SERTIFIKASI --}}
-                            <div class="col-md-12">
-                                <hr class="my-2">
-                                <h6 class="fw-bold text-adaptive-purple mb-3">Informasi Sertifikasi Al-Qur'an</h6>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Metode</label>
-                                <input type="text" class="form-control" name="metode_alquran" id="metode_alquran"
-                                    placeholder="Contoh: Ummi, Wafa">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Tahun Sertifikasi</label>
-                                <input type="number" class="form-control" name="tahun_sertifikasi"
-                                    id="tahun_sertifikasi" placeholder="Contoh: 2024">
-                            </div>
-                            <div class="col-12">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="is_sertifikasi_ummi"
-                                        id="is_sertifikasi_ummi" value="1">
-                                    <label class="form-check-label small fw-bold" for="is_sertifikasi_ummi">SUDAH
-                                        SERTIFIKASI UMMI</label>
+                                        <div class="col-md-6 form-field">
+                                            <label class="form-label" for="jenis_kelamin">
+                                                Jenis Kelamin <span class="required-mark">*</span>
+                                            </label>
+                                            <select class="form-select" name="jenis_kelamin" id="jenis_kelamin" required>
+                                                <option value="">Pilih jenis kelamin...</option>
+                                                <option value="L">Putra / Laki-laki</option>
+                                                <option value="P">Putri / Perempuan</option>
+                                            </select>
+                                            <div class="form-text">Digunakan untuk pemisahan musyrif Putra dan Putri.</div>
+                                        </div>
+
+                                        <div class="col-md-6 form-field">
+                                            <label class="form-label" for="kelas_induk_id">Tingkat Utama</label>
+                                            <select class="form-select" name="kelas_induk_id" id="kelas_induk_id">
+                                                <option value="">Belum ditugaskan ke tingkat</option>
+                                                @foreach ($kelasParents as $parent)
+                                                    <option value="{{ $parent->id }}">
+                                                        {{ $parent->nama_kelas }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <div class="form-text">
+                                                Parent administratif, misalnya Kelas 7. Semua kelas binaan wajib berada di bawah tingkat ini.
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6 form-field">
+                                            <label class="form-label" for="kelas_id">Kelas Operasional Utama</label>
+                                            <select class="form-select" name="kelas_id" id="kelas_id">
+                                                <option value="">Pilih kelas operasional utama...</option>
+                                                @foreach ($kelasParents as $parent)
+                                                    <optgroup label="{{ $parent->nama_kelas }}">
+                                                        @foreach ($parent->children as $child)
+                                                            <option value="{{ $child->id }}" data-parent-id="{{ $parent->id }}">
+                                                                {{ $child->nama_kelas }}
+                                                            </option>
+                                                        @endforeach
+                                                    </optgroup>
+                                                @endforeach
+                                            </select>
+                                            <div class="form-text">
+                                                Dipakai untuk kompatibilitas laporan lama dan wajib termasuk dalam kelas yang dibina.
+                                            </div>
+                                        </div>
+
+                                        <div class="col-12 form-field">
+                                            <label class="form-label" for="kelas_ids">Kelas yang Dibina</label>
+                                            <select class="form-select" name="kelas_ids[]" id="kelas_ids" multiple size="7">
+                                                @foreach ($kelasParents as $parent)
+                                                    <optgroup label="{{ $parent->nama_kelas }}">
+                                                        @foreach ($parent->children as $child)
+                                                            <option value="{{ $child->id }}" data-parent-id="{{ $parent->id }}">
+                                                                {{ $child->nama_kelas }}
+                                                            </option>
+                                                        @endforeach
+                                                    </optgroup>
+                                                @endforeach
+                                            </select>
+                                            <div class="form-text">
+                                                Pivot ini menjadi sumber resmi kelas binaan. Pilih beberapa rombel dalam tingkat yang sama,
+                                                misalnya Kelas 7 A, 7 B, dan 7 C.
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-4 form-field">
+                                            <label class="form-label" for="pendidikan_terakhir">Pendidikan</label>
+                                            <select class="form-select" name="pendidikan_terakhir"
+                                                id="pendidikan_terakhir">
+                                                <option value="">Pilih...</option>
+                                                <option value="SMA">SMA/Sederajat</option>
+                                                <option value="D3">D3</option>
+                                                <option value="S1">S1</option>
+                                                <option value="S2">S2</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4 form-field">
+                                            <label class="form-label" for="halaqah">Program Halaqah</label>
+                                            <select class="form-select" name="halaqah" id="halaqah">
+                                                <option value="Reguler">Reguler</option>
+                                                <option value="Takhassus">Takhassus</option>
+                                                <option value="Pengganti">Pengganti</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4 form-field">
+                                            <label class="form-label" for="domisili">Domisili</label>
+                                            <select class="form-select" name="domisili" id="domisili">
+                                                <option value="Dalam Pondok (Mukim)">Dalam Pondok (Mukim)</option>
+                                                <option value="Luar Pondok (Pulang-Pergi)">Luar Pondok (Pulang-Pergi)</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-12 form-field">
+                                            <label class="form-label" for="alamat">Alamat Lengkap</label>
+                                            <textarea class="form-control" name="alamat" id="alamat" rows="2"
+                                                placeholder="Alamat domisili musyrif"></textarea>
+                                        </div>
+
+                                        <div class="col-12 form-field">
+                                            <label class="form-label" for="keterangan">Keterangan Tambahan</label>
+                                            <textarea class="form-control" name="keterangan" id="keterangan" rows="2"
+                                                placeholder="Catatan khusus tentang musyrif ini..."></textarea>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-
-
-                            {{-- AKUN LOGIN SECTION --}}
-                            <div class="col-12 mt-2">
-                                <div class="bg-light rounded-3 p-3 border border-dashed">
-                                    <div class="form-check form-switch mb-0">
-                                        <input class="form-check-input" type="checkbox" id="create_user"
-                                            style="cursor: pointer;">
-                                        <label class="form-check-label fw-bold small text-adaptive-purple"
-                                            for="create_user" style="cursor: pointer;">
-                                            PENGATURAN AKUN LOGIN
-                                        </label>
+                            {{-- SERTIFIKASI --}}
+                            <div class="col-lg-5">
+                                <div class="musyrif-form-section">
+                                    <div class="musyrif-form-section-title">
+                                        <span class="musyrif-form-section-icon">
+                                            <i class="bi bi-patch-check-fill"></i>
+                                        </span>
+                                        <div>
+                                            <div>Sertifikasi Al-Qur'an</div>
+                                            <div class="small text-body-secondary fw-normal">Kualifikasi metode pembelajaran</div>
+                                        </div>
                                     </div>
 
-                                    <div id="createUserFields" class="d-none mt-3">
-                                        <div class="row g-2">
-                                            <div class="col-md-6">
-                                                <label class="form-label small">Email Login</label>
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                                    <input type="email" class="form-control" name="email"
-                                                        id="email" placeholder="email@contoh.com">
+                                    <div class="row g-3">
+                                        <div class="col-12 form-field">
+                                            <label class="form-label" for="metode_alquran">Metode</label>
+                                            <input type="text" class="form-control" name="metode_alquran"
+                                                id="metode_alquran" maxlength="255" placeholder="Contoh: Ummi, Wafa">
+                                        </div>
+
+                                        <div class="col-12 form-field">
+                                            <label class="form-label" for="tahun_sertifikasi">Tahun Sertifikasi</label>
+                                            <input type="number" class="form-control" name="tahun_sertifikasi"
+                                                id="tahun_sertifikasi" min="1900" max="{{ now()->year + 1 }}"
+                                                placeholder="Contoh: {{ now()->year }}">
+                                        </div>
+
+                                        <div class="col-12">
+                                            <div class="form-check p-3 border rounded-4">
+                                                <input class="form-check-input" type="checkbox"
+                                                    name="is_sertifikasi_ummi" id="is_sertifikasi_ummi" value="1">
+                                                <label class="form-check-label fw-semibold" for="is_sertifikasi_ummi">
+                                                    Sudah Sertifikasi Ummi
+                                                </label>
+                                                <div class="small text-body-secondary mt-1">
+                                                    Centang apabila sertifikat Ummi sudah diverifikasi.
                                                 </div>
                                             </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label small">Password</label>
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- PENGATURAN AKUN LOGIN --}}
+                            <div class="col-12">
+                                <div class="account-config-card" id="accountConfigCard">
+                                    <div class="account-config-header d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <span class="account-config-icon">
+                                                <i class="bi bi-shield-lock-fill"></i>
+                                            </span>
+                                            <div>
+                                                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                                    <div class="fw-bold">Pengaturan Akun Login</div>
+                                                    <span class="badge text-bg-secondary rounded-pill" id="accountStatusBadge">
+                                                        Opsional
+                                                    </span>
+                                                </div>
+                                                <div class="small text-body-secondary" id="accountHelpText">
+                                                    Aktifkan untuk membuat akun login baru bagi musyrif ini.
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-check form-switch mb-0 flex-shrink-0">
+                                            <input class="form-check-input" type="checkbox" role="switch"
+                                                name="create_user" id="create_user" value="1">
+                                            <label class="form-check-label fw-semibold" for="create_user" id="accountSwitchLabel">
+                                                Buat akun login
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div id="createUserFields" class="account-fields d-none">
+                                        <div class="row g-3">
+                                            <div class="col-md-6 form-field">
+                                                <label class="form-label" for="email">
+                                                    Email Login <span class="required-mark">*</span>
+                                                </label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="bi bi-envelope-at"></i></span>
+                                                    <input type="email" class="form-control" name="email" id="email"
+                                                        maxlength="255" autocomplete="username"
+                                                        placeholder="nama@pesantren.sch.id">
+                                                </div>
+                                                <div class="form-text">Email harus aktif dan belum digunakan akun lain.</div>
+                                            </div>
+
+                                            <div class="col-md-6 form-field">
+                                                <label class="form-label" for="nomor">
+                                                    Nomor HP / WhatsApp <span class="required-mark">*</span>
+                                                </label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="bi bi-whatsapp"></i></span>
+                                                    <input type="tel" class="form-control" name="nomor" id="nomor"
+                                                        maxlength="25" inputmode="tel" autocomplete="tel"
+                                                        placeholder="Contoh: 081234567890">
+                                                </div>
+                                                <div class="form-text">Gunakan nomor aktif, format 08 atau +62.</div>
+                                            </div>
+
+                                            <div class="col-md-6 form-field">
+                                                <label class="form-label" for="password">
+                                                    Password <span class="required-mark" id="passwordRequiredMark">*</span>
+                                                </label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="bi bi-key-fill"></i></span>
                                                     <input type="password" class="form-control" name="password"
-                                                        id="password" placeholder="Min. 8 karakter">
+                                                        id="password" minlength="8" autocomplete="new-password"
+                                                        placeholder="Minimal 8 karakter">
                                                     <button class="btn btn-outline-secondary" type="button"
-                                                        id="togglePassword">
+                                                        id="togglePassword" aria-label="Tampilkan password">
                                                         <i class="bi bi-eye-slash" id="eyeIcon"></i>
                                                     </button>
+                                                </div>
+                                                <div class="form-text" id="passwordHelpText">
+                                                    Password wajib minimal 8 karakter untuk akun baru.
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6 form-field">
+                                                <label class="form-label" for="password_confirmation">
+                                                    Konfirmasi Password
+                                                    <span class="required-mark" id="passwordConfirmationRequiredMark">*</span>
+                                                </label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="bi bi-shield-check"></i></span>
+                                                    <input type="password" class="form-control"
+                                                        name="password_confirmation" id="password_confirmation"
+                                                        minlength="8" autocomplete="new-password"
+                                                        placeholder="Ulangi password">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <div class="account-security-note p-3 small text-body-secondary">
+                                                    <i class="bi bi-shield-check text-warning me-1"></i>
+                                                    Akun dibuat dengan role <strong>musyrif</strong>. Password tidak pernah
+                                                    ditampilkan kembali dan hanya dapat diganti dengan mengisi password baru.
                                                 </div>
                                             </div>
                                         </div>
@@ -622,13 +1011,16 @@
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
-                        <button type="button" class="btn btn-light px-4 rounded-pill"
-                            data-coreui-dismiss="modal">Batal</button>
+
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                        <button type="button" class="btn btn-light px-4 rounded-pill" data-coreui-dismiss="modal">
+                            Batal
+                        </button>
                         <button type="submit" class="btn text-white px-4 rounded-pill shadow-sm"
-                            style="background: var(--islamic-purple-600);" id="btnSaveMusyrif">Simpan</button>
+                            style="background: var(--islamic-purple-600);" id="btnSaveMusyrif">
+                            <i class="bi bi-check-circle-fill me-1"></i> Simpan Musyrif
+                        </button>
                     </div>
-                </div>
             </form>
         </div>
     </div>
@@ -1221,6 +1613,131 @@
             // ==========================================
             // 2. FUNGSI HELPER
             // ==========================================
+            let hasExistingUser = false;
+
+            function emptyValue(value) {
+                return value === null || value === undefined || value === '-' ? '' : value;
+            }
+
+            function filterKelasByInduk(clearInvalid = true) {
+                const parentId = String($('#kelas_induk_id').val() || '');
+                const primary = $('#kelas_id');
+                const multiple = $('#kelas_ids');
+
+                [primary, multiple].forEach(function(select) {
+                    select.find('option[data-parent-id]').each(function() {
+                        const allowed = parentId !== '' && String(this.dataset.parentId) === parentId;
+                        this.disabled = !allowed;
+                        this.hidden = !allowed;
+                    });
+                });
+
+                if (!clearInvalid) {
+                    return;
+                }
+
+                const primaryOption = primary.find('option:selected').get(0);
+                if (primaryOption && primaryOption.dataset.parentId !== parentId) {
+                    primary.val('');
+                }
+
+                const validSelected = (multiple.val() || []).filter(function(value) {
+                    const option = multiple.find('option[value="' + value + '"]').get(0);
+                    return option && option.dataset.parentId === parentId;
+                });
+                multiple.val(validSelected);
+            }
+
+            function clearValidationErrors() {
+                $('#formMusyrif .invalid-feedback').remove();
+                $('#formMusyrif .form-control, #formMusyrif .form-select').removeClass('is-invalid');
+            }
+
+            function showFieldError(fieldName, message) {
+                const normalizedFieldName = fieldName.startsWith('kelas_ids.')
+                    ? 'kelas_ids[]'
+                    : fieldName;
+
+                const inputField = $(`#formMusyrif [name="${normalizedFieldName}"]`).first();
+
+                if (!inputField.length) {
+                    return;
+                }
+
+                inputField.addClass('is-invalid');
+
+                const fieldWrapper = inputField.closest('.form-field');
+                const feedback = $('<div>', {
+                    class: 'invalid-feedback small fw-bold'
+                }).text(message);
+
+                if (fieldWrapper.length) {
+                    fieldWrapper.append(feedback);
+                } else {
+                    inputField.after(feedback);
+                }
+            }
+
+            function syncAccountFieldsState(animate = false) {
+                const enabled = $('#create_user').is(':checked');
+                const fields = $('#createUserFields');
+                const accountCard = $('#accountConfigCard');
+                const isNewAccount = enabled && !hasExistingUser;
+
+                accountCard.toggleClass('is-enabled', enabled);
+                $('#email, #nomor').prop('required', enabled);
+                $('#password, #password_confirmation').prop('required', isNewAccount);
+                $('#passwordRequiredMark, #passwordConfirmationRequiredMark').toggleClass(
+                    'd-none',
+                    !isNewAccount
+                );
+
+                if (enabled) {
+                    $('#accountStatusBadge')
+                        .attr('class', `badge rounded-pill ${hasExistingUser ? 'text-bg-success' : 'text-bg-primary'}`)
+                        .text(hasExistingUser ? 'Akun terhubung' : 'Akun baru');
+
+                    $('#accountSwitchLabel').text(hasExistingUser ? 'Akun login aktif' : 'Buat akun login');
+
+                    $('#accountHelpText').text(
+                        hasExistingUser ?
+                        'Email dan nomor dapat diperbarui. Isi password hanya ketika ingin mengganti password.' :
+                        'Lengkapi email, nomor HP/WhatsApp, password, dan konfirmasi password.'
+                    );
+
+                    $('#passwordHelpText').text(
+                        hasExistingUser ?
+                        'Kosongkan apabila password akun tidak ingin diubah.' :
+                        'Password wajib minimal 8 karakter untuk akun baru.'
+                    );
+
+                    if (animate) {
+                        fields.stop(true, true).removeClass('d-none').hide().slideDown(160);
+                    } else {
+                        fields.stop(true, true).removeClass('d-none').show();
+                    }
+                } else {
+                    $('#accountStatusBadge')
+                        .attr('class', 'badge text-bg-secondary rounded-pill')
+                        .text('Opsional');
+                    $('#accountSwitchLabel').text('Buat akun login');
+                    $('#accountHelpText').text('Aktifkan untuk membuat akun login baru bagi musyrif ini.');
+
+                    const hideFields = function() {
+                        fields.addClass('d-none');
+                        $('#email, #nomor, #password, #password_confirmation').val('');
+                        clearValidationErrors();
+                    };
+
+                    if (animate) {
+                        fields.stop(true, true).slideUp(160, hideFields);
+                    } else {
+                        fields.stop(true, true).hide();
+                        hideFields();
+                    }
+                }
+            }
+
             function resetForm() {
                 const form = document.getElementById('formMusyrif');
 
@@ -1228,22 +1745,86 @@
                     form.reset();
                 }
 
+                hasExistingUser = false;
+                $('#kelas_induk_id, #kelas_id').val('');
+                $('#kelas_ids').val([]);
+                filterKelasByInduk(false);
                 $('#musyrif_id').val('');
                 $('#modalMusyrifTitle').html('<i class="bi bi-person-badge-fill"></i> Tambah Musyrif');
-                $('#btnSaveMusyrif').prop('disabled', false).text('Simpan Musyrif');
+                $('#btnSaveMusyrif')
+                    .prop('disabled', false)
+                    .html('<i class="bi bi-check-circle-fill me-1"></i> Simpan Musyrif');
                 $('#keterangan').val('');
                 $('#jenis_kelamin').val('');
-                $('#create_user').prop('checked', false);
-                $('#createUserFields').stop(true, true).addClass('d-none').hide();
-                $('#email').val('');
+                $('#create_user').prop({
+                    checked: false,
+                    disabled: false
+                });
+                $('#email, #nomor, #password, #password_confirmation').val('');
                 $('#password')
-                    .val('')
                     .attr('type', 'password')
-                    .attr('placeholder', 'Min. 8 karakter');
+                    .attr('placeholder', 'Minimal 8 karakter');
+                $('#password_confirmation').attr('placeholder', 'Ulangi password');
                 $('#eyeIcon').removeClass('bi-eye').addClass('bi-eye-slash');
+                clearValidationErrors();
+                syncAccountFieldsState(false);
+            }
 
-                $('.invalid-feedback').remove();
-                $('.form-control, .form-select').removeClass('is-invalid');
+            function populateMusyrifForm(res) {
+                $('#musyrif_id').val(res.id);
+                $('#nama').val(emptyValue(res.nama));
+                $('#kode').val(emptyValue(res.kode));
+                $('#jenis_kelamin').val(emptyValue(res.jenis_kelamin));
+                $('#kelas_induk_id').val(emptyValue(res.kelas_induk_id));
+                filterKelasByInduk(false);
+                $('#kelas_id').val(emptyValue(res.kelas_id));
+                $('#kelas_ids').val(
+                    Array.isArray(res.kelas_ids)
+                        ? res.kelas_ids.map(String)
+                        : (res.kelas_id ? [String(res.kelas_id)] : [])
+                );
+                $('#alamat').val(emptyValue(res.alamat));
+                $('#pendidikan_terakhir').val(emptyValue(res.pendidikan_terakhir));
+                $('#domisili').val(emptyValue(res.domisili));
+                $('#halaqah').val(emptyValue(res.halaqah));
+                $('#metode_alquran').val(emptyValue(res.metode_alquran));
+                $('#tahun_sertifikasi').val(emptyValue(res.tahun_sertifikasi));
+                $('#is_sertifikasi_ummi').prop('checked', Number(res.is_sertifikasi_ummi) === 1);
+                $('#keterangan').val(emptyValue(res.keterangan));
+
+                hasExistingUser = Boolean(res.has_user);
+                $('#create_user').prop({
+                    checked: hasExistingUser,
+                    disabled: hasExistingUser
+                });
+                $('#email').val(emptyValue(res.email));
+                $('#nomor').val(emptyValue(res.nomor));
+                $('#password, #password_confirmation').val('');
+                $('#password').attr('placeholder', hasExistingUser ? 'Isi hanya untuk mengganti password' : 'Minimal 8 karakter');
+                $('#password_confirmation').attr('placeholder', hasExistingUser ? 'Ulangi password baru' : 'Ulangi password');
+
+                syncAccountFieldsState(false);
+            }
+
+            function openEditMusyrif(id, kelasId = '') {
+                resetForm();
+                $('#modalMusyrifTitle').html('<i class="bi bi-pencil-square"></i> Edit Data Musyrif');
+                $('#btnSaveMusyrif').html('<i class="bi bi-check-circle-fill me-1"></i> Update Musyrif');
+
+                if (kelasId) {
+                    $('#kelas_id').val(kelasId);
+                }
+
+                $.get("{{ route('admin.musyrif.show', ':id') }}".replace(':id', id))
+                    .done(function(res) {
+                        populateMusyrifForm(res);
+                        modalMusyrif?.show();
+                    })
+                    .fail(function(xhr) {
+                        if (window.AppAlert) {
+                            AppAlert.error(xhr.responseJSON?.message || 'Gagal memuat data musyrif.');
+                        }
+                    });
             }
 
             $('#btnAddMusyrif').on('click', function(e) {
@@ -1313,6 +1894,25 @@
             // ==========================================
             // 3. EVENT HANDLERS (CRUD)
             // ==========================================
+            $('#kelas_induk_id').on('change', function() {
+                filterKelasByInduk(true);
+            });
+
+            $('#kelas_id').on('change', function() {
+                const primaryId = String($(this).val() || '');
+
+                if (!primaryId) {
+                    return;
+                }
+
+                const selected = ($('#kelas_ids').val() || []).map(String);
+
+                if (!selected.includes(primaryId)) {
+                    selected.push(primaryId);
+                    $('#kelas_ids').val(selected);
+                }
+            });
+
             $(document).on('click', '.btnDetail', function() {
                 const id = $(this).data('id');
 
@@ -1324,8 +1924,10 @@
                         $('#det_nama').text(res.nama);
                         $('#det_kode').text(res.kode);
 
-                        // PAKAI res.nama_kelas
-                        $('#det_kelas').text(res.nama_kelas);
+                        $('#det_kelas').text(
+                            (res.nama_kelas_induk ? res.nama_kelas_induk + ' — ' : '')
+                            + (res.nama_kelas_binaan || res.nama_kelas || '-')
+                        );
                         $('#det_jenis_kelamin').text(res.jenis_kelamin_label || '-');
 
                         $('#det_halaqah').text(res.halaqah);
@@ -1341,9 +1943,9 @@
                             '<span class="text-danger">Belum</span>');
 
                         $('#det_tahun').text(res.tahun_sertifikasi);
-                        $('#det_nomor').text(res.nomor);
-                        $('#det_email').text(res.email);
-                        $('#det_alamat').text(res.alamat);
+                        $('#det_nomor').text(res.nomor || '-');
+                        $('#det_email').text(res.email || '-');
+                        $('#det_alamat').text(res.alamat || '-');
 
                         modalDetail?.show();
                     });
@@ -1359,70 +1961,13 @@
             });
 
             $(document).on('click', '.btnEdit', function() {
-                const id = $(this).data('id');
-                const kelasId = $(this).data('kelas_id'); // Ambil kelas_id dari tombol yang diklik
-
-                resetForm();
-
-                $('#modalMusyrifTitle').html('<i class="bi bi-pencil-square"></i> Edit Data Musyrif');
-                $('#btnSaveMusyrif').text('Update Musyrif');
-
-                // Langsung set kelas_id di awal agar user tidak melihat dropdown kosong
-                if (kelasId) {
-                    $('#kelas_id').val(kelasId);
-                }
-
-                $.get("{{ route('admin.musyrif.show', ':id') }}".replace(':id', id))
-                    .done(function(res) {
-                        // Isi field profil (Nama, Kode, dsb)
-                        $('#musyrif_id').val(res.id);
-                        $('#nama').val(res.nama);
-                        $('#kode').val(res.kode);
-                        $('#jenis_kelamin').val(res.jenis_kelamin || '');
-                        if (res.kelas_id) {
-                            $('#kelas_id').val(res.kelas_id);
-                        }
-                        $('#alamat').val(res.alamat);
-                        $('#pendidikan_terakhir').val(res.pendidikan_terakhir);
-                        $('#domisili').val(res.domisili);
-                        $('#halaqah').val(res.halaqah);
-                        $('#metode_alquran').val(res.metode_alquran);
-                        $('#tahun_sertifikasi').val(res.tahun_sertifikasi);
-                        $('#is_sertifikasi_ummi').prop('checked', res.is_sertifikasi_ummi == 1);
-                        $('#keterangan').val(res.keterangan);
-
-                        // LOGIKA AKUN LOGIN EXISTING
-                        if (res.user_id || res.email !== '-') {
-                            $('#create_user').prop('checked', true);
-                            $('#createUserFields').removeClass(
-                                'd-none'); // Paksa muncul tanpa nunggu fade
-                            $('#email').val(res.email);
-                            $('#password').val(''); // Password dikosongkan saat edit
-                            $('#password').attr('placeholder', 'Isi jika ingin ganti pass');
-                        } else {
-                            $('#create_user').prop('checked', false);
-                            $('#createUserFields').addClass('d-none');
-                        }
-
-                        modalMusyrif?.show();
-                    });
+                openEditMusyrif($(this).data('id'), $(this).data('kelas_id'));
             });
 
-            // Tampilkan atau sembunyikan field akun login.
-            // Namespace event mencegah handler terpasang dua kali.
             $('#create_user')
                 .off('change.musyrifAccount')
                 .on('change.musyrifAccount', function() {
-                    const fields = $('#createUserFields');
-
-                    if ($(this).is(':checked')) {
-                        fields.stop(true, true).removeClass('d-none').hide().fadeIn(150);
-                    } else {
-                        fields.stop(true, true).fadeOut(150, function() {
-                            fields.addClass('d-none');
-                            $('#email, #password').val('');
-                        });
-                    }
+                    syncAccountFieldsState(true);
                 });
 
             // Trigger Edit dari dalam Modal Detail
@@ -1430,52 +1975,11 @@
                 const id = $('#det_id_hidden').val();
                 const kelasId = $('#det_kelas_id_hidden').val();
 
-                modalDetail?.hide(); // Tutup modal detail
+                modalDetail?.hide();
 
-                setTimeout(() => {
-                    // Panggil form reset dan set title (Sama seperti logic .btnEdit)
-                    resetForm();
-                    $('#modalMusyrifTitle').html(
-                        '<i class="bi bi-pencil-square"></i> Edit Data Musyrif');
-                    $('#btnSaveMusyrif').text('Update Musyrif');
-
-                    if (kelasId) {
-                        $('#kelas_id').val(kelasId);
-                    }
-
-                    // Jalankan AJAX untuk mengambil data edit
-                    $.get("{{ route('admin.musyrif.show', ':id') }}".replace(':id', id))
-                        .done(function(res) {
-                            $('#musyrif_id').val(res.id);
-                            $('#nama').val(res.nama);
-                            $('#kode').val(res.kode);
-                            $('#jenis_kelamin').val(res.jenis_kelamin || '');
-                            if (res.kelas_id) $('#kelas_id').val(res.kelas_id);
-                            $('#alamat').val(res.alamat);
-                            $('#pendidikan_terakhir').val(res.pendidikan_terakhir);
-                            $('#domisili').val(res.domisili);
-                            $('#halaqah').val(res.halaqah);
-                            $('#metode_alquran').val(res.metode_alquran);
-                            $('#tahun_sertifikasi').val(res.tahun_sertifikasi);
-                            $('#is_sertifikasi_ummi').prop('checked', res.is_sertifikasi_ummi ==
-                                1);
-                            $('#keterangan').val(res.keterangan);
-
-                            // LOGIKA AKUN LOGIN EXISTING
-                            if (res.user_id || res.email !== '-') {
-                                $('#create_user').prop('checked', true);
-                                $('#createUserFields').removeClass('d-none');
-                                $('#email').val(res.email);
-                                $('#password').val('').attr('placeholder',
-                                    'Isi jika ingin ganti pass');
-                            } else {
-                                $('#create_user').prop('checked', false);
-                                $('#createUserFields').addClass('d-none');
-                            }
-
-                            modalMusyrif?.show(); // Buka modal Edit
-                        });
-                }, 400); // Jeda 400ms agar animasi modal tutup selesai dulu
+                setTimeout(function() {
+                    openEditMusyrif(id, kelasId);
+                }, 350);
             });
 
             $('#formMusyrif').on('submit', function(e) {
@@ -1491,8 +1995,7 @@
                     '<span class="spinner-border spinner-border-sm"></span> Menyimpan...');
 
                 // Hapus feedback error sebelumnya
-                $('.invalid-feedback').remove();
-                $('.form-control, .form-select').removeClass('is-invalid');
+                clearValidationErrors();
 
                 $.ajax({
                     url: url,
@@ -1512,17 +2015,8 @@
 
                             // Loop setiap field yang error
                             Object.keys(errors).forEach(key => {
-                                const inputField = $(`[name="${key}"]`);
-                                const message = errors[key][0]; // Ambil pesan pertama
-
-                                // Tambahkan class merah pada input
-                                inputField.addClass('is-invalid');
-
-                                // Tambahkan pesan error di bawah input
-                                inputField.after(
-                                    `<div class="invalid-feedback small fw-bold">${message}</div>`
-                                );
-
+                                const message = errors[key][0];
+                                showFieldError(key, message);
                                 errorMessages += `<li>${message}</li>`;
                             });
 
