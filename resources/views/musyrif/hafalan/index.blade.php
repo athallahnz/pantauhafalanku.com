@@ -255,6 +255,8 @@
         </div>
     </div>
 
+    @include('musyrif.partials.academic-day-status')
+
     <div class="card main-card spotlight-card">
         <div class="card-header card-header-purple bg-light bg-opacity-10 py-3 px-3 px-md-4">
             <div
@@ -324,7 +326,9 @@
             <i class="bi bi-question-circle-fill"></i>
         </button>
 
-        <button class="btn btn-primary btn-fab-main" id="btnAddHafalan">
+        <button class="btn btn-primary btn-fab-main" id="btnAddHafalan"
+            @disabled(!($academicDayContext['academic_input_open'] ?? false))
+            title="{{ ($academicDayContext['academic_input_open'] ?? false) ? 'Input Hafalan' : $academicDayContext['message'] }}">
             <i class="bi bi-plus-lg"></i>
             <span class="fab-text">Input Hafalan</span>
         </button>
@@ -672,6 +676,23 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const ACADEMIC_INPUT_OPEN = @json($academicDayContext['academic_input_open'] ?? false);
+            const ACADEMIC_CLOSED_MESSAGE = @json($academicDayContext['message'] ?? 'Pencatatan sedang ditutup.');
+
+            function guardAcademicInput(event) {
+                if (ACADEMIC_INPUT_OPEN) return true;
+                event?.preventDefault();
+                event?.stopImmediatePropagation();
+                if (window.AppAlert) {
+                    AppAlert.error(ACADEMIC_CLOSED_MESSAGE);
+                }
+                return false;
+            }
+
+            if (!ACADEMIC_INPUT_OPEN) {
+                $(document).on('click', '#btnAddHafalan, .btn-edit, .btn-delete', guardAcademicInput);
+            }
+
             // ================== Filter Tanggal (Button Group) ==================
             let filterTanggal = 'today';
 
@@ -1174,8 +1195,9 @@
                                 AppAlert.success(res.message ??
                                     'Setoran hafalan berhasil dihapus.');
                             },
-                            error: function() {
-                                AppAlert.error('Tidak dapat menghapus setoran hafalan.');
+                            error: function(xhr) {
+                                AppAlert.error(xhr.responseJSON?.message ??
+                                    'Tidak dapat menghapus setoran hafalan.');
                             }
                         });
                     });

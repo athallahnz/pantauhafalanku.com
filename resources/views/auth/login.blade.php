@@ -179,15 +179,15 @@
                         <div class="mb-4">
                             <label class="form-label small fw-bold force-white">Email, Nomor, atau NIS</label>
                             <input type="text" name="login" class="form-control glass-input"
-                                value="{{ old('login') }}" placeholder="Masukkan Email, Nomor, atau NIS" required
-                                autofocus>
+                                value="{{ old('login') }}" placeholder="Masukkan Email, Nomor, atau NIS"
+                                maxlength="255" autocomplete="username" required autofocus>
                         </div>
 
                         <div class="mb-4">
                             <label class="form-label small fw-bold force-white">Password</label>
                             <div class="position-relative">
                                 <input id="password" type="password" name="password" class="form-control glass-input pe-5"
-                                    placeholder="Masukkan Password" required>
+                                    placeholder="Masukkan Password" autocomplete="current-password" required>
                                 <button type="button" id="togglePassword"
                                     class="btn btn-link p-0 position-absolute top-50 translate-middle-y text-white-forced"
                                     style="right: 1.2rem; z-index: 10;">
@@ -204,6 +204,17 @@
                             <a class="small fw-bold text-decoration-none text-white"
                                 href="{{ route('password.request') }}">Lupa password?</a>
                         </div>
+
+
+                        @if (config('auth_security.turnstile.enabled') && config('auth_security.turnstile.site_key'))
+                            <div class="d-flex justify-content-center mb-4" style="min-height: 68px;">
+                                <div class="cf-turnstile"
+                                    data-sitekey="{{ config('auth_security.turnstile.site_key') }}"
+                                    data-action="login"
+                                    data-theme="auto"
+                                    data-language="id"></div>
+                            </div>
+                        @endif
 
                         <div class="d-grid mb-4">
                             <button class="btn btn-primary btn-lg rounded-4 shadow-sm fw-bold py-3" type="submit"
@@ -230,6 +241,11 @@
             </div>
         </div>
     </div>
+
+    @if (config('auth_security.turnstile.enabled') && config('auth_security.turnstile.site_key'))
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    @endif
+
 @endsection
 
 <script type="module">

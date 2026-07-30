@@ -16,9 +16,13 @@ use Intervention\Image\Encoders\JpegEncoder;
 use Intervention\Image\Encoders\PngEncoder;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use App\Services\Academic\AcademicCalendarService;
 
 class MusyrifAttendanceController extends Controller
 {
+    public function __construct(
+        private readonly AcademicCalendarService $calendarService
+    ) {}
 
     /**
      * Ambil hanya titik aktif. Array ini juga dikirim ke frontend sehingga UI
@@ -95,6 +99,7 @@ class MusyrifAttendanceController extends Controller
     public function index(Request $request)
     {
         $musyrif = $this->resolveMusyrif($request);
+        $academicDayContext = $this->calendarService->todayContext();
 
         // Status hari ini (untuk tombol UI)
         $today = now()->toDateString();
@@ -110,12 +115,18 @@ class MusyrifAttendanceController extends Controller
             'musyrif',
             'morning',
             'afternoon',
-            'geofenceLocations'
+            'geofenceLocations',
+            'academicDayContext'
         ));
     }
 
     public function store(Request $request)
     {
+        /*
+         * Middleware sudah menutup request pada hari libur. Pemeriksaan ini
+         * juga memvalidasi tanggal tangkapan untuk antrean offline.
+         */
+        $this->calendarService->assertAttendanceOpen();
         $musyrif = $this->resolveMusyrif($request);
 
         $validated = $request->validate([
@@ -126,7 +137,35 @@ class MusyrifAttendanceController extends Controller
             'accuracy' => ['nullable', 'numeric'],
             'address_text' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'captured_at' => ['nullable', 'date'],
+            'timestamp' => ['nullable', 'date'],
         ]);
+
+        $capturedAtRaw = $validated['captured_at']
+            ?? $validated['timestamp']
+            ?? null;
+        $attendanceAt = $capturedAtRaw
+            ? Carbon::parse($capturedAtRaw)->setTimezone(
+                AcademicCalendarService::TIMEZONE
+            )
+            : now(AcademicCalendarService::TIMEZONE);
+        $now = now(AcademicCalendarService::TIMEZONE);
+
+        if (
+            $attendanceAt->lt($now->copy()->subHours(24))
+            || $attendanceAt->gt($now->copy()->addMinutes(5))
+        ) {
+            return response()->json([
+                'message' => 'Data absensi offline kedaluwarsa atau waktu perangkat tidak valid.',
+                'errors' => [
+                    'captured_at' => [
+                        'Absensi offline hanya dapat disinkronkan maksimal 24 jam.',
+                    ],
+                ],
+            ], 422);
+        }
+
+        $this->calendarService->assertAttendanceOpen($attendanceAt);
 
         $status = 'valid';
         $notesExtra = null;
@@ -164,9 +203,21 @@ class MusyrifAttendanceController extends Controller
             }
         }
 
-        $today = now()->toDateString();
+        if ($capturedAtRaw) {
+            if ($status === 'valid') {
+                $status = 'suspect';
+            }
+            $notesExtra = trim(
+                ($notesExtra ? $notesExtra . "\n" : '')
+                . 'Dikirim dari antrean offline; waktu tangkap: '
+                . $attendanceAt->format('d-m-Y H:i:s')
+                . ' WIB.'
+            );
+        }
+
+        $attendanceDate = $attendanceAt->toDateString();
         $already = MusyrifAttendance::where('musyrif_id', $musyrif->id)
-            ->whereDate('attendance_at', $today)
+            ->whereDate('attendance_at', $attendanceDate)
             ->where('type', $validated['type'])
             ->exists();
 
@@ -179,11 +230,11 @@ class MusyrifAttendanceController extends Controller
         $photoPath = $this->storeBase64Photo($validated['photo'], $musyrif->id);
 
         // Gunakan variabel untuk menangkap hasil data absensi
-        $attendance = DB::transaction(function () use ($musyrif, $validated, $photoPath, $request, $status, $notesExtra, $lat, $lng, $nearestLocation) {
+        $attendance = DB::transaction(function () use ($musyrif, $validated, $photoPath, $request, $status, $notesExtra, $lat, $lng, $nearestLocation, $attendanceAt) {
             return MusyrifAttendance::create([
                 'musyrif_id' => $musyrif->id,
                 'type' => $validated['type'],
-                'attendance_at' => now(),
+                'attendance_at' => $attendanceAt,
                 'photo_path' => $photoPath,
                 'latitude' => $lat,
                 'longitude' => $lng,
@@ -257,6 +308,10 @@ class MusyrifAttendanceController extends Controller
             }
         }
 
+        $academicDays = $this->calendarService
+            ->daysForRange($start, $end);
+        $academicDayContext = $this->calendarService->todayContext();
+
 
         // ========================
         // RETURN VIEW
@@ -269,6 +324,10 @@ class MusyrifAttendanceController extends Controller
             'data' => $data,
 
             'calendar' => $calendar,
+
+            'academicDays' => $academicDays,
+
+            'academicDayContext' => $academicDayContext,
 
             'month' => $month,
 

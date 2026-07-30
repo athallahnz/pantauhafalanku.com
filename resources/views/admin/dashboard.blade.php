@@ -1001,6 +1001,14 @@
                     </span>
                 </a>
 
+                <a href="{{ route('admin.academic-calendar.index') }}" class="quick-action">
+                    <span class="quick-action-icon"><i class="bi bi-calendar2-week-fill"></i></span>
+                    <span>
+                        <span class="quick-action-title d-block">Kalender Akademik</span>
+                        <span class="quick-action-copy d-block">Atur hari masuk dan libur</span>
+                    </span>
+                </a>
+
                 <a href="{{ route('santri.master.violation.report') }}" class="quick-action">
                     <span class="quick-action-icon"><i class="bi bi-exclamation-triangle-fill"></i></span>
                     <span>

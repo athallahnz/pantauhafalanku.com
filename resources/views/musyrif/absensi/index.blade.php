@@ -294,6 +294,38 @@
 
 <body>
 
+    @if (!($academicDayContext['attendance_open'] ?? false))
+        <main class="d-flex align-items-center justify-content-center min-vh-100 p-4"
+            style="background: radial-gradient(circle at top, #4c2f83 0, #171320 55%, #08070a 100%);">
+            <section class="card border-0 shadow-lg text-center p-4 p-md-5"
+                style="max-width: 560px; border-radius: 32px;">
+                <div class="mx-auto mb-4 d-flex align-items-center justify-content-center rounded-circle bg-info-subtle text-info"
+                    style="width: 88px; height: 88px;">
+                    <i class="bi bi-calendar2-x-fill display-5"></i>
+                </div>
+                <div class="small fw-bold text-uppercase text-info mb-2">
+                    {{ now('Asia/Jakarta')->translatedFormat('l, d F Y') }}
+                </div>
+                <h2 class="fw-bold mb-3">{{ $academicDayContext['label'] }}</h2>
+                <p class="text-body-secondary mb-2">{{ $academicDayContext['message'] }}</p>
+                @if ($academicDayContext['calendar_day']?->keterangan)
+                    <p class="small text-body-secondary mb-4">
+                        {{ $academicDayContext['calendar_day']->keterangan }}
+                    </p>
+                @endif
+                <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center mt-3">
+                    <a href="{{ route('musyrif.dashboard') }}" class="btn btn-primary rounded-pill px-4">
+                        <i class="bi bi-house-door me-1"></i> Dashboard
+                    </a>
+                    <a href="{{ route('musyrif.absensi.history') }}"
+                        class="btn btn-outline-secondary rounded-pill px-4">
+                        <i class="bi bi-clock-history me-1"></i> Riwayat
+                    </a>
+                </div>
+            </section>
+        </main>
+    @else
+
     {{-- ALERTS (Success/Error) --}}
     @if (session('success') || $errors->any())
         <div class="alert-floating">
@@ -616,6 +648,16 @@
                             queue.splice(i, 1);
                             i--;
                             localStorage.setItem('absensi_queue', JSON.stringify(queue));
+                        } else if ([409, 410, 422].includes(response.status)) {
+                            const result = await response.json().catch(() => ({}));
+                            queue.splice(i, 1);
+                            i--;
+                            localStorage.setItem('absensi_queue', JSON.stringify(queue));
+                            Swal.fire(
+                                'Absensi Offline Ditolak',
+                                result.message || 'Data tidak memenuhi jadwal kalender akademik.',
+                                'warning'
+                            );
                         }
                     } catch (err) {
                         break;
@@ -963,6 +1005,7 @@
             // initCamera();
         })();
     </script>
+    @endif
 </body>
 
 </html>

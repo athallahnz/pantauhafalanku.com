@@ -380,6 +380,12 @@ class SantriProgressController extends Controller
                 '=',
                 'hafalans.hafalan_template_id'
             )
+            ->leftJoin(
+                'musyrifs as m',
+                'm.id',
+                '=',
+                'hafalans.musyrif_id'
+            )
             ->where(
                 'hafalans.santri_id',
                 $santri->id
@@ -400,6 +406,7 @@ class SantriProgressController extends Controller
                 'hafalans.nilai_label',
                 'hafalans.catatan',
                 'hafalans.created_at',
+                'm.nama as musyrif_nama',
                 'ht.juz as template_juz',
                 'ht.tahap as template_tahap',
                 'ht.label as template_label',
@@ -426,6 +433,14 @@ class SantriProgressController extends Controller
                 $this->timelineSemesterLabel(
                     $row->semester_id,
                     $semesterLabels
+                )
+            )
+            ->addColumn(
+                'musyrif',
+                fn($row) =>
+                e(
+                    $row->musyrif_nama
+                        ?: '-'
                 )
             )
             ->addColumn(

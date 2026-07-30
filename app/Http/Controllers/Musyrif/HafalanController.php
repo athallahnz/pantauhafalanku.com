@@ -14,6 +14,7 @@ use App\Http\Requests\StoreHafalanRequest;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Services\Academic\AcademicCalendarService;
 
 class HafalanController extends Controller
 {
@@ -87,7 +88,14 @@ class HafalanController extends Controller
             ->orderBy('nama')
             ->get();
 
-        return view('musyrif.hafalan.index', compact('santriBinaan'));
+        $academicDayContext = app(
+            AcademicCalendarService::class
+        )->todayContext();
+
+        return view('musyrif.hafalan.index', compact(
+            'santriBinaan',
+            'academicDayContext'
+        ));
     }
 
     public function datatable(Request $request)

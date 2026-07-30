@@ -11,6 +11,7 @@ use App\Models\SystemReview;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Services\Academic\AcademicCalendarService;
 
 class DashboardController extends Controller
 {
@@ -24,6 +25,9 @@ class DashboardController extends Controller
         }
 
         $today = Carbon::today();
+        $academicDayContext = app(
+            AcademicCalendarService::class
+        )->todayContext();
 
         // =================== KARTU RINGKASAN ===================
         $jumlahSantri = Santri::where('musyrif_id', $musyrif->id)->count();
@@ -211,7 +215,8 @@ class DashboardController extends Controller
             'chartJuz',
             'chartNilaiPerSantri',
             'existingSystemReview',
-            'shouldPromptSystemReview'
+            'shouldPromptSystemReview',
+            'academicDayContext'
         ));
     }
 }

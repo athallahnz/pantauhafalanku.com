@@ -4,24 +4,25 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureUserIsApproved
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check() && !auth()->user()->is_approved) {
-            // Jika belum di-approve, jangan kasih pesan error di login,
-            // tapi arahkan ke halaman waiting agar lebih ramah.
-            auth()->logout();
-            return redirect()->route('waiting.approval');
+        $user = $request->user();
+
+        if (!$user || (bool) $user->is_approved) {
+            return $next($request);
         }
 
-        return $next($request);
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()
+            ->route('waiting.approval')
+            ->with('error', 'Akun Anda masih menunggu persetujuan administrator.');
     }
 }

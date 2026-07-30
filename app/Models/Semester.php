@@ -79,6 +79,14 @@ class Semester extends Model
         );
     }
 
+    public function calendarDays(): HasMany
+    {
+        return $this->hasMany(
+            AcademicCalendarDay::class,
+            'semester_id'
+        );
+    }
+
     public function scopeDraft(Builder $query): Builder
     {
         return $query->where(

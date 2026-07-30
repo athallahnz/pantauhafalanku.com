@@ -1220,6 +1220,7 @@
                                     <th>No</th>
                                     <th>Tanggal</th>
                                     <th>Semester</th>
+                                    <th>Musyrif</th>
                                     <th>Juz</th>
                                     <th>Tahapan</th>
                                     <th>Surah / Ayat</th>
@@ -1923,6 +1924,11 @@
                             data: 'semester',
                             orderable: false,
                             searchable: false
+                        },
+                        {
+                            data: 'musyrif',
+                            name: 'm.nama',
+                            defaultContent: '-'
                         },
                         {
                             data: 'juz',

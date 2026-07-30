@@ -8,6 +8,7 @@ use App\Models\Musyrif;
 use App\Models\Santri;
 use App\Models\User;
 use App\Models\UserLifecycleLog;
+use App\Rules\SafePersonName;
 use App\Services\UserLifecycleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -82,9 +83,11 @@ class UserController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->normalizeIdentityInput($request);
+
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'name' => ['bail', 'required', 'string', 'min:2', 'max:150', new SafePersonName()],
+            'email' => ['bail', 'required', 'string', 'email:rfc', 'max:255', 'unique:users,email'],
             'nomor' => ['nullable', 'string', 'max:20', 'unique:users,nomor'],
             'role' => ['required', 'string', 'in:' . implode(',', self::ROLES)],
             'password' => ['required', 'string', 'min:6'],
@@ -132,15 +135,19 @@ class UserController extends Controller
 
     public function update(Request $request, int|string $id): JsonResponse
     {
+        $this->normalizeIdentityInput($request);
+
         $user = User::query()->findOrFail($id);
         $oldRole = (string) $user->role;
         $before = $this->lifecycle->snapshot($user);
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['bail', 'required', 'string', 'min:2', 'max:150', new SafePersonName()],
             'email' => [
+                'bail',
                 'required',
-                'email',
+                'string',
+                'email:rfc',
                 'max:255',
                 'unique:users,email,' . $user->id,
             ],
@@ -368,6 +375,11 @@ class UserController extends Controller
                     . implode('', $buttons)
                     . '</div>';
             })
+            ->escapeColumns([
+                'name',
+                'email',
+                'nomor',
+            ])
             ->rawColumns([
                 'checkbox',
                 'role',
@@ -647,6 +659,17 @@ class UserController extends Controller
                 ],
             ]);
         }
+    }
+
+    private function normalizeIdentityInput(Request $request): void
+    {
+        $request->merge([
+            'name' => SafePersonName::normalize($request->input('name')),
+            'email' => mb_strtolower(trim((string) $request->input('email', ''))),
+            'nomor' => $request->filled('nomor')
+                ? trim((string) $request->input('nomor'))
+                : null,
+        ]);
     }
 
     private function validateReason(Request $request): array

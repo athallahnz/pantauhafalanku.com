@@ -2,146 +2,141 @@
 
 namespace App\Providers;
 
+use App\Actions\Auth\LoginResponse as CustomLoginResponse;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
-use App\Actions\Fortify\UpdateUserPassword;
-use App\Actions\Fortify\UpdateUserProfileInformation;
-use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Http\Request;
-use Laravel\Fortify\Fortify;
-use Laravel\Fortify\Contracts\LoginResponse;
-use App\Actions\Auth\LoginResponse as CustomLoginResponse;
 use App\Models\User;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\ValidationException;
+use Laravel\Fortify\Contracts\CreatesNewUsers;
+use Laravel\Fortify\Contracts\LoginResponse;
 use Laravel\Fortify\Contracts\RegisterResponse;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
-use App\Models\Santri;
-use App\Models\Musyrif;
+use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        // Ini buat Response Login Mas yang udah ada
-        $this->app->singleton(\Laravel\Fortify\Contracts\LoginResponse::class, \App\Actions\Auth\LoginResponse::class);
+        $this->app->singleton(LoginResponse::class, CustomLoginResponse::class);
+        $this->app->bind(CreatesNewUsers::class, CreateNewUser::class);
 
-        // PAKSA BINDING UNTUK REGISTER DISINI:
-        $this->app->bind(
-            \Laravel\Fortify\Contracts\CreatesNewUsers::class,
-            \App\Actions\Fortify\CreateNewUser::class
-        );
-
-        // Di dalam register()
         $this->app->instance(RegisterResponse::class, new class implements RegisterResponse {
             public function toResponse($request)
             {
-                // Setelah daftar, paksa logout (karena Fortify otomatis login)
-                // lalu lempar ke halaman waiting
-                auth()->logout();
-                return redirect()->route('waiting.approval');
+                /*
+                 * Fortify otomatis mengautentikasi akun setelah registrasi.
+                 * Karena akun harus melalui approval, sesi langsung ditutup dan
+                 * dirotasi agar tidak ada sesi pending yang tertinggal.
+                 */
+                auth()->guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect()
+                    ->route('waiting.approval')
+                    ->with('success', 'Registrasi berhasil. Akun menunggu persetujuan administrator.');
             }
         });
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        // WAJIB: override username field
         Fortify::username('login');
 
-        // LOGIN VIEW
-        Fortify::loginView(function () {
-            return view('auth.login');
-        });
-
-        // REGISTER VIEW
-        Fortify::registerView(function () {
-            return view('auth.register');
-        });
-
-        // FORGOT PASSWORD VIEW
-        Fortify::requestPasswordResetLinkView(function () {
-            return view('auth.forgot-password');
-        });
-
-        // RESET PASSWORD VIEW
-        Fortify::resetPasswordView(function ($request) {
-            return view('auth.reset-password', ['request' => $request]);
-        });
-
+        Fortify::loginView(fn () => view('auth.login'));
+        Fortify::registerView(fn () => view('auth.register'));
+        Fortify::requestPasswordResetLinkView(fn () => view('auth.forgot-password'));
+        Fortify::resetPasswordView(
+            fn (Request $request) => view('auth.reset-password', ['request' => $request])
+        );
+        Fortify::verifyEmailView(fn () => view('auth.verify-email'));
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
 
-        // EMAIL VERIFICATION VIEW
-        Fortify::verifyEmailView(function () {
-            return view('auth.verify-email');
-        });
-
-        // CUSTOM AUTH
-        Fortify::authenticateUsing(function (Request $request) {
+        Fortify::authenticateUsing(function (Request $request): ?User {
             $request->validate([
-                'login'    => ['required', 'string'],
-                'password' => ['required', 'string'],
+                'login' => ['required', 'string', 'max:255'],
+                'password' => ['required', 'string', 'max:4096'],
             ]);
 
-            $login = trim($request->input('login'));
+            $login = trim((string) $request->input('login'));
+            $normalizedEmail = mb_strtolower($login);
 
-            // UPDATE DI SINI: Query pencarian user diperluas
             $user = User::query()
-                ->where('email', $login)
-                ->orWhere('nomor', $login)
-                ->orWhereHas('santri', function ($query) use ($login) {
-                    $query->where('nis', $login);
+                ->where(function ($query) use ($login, $normalizedEmail): void {
+                    $query->where('email', $normalizedEmail)
+                        ->orWhere('nomor', $login)
+                        ->orWhereHas('santri', function ($santriQuery) use ($login): void {
+                            $santriQuery->where('nis', $login);
+                        });
                 })
                 ->first();
 
-            if (!$user) {
+            if (!$user || !Hash::check((string) $request->input('password'), $user->password)) {
                 throw ValidationException::withMessages([
-                    // Update pesan error-nya
-                    'login' => 'Email, Nomor, atau NIS/NIM tidak terdaftar.',
+                    'login' => 'Kredensial yang Anda masukkan tidak valid.',
                 ]);
             }
 
-            if (!Hash::check($request->password, $user->password)) {
-                throw ValidationException::withMessages([
-                    'password' => 'Password yang Anda masukkan salah.',
-                ]);
-            }
-
-            // Pengecekan verifikasi email
             if ($user instanceof MustVerifyEmail && !$user->hasVerifiedEmail()) {
-                return null;
+                throw ValidationException::withMessages([
+                    'login' => 'Alamat email akun belum diverifikasi.',
+                ]);
             }
 
-            if (!$user->is_approved) {
+            $status = (string) ($user->account_status ?? 'pending');
+            $isActive = $status === 'active' && (bool) $user->is_approved;
+
+            if (!$isActive) {
+                $message = match ($status) {
+                    'pending' => 'Akun masih menunggu persetujuan administrator.',
+                    'suspended' => 'Akun sedang ditangguhkan. Hubungi Super Admin.',
+                    'rejected' => 'Permohonan akun telah ditolak.',
+                    'archived' => 'Akun telah diarsipkan dan tidak dapat digunakan.',
+                    default => 'Akun belum dapat digunakan.',
+                };
+
                 throw ValidationException::withMessages([
-                    'login' => 'Akun Anda sudah diverifikasi, namun masih menunggu persetujuan Admin.',
+                    'login' => $message,
                 ]);
             }
 
             return $user;
         });
 
-        // RATE LIMITER
-        RateLimiter::for('login', function (Request $request) {
-            return Limit::perMinute(10)->by(
-                Str::lower($request->input('login')) . '|' . $request->ip()
+        RateLimiter::for('login', function (Request $request): array {
+            $login = Str::lower(Str::limit(trim((string) $request->input('login')), 255, ''));
+            $ip = (string) $request->ip();
+
+            $identityLimit = max(
+                1,
+                (int) config('auth_security.login.identity_max_attempts_per_minute', 5)
             );
+            $ipLimit = max(
+                $identityLimit,
+                (int) config('auth_security.login.ip_max_attempts_per_hour', 60)
+            );
+
+            return [
+                // Membatasi brute-force pada satu identitas dari satu alamat IP.
+                Limit::perMinute($identityLimit)
+                    ->by('login-identity:' . $login . '|' . $ip),
+
+                // Membatasi credential stuffing dengan banyak identitas dari IP yang sama.
+                Limit::perHour($ipLimit)
+                    ->by('login-ip:' . $ip),
+            ];
         });
 
-        RateLimiter::for('two-factor', function (Request $request) {
-            return Limit::perMinute(5)->by($request->session()->get('login.id'));
+        RateLimiter::for('two-factor', function (Request $request): Limit {
+            return Limit::perMinute(5)->by(
+                'two-factor:' . (string) $request->session()->get('login.id', 'guest')
+            );
         });
     }
 }

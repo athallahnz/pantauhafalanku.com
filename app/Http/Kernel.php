@@ -67,5 +67,7 @@ class Kernel extends HttpKernel
         'approved' => \App\Http\Middleware\EnsureUserIsApproved::class,
         'role' => \App\Http\Middleware\RoleMiddleware::class,
         'account.active' => \App\Http\Middleware\EnsureAccountIsActive::class,
+        'auth.security' => \App\Http\Middleware\ProtectAuthenticationEndpoints::class,
+        'academic.day.open' => \App\Http\Middleware\EnsureAcademicDayIsOpen::class,
     ];
 }

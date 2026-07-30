@@ -8,6 +8,10 @@ use Illuminate\Validation\ValidationException;
 
 class SemesterLifecycleService
 {
+    public function __construct(
+        private readonly AcademicCalendarService $calendarService
+    ) {}
+
     public function lockInput(Semester $semester): Semester
     {
         return DB::transaction(function () use ($semester) {
@@ -128,6 +132,8 @@ class SemesterLifecycleService
                 'activated_at' => now(),
                 'closed_at' => null,
             ])->save();
+
+            $this->calendarService->syncSemesterCalendar($target);
 
             return $target->fresh('tahunAjaran');
         });

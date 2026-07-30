@@ -53,6 +53,11 @@
             opacity: 0.4;
         }
 
+        .calendar .holiday-day {
+            background: rgba(13, 202, 240, 0.10) !important;
+            box-shadow: inset 0 0 0 1px rgba(13, 202, 240, 0.35);
+        }
+
         /* Dot Indicators di Kalender */
         .badge-dot {
             width: 8px;
@@ -154,6 +159,8 @@
             </a>
         </div>
 
+        @include('musyrif.partials.academic-day-status')
+
         {{-- FILTER BULAN --}}
         <div class="card border-0 shadow-sm rounded-4 mb-4 filter-card">
             <div class="card-body p-3 p-md-4">
@@ -224,8 +231,10 @@
                                         $inMonth = $cursor->month == \Carbon\Carbon::parse($start)->month;
                                         $mor = $calendar[$dateString]['morning'] ?? null;
                                         $aft = $calendar[$dateString]['afternoon'] ?? null;
+                                        $academicDay = $academicDays[$dateString] ?? null;
+                                        $isHoliday = $academicDay?->status === 'libur';
                                     @endphp
-                                    <td class="{{ $isToday ? 'today' : '' }}">
+                                    <td class="{{ $isToday ? 'today' : '' }} {{ $isHoliday ? 'holiday-day' : '' }}">
                                         <div class="day-number {{ $inMonth ? '' : 'outside' }}">{{ $cursor->day }}</div>
 
                                         @if ($isToday)
@@ -235,13 +244,20 @@
                                         @endif
 
                                         <div class="mt-1 d-flex gap-1 flex-wrap">
-                                            @if ($mor)
-                                                <span class="badge-dot {{ $statusColor($mor) }}"
-                                                    title="Pagi: {{ $mor }}"></span>
-                                            @endif
-                                            @if ($aft)
-                                                <span class="badge-dot {{ $statusColor($aft) }}"
-                                                    title="Malam: {{ $aft }}"></span>
+                                            @if ($isHoliday)
+                                                <span class="badge bg-info rounded-pill"
+                                                    title="{{ $academicDay->nama_kegiatan ?? 'Hari Libur' }}">
+                                                    LIBUR
+                                                </span>
+                                            @else
+                                                @if ($mor)
+                                                    <span class="badge-dot {{ $statusColor($mor) }}"
+                                                        title="Pagi: {{ $mor }}"></span>
+                                                @endif
+                                                @if ($aft)
+                                                    <span class="badge-dot {{ $statusColor($aft) }}"
+                                                        title="Malam: {{ $aft }}"></span>
+                                                @endif
                                             @endif
                                         </div>
                                     </td>

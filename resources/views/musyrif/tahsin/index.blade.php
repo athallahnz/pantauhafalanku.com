@@ -393,6 +393,8 @@
         </div>
     </div>
 
+    @include('musyrif.partials.academic-day-status')
+
     {{-- KPI Cards Section --}}
     <div class="row g-3 mb-4 px-3 px-md-0">
         <div class="col-12 col-md-6 col-lg-3">
@@ -585,11 +587,15 @@
         </div>
 
         <div class="fab-right">
-            <button class="btn btn-success text-white btn-fab-main shadow" id="btnAddTilawah">
+            <button class="btn btn-success text-white btn-fab-main shadow" id="btnAddTilawah"
+                @disabled(!($academicDayContext['academic_input_open'] ?? false))
+                title="{{ ($academicDayContext['academic_input_open'] ?? false) ? 'Catat Tilawah' : $academicDayContext['message'] }}">
                 <i class="bi bi-journal-bookmark me-md-2"></i>
                 <span class="fab-text">Catat Tilawah</span>
             </button>
-            <button class="btn btn-primary btn-fab-main shadow" id="btnAddTahsin">
+            <button class="btn btn-primary btn-fab-main shadow" id="btnAddTahsin"
+                @disabled(!($academicDayContext['academic_input_open'] ?? false))
+                title="{{ ($academicDayContext['academic_input_open'] ?? false) ? 'Input Tahsin' : $academicDayContext['message'] }}">
                 <i class="bi bi-book me-md-2"></i>
                 <span class="fab-text">Input Tahsin Masal</span>
             </button>
@@ -1208,6 +1214,25 @@
         };
 
         document.addEventListener('DOMContentLoaded', function() {
+            const ACADEMIC_INPUT_OPEN = @json($academicDayContext['academic_input_open'] ?? false);
+            const ACADEMIC_CLOSED_MESSAGE = @json($academicDayContext['message'] ?? 'Pencatatan sedang ditutup.');
+
+            function guardAcademicInput(event) {
+                if (ACADEMIC_INPUT_OPEN) return true;
+                event?.preventDefault();
+                event?.stopImmediatePropagation();
+                Swal.fire('Pencatatan Ditutup', ACADEMIC_CLOSED_MESSAGE, 'info');
+                return false;
+            }
+
+            if (!ACADEMIC_INPUT_OPEN) {
+                $(document).on(
+                    'click',
+                    '#btnAddTahsin, #btnAddTilawah, .btn-edit, .btn-delete, .btn-edit-tilawah, .btn-delete-tilawah',
+                    guardAcademicInput
+                );
+            }
+
             let filterTanggal = 'today';
             let tilawahTemplates = [];
             const DRILL_MATERI_CATATAN = 'Mengulang Materi Bersama';
@@ -1708,6 +1733,13 @@
                             timer: 1500,
                             showConfirmButton: false
                         });
+                    },
+                    error: xhr => {
+                        Swal.fire(
+                            'Gagal!',
+                            xhr.responseJSON?.message ?? 'Data Tahsin tidak dapat diperbarui.',
+                            'error'
+                        );
                     }
                 });
             });
@@ -1776,7 +1808,8 @@
                         });
                     },
                     error: xhr => {
-                        Swal.fire('Gagal!', 'Terjadi kesalahan. Cek log console.', 'error');
+                        Swal.fire('Gagal!', xhr.responseJSON?.message ??
+                            'Terjadi kesalahan. Cek log console.', 'error');
                         console.log(xhr.responseText);
                     }
                 });
@@ -1802,6 +1835,10 @@
                             success: res => {
                                 tableInstance.ajax.reload();
                                 Swal.fire('Terhapus!', res.message, 'success');
+                            },
+                            error: xhr => {
+                                Swal.fire('Gagal!', xhr.responseJSON?.message ??
+                                    'Data tidak dapat dihapus.', 'error');
                             }
                         });
                     }

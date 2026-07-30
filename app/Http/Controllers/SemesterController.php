@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Semester;
+use App\Services\Academic\AcademicCalendarService;
 use App\Services\Academic\SemesterLifecycleService;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
@@ -16,7 +17,8 @@ use Yajra\DataTables\Facades\DataTables;
 class SemesterController extends Controller
 {
     public function __construct(
-        private readonly SemesterLifecycleService $lifecycleService
+        private readonly SemesterLifecycleService $lifecycleService,
+        private readonly AcademicCalendarService $calendarService
     ) {}
 
     public function getData(Request $request)
@@ -185,7 +187,12 @@ class SemesterController extends Controller
         $validated['activated_at'] = null;
         $validated['closed_at'] = null;
 
-        $semester = Semester::query()->create($validated);
+        $semester = DB::transaction(function () use ($validated) {
+            $semester = Semester::query()->create($validated);
+            $this->calendarService->syncSemesterCalendar($semester);
+
+            return $semester;
+        });
 
         return response()->json([
             'status' => 'success',
@@ -213,7 +220,13 @@ class SemesterController extends Controller
             $semester->id
         );
 
-        $semester->update($validated);
+        DB::transaction(function () use ($semester, $validated): void {
+            $semester->update($validated);
+            $this->calendarService->syncSemesterCalendar(
+                $semester,
+                true
+            );
+        });
 
         return response()->json([
             'status' => 'success',

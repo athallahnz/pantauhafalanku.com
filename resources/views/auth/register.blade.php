@@ -119,6 +119,23 @@
                 transform: translateX(5px);
             }
         }
+
+
+        .auth-honeypot {
+            position: absolute !important;
+            left: -10000px !important;
+            top: auto !important;
+            width: 1px !important;
+            height: 1px !important;
+            overflow: hidden !important;
+        }
+
+        .turnstile-wrap {
+            min-height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 
     <div id="aurora-bg"></div>
@@ -145,6 +162,13 @@
 
                     <form method="POST" action="{{ route('register') }}" id="authForm">
                         @csrf
+
+                        {{-- Honeypot: pengguna normal tidak akan melihat atau mengisi field ini. --}}
+                        <div class="auth-honeypot" aria-hidden="true">
+                            <label for="company_website">Website Perusahaan</label>
+                            <input type="text" name="company_website" id="company_website" value=""
+                                tabindex="-1" autocomplete="off">
+                        </div>
 
                         {{-- ROLE TILES --}}
                         <div class="mb-4 text-center">
@@ -173,19 +197,21 @@
                             <div class="col-12">
                                 <label class="form-label small fw-bold force-white">Nama Lengkap</label>
                                 <input type="text" name="name" class="form-control glass-input"
-                                    value="{{ old('name') }}" placeholder="Masukkan Nama Lengkap" required>
+                                    value="{{ old('name') }}" placeholder="Masukkan Nama Lengkap"
+                                    minlength="2" maxlength="150" autocomplete="name" required>
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-bold force-white">E-Mail</label>
                                 <input type="email" name="email" class="form-control glass-input"
-                                    value="{{ old('email') }}" placeholder="Masukkan E-Mail" required>
+                                    value="{{ old('email') }}" placeholder="Masukkan E-Mail"
+                                    maxlength="255" autocomplete="email" required>
                             </div>
 
                             {{-- PASSWORD --}}
                             <div class="col-md-6 position-relative">
                                 <label class="form-label small fw-bold force-white">Password</label>
                                 <input type="password" name="password" id="password" class="form-control glass-input"
-                                    placeholder="Masukkan Password" required>
+                                    placeholder="Masukkan Password" autocomplete="new-password" required>
                                 <button type="button" id="togglePassword"
                                     class="btn btn-link p-0 position-absolute text-white-forced"
                                     style="right: 1.2rem; top: 38px; z-index: 10;">
@@ -197,7 +223,8 @@
                             <div class="col-md-6 position-relative">
                                 <label class="form-label small fw-bold force-white">Konfirmasi</label>
                                 <input type="password" name="password_confirmation" id="password_confirmation"
-                                    class="form-control glass-input" placeholder="Konfirmasi Password" required>
+                                    class="form-control glass-input" placeholder="Konfirmasi Password"
+                                    autocomplete="new-password" required>
                                 <button type="button" id="togglePasswordConfirmation"
                                     class="btn btn-link p-0 position-absolute text-white-forced"
                                     style="right: 1.2rem; top: 38px; z-index: 10;">
@@ -205,6 +232,17 @@
                                 </button>
                             </div>
                         </div>
+
+
+                        @if (config('auth_security.turnstile.enabled') && config('auth_security.turnstile.site_key'))
+                            <div class="turnstile-wrap mt-4">
+                                <div class="cf-turnstile"
+                                    data-sitekey="{{ config('auth_security.turnstile.site_key') }}"
+                                    data-action="register"
+                                    data-theme="auto"
+                                    data-language="id"></div>
+                            </div>
+                        @endif
 
                         <div class="d-grid mt-4 mb-3">
                             <button class="btn btn-primary btn-lg rounded-4 shadow-sm fw-bold py-3" type="submit"
@@ -229,6 +267,11 @@
             </div>
         </div>
     </div>
+
+
+    @if (config('auth_security.turnstile.enabled') && config('auth_security.turnstile.site_key'))
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    @endif
 
     {{-- ========================================================= --}}
     {{-- SCRIPT 1: LOGIKA UI (PASSWORD MATA & TEMA)                --}}

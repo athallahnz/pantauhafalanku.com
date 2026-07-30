@@ -29,6 +29,13 @@
 </li>
 
 <li class="nav-item mb-1">
+    <a class="nav-link {{ request()->routeIs('admin.academic-calendar.*') ? 'active' : '' }}"
+        href="{{ route('admin.academic-calendar.index') }}">
+        <i class="nav-icon bi bi-calendar2-week-fill"></i> <span>Kalender Akademik</span>
+    </a>
+</li>
+
+<li class="nav-item mb-1">
     <a href="{{ route('admin.academic-documents.index') }}"
         class="nav-link {{ request()->routeIs('admin.academic-documents.*') ? 'active' : '' }}">
         <i class="nav-icon bi bi-file-earmark-text"></i>

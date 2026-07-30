@@ -245,6 +245,8 @@
         <p class="text-muted small">Berikut adalah ringkasan perkembangan hafalan santri Anda hari ini.</p>
     </div>
 
+    @include('musyrif.partials.academic-day-status')
+
     {{-- ================== ROW KPI CARDS ================== --}}
     <div class="row g-3 mb-4">
         {{-- Santri Bimbingan --}}
@@ -1033,4 +1035,3 @@
         </script>
     @endunless
 @endpush
-

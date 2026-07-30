@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\SantriArchiveController as AdminSantriArchiveCont
 use App\Http\Controllers\Admin\SantriPlacementBackfillController as AdminSantriPlacementBackfillController;
 use App\Http\Controllers\Admin\KelasGroupAssignmentController as AdminKelasGroupAssignmentController;
 use App\Http\Controllers\Admin\AcademicDocumentController as AdminAcademicDocumentController;
+use App\Http\Controllers\Admin\AcademicCalendarController as AdminAcademicCalendarController;
 
 use App\Http\Controllers\Musyrif\DashboardController as MusyrifDashboardController;
 use App\Http\Controllers\Musyrif\HafalanController as MusyrifHafalanController;
@@ -506,6 +507,25 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'account.active', 'r
                 ->name('destroy');
         });
 
+    Route::prefix('kalender-akademik')
+        ->name('academic-calendar.')
+        ->controller(AdminAcademicCalendarController::class)
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{semester}/days', 'days')
+                ->whereNumber('semester')
+                ->name('days');
+            Route::post('/{semester}/sync', 'sync')
+                ->whereNumber('semester')
+                ->name('sync');
+            Route::post('/{semester}/bulk', 'bulk')
+                ->whereNumber('semester')
+                ->name('bulk');
+            Route::patch('/days/{academicCalendarDay}', 'update')
+                ->whereNumber('academicCalendarDay')
+                ->name('days.update');
+        });
+
     Route::get(
         '/santri/migrasi/batches',
         [AdminMigrasiSantriController::class, 'batches']
@@ -810,6 +830,7 @@ Route::prefix('musyrif')
         Route::get('/absensi', [MusyrifAttendanceController::class, 'index'])
             ->name('absensi.index');
         Route::post('/absensi', [MusyrifAttendanceController::class, 'store'])
+            ->middleware('academic.day.open:attendance')
             ->name('absensi.store');
         Route::get('/absensi/riwayat', [MusyrifAttendanceController::class, 'history'])
             ->name('absensi.history');
@@ -822,9 +843,17 @@ Route::prefix('musyrif')
                 Route::get('/datatable', [MusyrifHafalanController::class, 'datatable'])->name('datatable');
                 Route::get('/templates', [MusyrifHafalanController::class, 'templates'])->name('templates');
                 Route::get('/create', [MusyrifHafalanController::class, 'create'])->name('create');
-                Route::post('/', [MusyrifHafalanController::class, 'store'])->name('store');
-                Route::put('/{hafalan}', [MusyrifHafalanController::class, 'update'])->whereNumber('hafalan')->name('update');
-                Route::delete('/{hafalan}', [MusyrifHafalanController::class, 'destroy'])->whereNumber('hafalan')->name('destroy');
+                Route::post('/', [MusyrifHafalanController::class, 'store'])
+                    ->middleware('academic.day.open')
+                    ->name('store');
+                Route::put('/{hafalan}', [MusyrifHafalanController::class, 'update'])
+                    ->middleware('academic.day.open')
+                    ->whereNumber('hafalan')
+                    ->name('update');
+                Route::delete('/{hafalan}', [MusyrifHafalanController::class, 'destroy'])
+                    ->middleware('academic.day.open')
+                    ->whereNumber('hafalan')
+                    ->name('destroy');
                 Route::get('/{hafalan}', [MusyrifHafalanController::class, 'show'])->whereNumber('hafalan')->name('show');
             });
 
@@ -846,10 +875,18 @@ Route::prefix('musyrif')
             ->group(function () {
                 Route::get('/', [MusyrifTahsinController::class, 'index'])->name('index');
                 Route::get('/datatable', [MusyrifTahsinController::class, 'datatable'])->name('datatable');
-                Route::post('/', [MusyrifTahsinController::class, 'store'])->name('store');
+                Route::post('/', [MusyrifTahsinController::class, 'store'])
+                    ->middleware('academic.day.open')
+                    ->name('store');
                 Route::get('/today/{santriId}', [MusyrifTahsinController::class, 'getTodayProgress'])->whereNumber('santriId')->name('today');
-                Route::put('/{tahsin}', [MusyrifTahsinController::class, 'update'])->whereNumber('tahsin')->name('update');
-                Route::delete('/{tahsin}', [MusyrifTahsinController::class, 'destroy'])->whereNumber('tahsin')->name('destroy');
+                Route::put('/{tahsin}', [MusyrifTahsinController::class, 'update'])
+                    ->middleware('academic.day.open')
+                    ->whereNumber('tahsin')
+                    ->name('update');
+                Route::delete('/{tahsin}', [MusyrifTahsinController::class, 'destroy'])
+                    ->middleware('academic.day.open')
+                    ->whereNumber('tahsin')
+                    ->name('destroy');
                 Route::get('/santri/{santri}', [MusyrifTahsinController::class, 'detail'])->name('detail');
                 Route::get('/santri/{santri}/timeline', [MusyrifTahsinController::class, 'timeline'])->name('timeline');
                 Route::get('/tahsin/{santri}/timeline-tilawah', [MusyrifTahsinController::class, 'timelineTilawah'])->name('timeline-tilawah');
@@ -862,11 +899,18 @@ Route::prefix('musyrif')
             ->group(function () {
                 // Route ini akan otomatis menjadi: musyrif.tilawah.progress
                 Route::get('/progress', [MusyrifTilawahController::class, 'getProgress'])->name('progress');
-                Route::put('/{tilawah}', [MusyrifTilawahController::class, 'update'])->name('update');
+                Route::put('/{tilawah}', [MusyrifTilawahController::class, 'update'])
+                    ->middleware('academic.day.open')
+                    ->name('update');
                 // Route ini akan otomatis menjadi: musyrif.tilawah.masal
-                Route::post('/masal', [MusyrifTilawahController::class, 'storeMasal'])->name('masal');
+                Route::post('/masal', [MusyrifTilawahController::class, 'storeMasal'])
+                    ->middleware('academic.day.open')
+                    ->name('masal');
                 Route::get('/datatable', [MusyrifTilawahController::class, 'datatable'])->name('datatable');
-                Route::delete('/{tilawah}', [MusyrifTilawahController::class, 'destroy'])->whereNumber('tilawah')->name('destroy');
+                Route::delete('/{tilawah}', [MusyrifTilawahController::class, 'destroy'])
+                    ->middleware('academic.day.open')
+                    ->whereNumber('tilawah')
+                    ->name('destroy');
             });
     });
 

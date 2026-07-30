@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Yajra\DataTables\DataTables;
+use App\Services\Academic\AcademicCalendarService;
 
 class TahsinController extends Controller
 {
@@ -98,6 +99,9 @@ class TahsinController extends Controller
             ->get();
 
         $totalSantri = $santriBinaan->count();
+        $academicDayContext = app(
+            AcademicCalendarService::class
+        )->todayContext();
 
         /*
         |--------------------------------------------------------------------------
@@ -154,7 +158,8 @@ class TahsinController extends Controller
             'tahsinToday',
             'tilawahToday',
             'avgJuz',
-            'mayoritasBuku'
+            'mayoritasBuku',
+            'academicDayContext'
         ));
     }
     /**
