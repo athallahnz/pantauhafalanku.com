@@ -135,18 +135,108 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow-x: auto;
         }
+
+        /* RESPONSIVE AUTH LAYOUT */
+        .auth-page-shell {
+            width: min(100%, 640px);
+            padding: 1.25rem;
+            margin-inline: auto;
+        }
+
+        .auth-card-register {
+            width: 100%;
+        }
+
+        .auth-card-register .card-body {
+            padding: clamp(1.5rem, 2.2vw, 3rem) !important;
+        }
+
+        .auth-card-register .glass-input {
+            min-height: 54px;
+            font-size: 1rem;
+        }
+
+        .auth-card-register .glass-role-card {
+            min-height: 112px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-card-register .auth-submit {
+            min-height: 58px;
+            font-size: 1.05rem;
+        }
+
+        .auth-card-register .auth-title {
+            font-size: clamp(1.45rem, 1.55vw, 1.85rem);
+        }
+
+        @media (min-width: 1600px) {
+            .auth-page-shell {
+                width: min(100%, 680px);
+            }
+
+            .auth-card-register .glass-input {
+                min-height: 58px;
+                font-size: 1.05rem;
+            }
+
+            .auth-card-register .glass-role-card {
+                min-height: 124px;
+            }
+
+            .auth-card-register .auth-submit {
+                min-height: 62px;
+                font-size: 1.12rem;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .auth-page-shell {
+                width: 100%;
+                padding: 1rem;
+            }
+
+            .glass-pane {
+                border-radius: 24px;
+            }
+
+            .auth-card-register .card-body {
+                padding: 1.5rem !important;
+            }
+
+            .auth-card-register .glass-input {
+                min-height: 50px;
+            }
+
+            .auth-card-register .glass-role-card {
+                min-height: 104px;
+            }
+
+            .theme-switcher {
+                top: 16px;
+                right: 16px;
+                width: 44px;
+                height: 44px;
+                border-radius: 13px;
+            }
+        }
+
     </style>
 
     <div id="aurora-bg"></div>
     <div class="theme-switcher shadow-lg" id="btnThemeToggle"><i class="bi bi-sun-fill fs-4" id="themeIcon"></i></div>
 
     <div class="row justify-content-center align-items-center min-vh-100 w-100 m-0" style="position: relative; z-index: 10;">
-        <div class="col-md-10 col-lg-6 col-xl-5 px-4">
-            <div class="card glass-pane border-0 py-3">
+        <div class="auth-page-shell">
+            <div class="card glass-pane auth-card-register border-0 py-3">
                 <div class="card-body px-4 px-md-5">
                     <div class="text-center mb-4">
-                        <h2 class="h4 fw-bold mb-1" id="welcomeText" style="color: #6f42c1;">Registrasi Internal</h2>
+                        <h2 class="auth-title fw-bold mb-1" id="welcomeText" style="color: #6f42c1;">Registrasi Internal</h2>
                         <p class="text-white-forced small">Silahkan buat akun untuk memulai akses.</p>
                     </div>
 
@@ -245,7 +335,7 @@
                         @endif
 
                         <div class="d-grid mt-4 mb-3">
-                            <button class="btn btn-primary btn-lg rounded-4 shadow-sm fw-bold py-3" type="submit"
+                            <button class="btn btn-primary btn-lg rounded-4 shadow-sm fw-bold py-3 auth-submit" type="submit"
                                 style="background: linear-gradient(135deg, #6f42c1, #4b2291); border: none; color: white;">
                                 Daftar Sekarang <i class="bi bi-arrow-right-short ms-1"></i>
                             </button>

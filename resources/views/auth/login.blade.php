@@ -122,6 +122,84 @@
             color: #f8d7da;
         }
 
+
+
+        /* ================= 5. RESPONSIVE AUTH LAYOUT ================= */
+        .auth-page-shell {
+            width: min(100%, 540px);
+            padding: 1.25rem;
+            margin-inline: auto;
+        }
+
+        .auth-card-login {
+            width: 100%;
+        }
+
+        .auth-card-login .card-body {
+            padding: clamp(1.5rem, 2.2vw, 3rem) !important;
+        }
+
+        .auth-card-login .glass-input {
+            min-height: 54px;
+            font-size: 1rem;
+        }
+
+        .auth-card-login .auth-submit {
+            min-height: 58px;
+            font-size: 1.05rem;
+        }
+
+        .auth-card-login .auth-logo {
+            width: clamp(82px, 5vw, 100px) !important;
+        }
+
+        .auth-card-login .auth-title {
+            font-size: clamp(1.2rem, 1.35vw, 1.55rem);
+        }
+
+        @media (min-width: 1600px) {
+            .auth-page-shell {
+                width: min(100%, 570px);
+            }
+
+            .auth-card-login .glass-input {
+                min-height: 58px;
+                font-size: 1.05rem;
+            }
+
+            .auth-card-login .auth-submit {
+                min-height: 62px;
+                font-size: 1.12rem;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .auth-page-shell {
+                width: 100%;
+                padding: 1rem;
+            }
+
+            .glass-pane {
+                border-radius: 24px;
+            }
+
+            .auth-card-login .card-body {
+                padding: 1.5rem !important;
+            }
+
+            .auth-card-login .glass-input {
+                min-height: 50px;
+            }
+
+            .theme-switcher {
+                top: 16px;
+                right: 16px;
+                width: 44px;
+                height: 44px;
+                border-radius: 13px;
+            }
+        }
+
         @keyframes shake {
 
             0%,
@@ -145,13 +223,13 @@
     </div>
 
     <div class="row justify-content-center align-items-center min-vh-100 w-100 m-0" style="position: relative; z-index: 10;">
-        <div class="col-md-10 col-lg-6 col-xl-5 px-4">
-            <div class="card glass-pane border-0 py-3">
+        <div class="auth-page-shell">
+            <div class="card glass-pane auth-card-login border-0 py-3">
                 <div class="card-body p-4 p-md-5">
                     <div class="text-center mb-4">
-                        <img src="{{ asset('assets/logos-primary.png') }}" alt="Logo" id="mainLogo" class="mb-3"
+                        <img src="{{ asset('assets/logos-primary.png') }}" alt="Logo" id="mainLogo" class="auth-logo mb-3"
                             style="width: 90px; filter: drop-shadow(0 5px 15px rgba(111, 66, 193, 0.2)); transition: all 0.3s ease;">
-                        <h2 class="h5 fw-bold mb-2 force-white" id="welcomeText">Sistem Informasi Tahfidz Qur'an</h2>
+                        <h2 class="auth-title fw-bold mb-2 force-white" id="welcomeText">Sistem Informasi Tahfidz Qur'an</h2>
                         <p class="text-white-forced small">Departemen Al-Qur'an - Pondok Pesantren Darut Taqwa Ponorogo</p>
                     </div>
 
@@ -217,7 +295,7 @@
                         @endif
 
                         <div class="d-grid mb-4">
-                            <button class="btn btn-primary btn-lg rounded-4 shadow-sm fw-bold py-3" type="submit"
+                            <button class="btn btn-primary btn-lg rounded-4 shadow-sm fw-bold py-3 auth-submit" type="submit"
                                 style="background: linear-gradient(135deg, #6f42c1, #4b2291); border: none; color: white;">
                                 Masuk ke Akun <i class="bi bi-arrow-right-short ms-1"></i>
                             </button>
