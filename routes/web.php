@@ -899,6 +899,11 @@ Route::prefix('musyrif')
             ->group(function () {
                 // Route ini akan otomatis menjadi: musyrif.tilawah.progress
                 Route::get('/progress', [MusyrifTilawahController::class, 'getProgress'])->name('progress');
+                Route::get('/susulan/options', [MusyrifTilawahController::class, 'getCatchupOptions'])
+                    ->name('catchup.options');
+                Route::post('/susulan', [MusyrifTilawahController::class, 'storeCatchup'])
+                    ->middleware('academic.day.open')
+                    ->name('catchup.store');
                 Route::put('/{tilawah}', [MusyrifTilawahController::class, 'update'])
                     ->middleware('academic.day.open')
                     ->name('update');

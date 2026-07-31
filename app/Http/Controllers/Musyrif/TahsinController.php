@@ -14,17 +14,23 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Yajra\DataTables\DataTables;
 use App\Services\Academic\AcademicCalendarService;
+use App\Services\TilawahEligibilityService;
 
 class TahsinController extends Controller
 {
     use ResolvesActiveSemester;
 
+    public function __construct(
+        private readonly TilawahEligibilityService $tilawahEligibility
+    ) {
+    }
+
     /*
      * Mapping target syarat Tilawah.
      *
-     * Nilai target tidak hanya berarti santri pernah tercatat pada Juz
-     * tersebut. Santri wajib memiliki Tilawah berstatus "hadir" pada setiap
-     * Juz secara berurutan, mulai Juz 1 sampai Juz target.
+     * Santri wajib memiliki cakupan ayat Tilawah berstatus "hadir" yang
+     * kontinu dari Al-Fatihah:1 sampai akhir Juz target. Record Susulan dapat
+     * menutup celah yang muncul karena izin, sakit, atau alpha.
      *
      * Buku yang tidak tercantum di mapping ini, termasuk Ummi 1–3, tidak
      * memiliki syarat Tilawah.
@@ -36,35 +42,6 @@ class TahsinController extends Controller
     ];
 
     private const DRILL_MATERI_CATATAN = 'Mengulang Materi Bersama';
-
-    /**
-     * Mengambil jumlah Juz Tilawah yang sudah tercatat hadir secara unik
-     * untuk setiap santri dalam rentang Juz 1 sampai Juz target.
-     *
-     * Karena query dibatasi ke rentang 1..$targetJuz, jumlah yang sama dengan
-     * $targetJuz berarti tidak ada Juz yang terlewat di dalam rentang wajib.
-     */
-    private function completedTilawahJuzCounts($santriIds, int $targetJuz)
-    {
-        return DB::table('tilawahs')
-            ->join(
-                'hafalan_templates',
-                'tilawahs.hafalan_template_id',
-                '=',
-                'hafalan_templates.id'
-            )
-            ->whereIn('tilawahs.santri_id', $santriIds)
-            ->where('tilawahs.status', 'hadir')
-            ->whereBetween('hafalan_templates.juz', [1, $targetJuz])
-            ->select(
-                'tilawahs.santri_id',
-                DB::raw(
-                    'COUNT(DISTINCT hafalan_templates.juz) as completed_juz_count'
-                )
-            )
-            ->groupBy('tilawahs.santri_id')
-            ->pluck('completed_juz_count', 'tilawahs.santri_id');
-    }
 
     /**
      * Buku NULL digunakan secara khusus untuk pencatatan Drill Materi.
@@ -288,19 +265,15 @@ class TahsinController extends Controller
             ]);
         }
 
-        $completedJuzCounts = $this->completedTilawahJuzCounts(
+        $tilawahSummaries = $this->tilawahEligibility->summaries(
             $santris,
             $syaratJuz
         );
-
-        $eligible = 0;
-        foreach ($santris as $id) {
-            $completedJuzCount = (int) ($completedJuzCounts[$id] ?? 0);
-
-            if ($completedJuzCount === $syaratJuz) {
-                $eligible++;
-            }
-        }
+        $eligible = $tilawahSummaries
+            ->filter(fn(array $summary): bool =>
+                (bool) ($summary['eligible'] ?? false)
+            )
+            ->count();
 
         return response()->json([
             'eligible'         => $eligible,
@@ -389,13 +362,12 @@ class TahsinController extends Controller
 
             /*
              * Progress Tilawah bersifat kumulatif dan tidak dibatasi semester.
-             * Santri harus memiliki data hadir pada setiap Juz dalam rentang
-             * 1 sampai target; Juz yang terlewat membuat santri tidak lolos.
-             * Query ini hanya diperlukan untuk Gharib 1–2 dan Tajwid.
+             * Eligibility dihitung dari union rentang ayat berstatus hadir dan
+             * wajib kontinu sejak indeks pertama sampai akhir Juz target.
              */
-            $completedJuzCounts = $syaratJuz === null
+            $tilawahSummaries = $syaratJuz === null
                 ? collect()
-                : $this->completedTilawahJuzCounts(
+                : $this->tilawahEligibility->summaries(
                     $santris->pluck('id'),
                     $syaratJuz
                 );
@@ -410,7 +382,7 @@ class TahsinController extends Controller
                 $halamanTujuan,
                 $catatanTujuan,
                 $syaratJuz,
-                $completedJuzCounts,
+                $tilawahSummaries,
                 $tanggal,
                 $semesterId,
                 $musyrif,
@@ -418,12 +390,11 @@ class TahsinController extends Controller
                 &$skippedNames
             ): void {
                 foreach ($santris as $santri) {
-                    $completedJuzCount =
-                        (int) ($completedJuzCounts[$santri->id] ?? 0);
+                    $summary = $tilawahSummaries->get((int) $santri->id);
 
                     if (
                         $syaratJuz !== null
-                        && $completedJuzCount !== $syaratJuz
+                        && !(bool) ($summary['eligible'] ?? false)
                     ) {
                         $skippedNames[] = $santri->nama;
                         continue;
@@ -458,7 +429,7 @@ class TahsinController extends Controller
                 return response()->json([
                     'ok' => false,
                     'icon' => 'error',
-                    'message' => "Gagal! Semua santri belum menuntaskan Tilawah lengkap dari Juz 1 sampai Juz {$syaratJuz}.",
+                    'message' => "Gagal! Semua santri belum menuntaskan cakupan ayat Tilawah secara berurutan dari Juz 1 sampai Juz {$syaratJuz}.",
                 ], 422);
             }
 
@@ -469,7 +440,7 @@ class TahsinController extends Controller
                     'message' =>
                     "Berhasil untuk {$insertedCount} santri. Namun, "
                         . count($skippedNames)
-                        . " santri dilewati karena Tilawah Juz 1 sampai Juz {$syaratJuz} belum lengkap.",
+                        . " santri dilewati karena cakupan ayat Tilawah Juz 1 sampai Juz {$syaratJuz} belum kontinu.",
                     'skipped_santri' => $skippedNames,
                 ]);
             }

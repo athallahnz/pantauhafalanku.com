@@ -158,6 +158,17 @@
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
 
+        #modalTilawah #formTilawah {
+            min-height: 0;
+        }
+
+        #modalTilawah .modal-body {
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .guide-step {
             position: relative;
             border-left: 3px solid var(--cui-info);
@@ -313,6 +324,80 @@
         }
 
         @media (max-width: 768px) {
+            #modalTilawah,
+            #modalTilawahCatchup {
+                padding: 0 !important;
+            }
+
+            #modalTilawah .modal-dialog,
+            #modalTilawahCatchup .modal-dialog {
+                width: 100%;
+                max-width: none;
+                height: 100vh;
+                height: 100dvh;
+                min-height: 100vh;
+                min-height: 100dvh;
+                margin: 0;
+                align-items: stretch;
+            }
+
+            #modalTilawah .modal-content,
+            #modalTilawahCatchup .modal-content {
+                width: 100%;
+                height: 100vh;
+                height: 100dvh;
+                max-height: 100vh;
+                max-height: 100dvh;
+                border-radius: 0 !important;
+            }
+
+            #modalTilawah #formTilawah,
+            #modalTilawahCatchup #formTilawahCatchup {
+                height: 100%;
+            }
+
+            #modalTilawah .modal-header,
+            #modalTilawahCatchup .modal-header {
+                flex: 0 0 auto;
+                padding: calc(0.875rem + env(safe-area-inset-top)) 1rem 0.875rem !important;
+            }
+
+            #modalTilawah .modal-body,
+            #modalTilawahCatchup .modal-body {
+                flex: 1 1 auto;
+                padding: 1rem !important;
+            }
+
+            #modalTilawah .modal-footer,
+            #modalTilawahCatchup .modal-footer {
+                flex: 0 0 auto;
+                flex-wrap: nowrap;
+                gap: 0.5rem;
+                padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom)) !important;
+                margin-top: 0 !important;
+                background: var(--cui-body-bg);
+                box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
+            }
+
+            #modalTilawah .modal-footer .btn,
+            #modalTilawahCatchup .modal-footer .btn {
+                margin: 0;
+                padding-right: 0.75rem !important;
+                padding-left: 0.75rem !important;
+                font-size: 0.875rem;
+            }
+
+            #modalTilawah #btnSubmitTilawah,
+            #modalTilawahCatchup #btnSubmitTilawahCatchup {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+
+            #modalTilawah .tilawah-status-scroll {
+                max-height: none !important;
+                overflow: visible !important;
+            }
+
             .fab-group-wrapper {
                 position: static;
                 display: block;
@@ -581,12 +666,19 @@
                 </div>
                 <div class="bubble-arrow"></div>
             </div>
-            <button class="btn btn-fab-info" data-coreui-toggle="modal" data-coreui-target="#modalPanduanTahsin">
+            <button type="button" class="btn btn-fab-info" id="btnPanduanTahsin"
+                title="Buka Panduan & Pembaruan" aria-label="Buka Panduan dan Pembaruan">
                 <i class="bi bi-question-circle-fill"></i>
             </button>
         </div>
 
         <div class="fab-right">
+            <button class="btn btn-warning text-dark btn-fab-main shadow" id="btnTilawahCatchup"
+                @disabled(!($academicDayContext['academic_input_open'] ?? false))
+                title="{{ ($academicDayContext['academic_input_open'] ?? false) ? 'Tilawah Susulan' : $academicDayContext['message'] }}">
+                <i class="bi bi-arrow-repeat me-md-2"></i>
+                <span class="fab-text">Tilawah Susulan</span>
+            </button>
             <button class="btn btn-success text-white btn-fab-main shadow" id="btnAddTilawah"
                 @disabled(!($academicDayContext['academic_input_open'] ?? false))
                 title="{{ ($academicDayContext['academic_input_open'] ?? false) ? 'Catat Tilawah' : $academicDayContext['message'] }}">
@@ -604,56 +696,79 @@
 
     {{-- MODAL PANDUAN --}}
     <div class="modal fade" id="modalPanduanTahsin" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 25px;">
                 <div class="modal-header px-4 bg-body-tertiary border-bottom-0"
                     style="border-top-left-radius: 25px; border-top-right-radius: 25px;">
                     <h5 class="modal-title fw-bold text-adaptive-purple">
-                        <i class="bi bi-lightbulb-fill text-warning me-2"></i>Panduan Sistem
+                        <i class="bi bi-lightbulb-fill text-warning me-2"></i>Panduan & Pembaruan
                     </h5>
                     <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4 pt-3">
+                    <div class="alert alert-warning border-0 rounded-4 mb-4">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-warning text-dark">PEMBARUAN</span>
+                            <strong class="text-warning-emphasis">Lanjut dari bacaan terakhir</strong>
+                        </div>
+                        <p class="small mb-2">
+                            Musyrif <b>tidak perlu memulai lagi dari Al-Fatihah</b>. Jika masih ada catatan lama,
+                            sistem otomatis menyarankan kolom <b>Dari</b> ke ayat setelah bacaan terakhir.
+                        </p>
+                        <div class="small bg-body rounded-3 p-2 border">
+                            Contoh: catatan terakhir <b>Al-Hijr:1–15</b>, maka pencatatan baru dimulai dari
+                            <b>Al-Hijr:16</b>. Periksa titik Dari, lalu pilih titik Sampai sesuai bacaan hari ini.
+                        </div>
+                    </div>
+
                     <div class="guide-step mb-4" style="border-left-color: #0dcaf0;">
                         <span class="guide-number" style="background: #0dcaf0; color: white;">1</span>
-                        <h6 class="fw-bold mb-1 text-info-emphasis">Wajib Input Tilawah Dahulu</h6>
+                        <h6 class="fw-bold mb-1 text-info-emphasis">Catat Rentang Tilawah Hari Ini</h6>
                         <p class="text-muted small mb-0">
-                            Sistem memiliki validasi cerdas. Anda harus mencatat <b>Target Tilawah (Juz)</b> terlebih
-                            dahulu. Sistem akan otomatis menolak/melewati santri yang capaian Tilawah-nya belum memenuhi
-                            syarat minimal Jilid Tahsin yang dipilih.
+                            Pada kondisi histori lama, periksa saran titik <b>Dari</b> yang sudah diisi sistem.
+                            Selanjutnya pilih titik <b>Sampai</b>. Semua ayat di antara kedua titik otomatis tercatat.
                         </p>
                     </div>
 
                     <div class="guide-step mb-4">
                         <span class="guide-number">2</span>
-                        <h6 class="fw-bold mb-1 text-adaptive-purple">Input Materi Tahsin Masal</h6>
+                        <h6 class="fw-bold mb-1 text-adaptive-purple">Tentukan Status Setiap Santri</h6>
                         <p class="text-muted small mb-0">
-                            Klik tombol ungu di pojok kanan bawah. Pilih Jilid & Centang materi/halaman berjalan hari ini
-                            (Bisa pilih lebih dari satu materi sekaligus).
+                            Rentang bacaan sama untuk seluruh santri. Hanya status <b>Hadir</b> yang menambah cakupan
+                            ayat. Izin, Sakit, dan Alpha akan dicatat sebagai bagian yang masih terlewat.
                         </p>
                     </div>
 
                     <div class="guide-step mb-4" style="border-left-color: #ffc107;">
                         <span class="guide-number text-dark" style="background: #ffc107;">3</span>
-                        <h6 class="fw-bold mb-1 text-warning-emphasis">Koreksi Absensi Individu</h6>
+                        <h6 class="fw-bold mb-1 text-warning-emphasis">Gunakan Tilawah Susulan</h6>
                         <p class="text-muted small mb-0">
-                            Jika ada santri yang berhalangan, klik tombol <b>Edit (Pensil)</b> pada baris nama santri di
-                            tabel riwayat untuk mengubah status kehadirannya.
+                            Klik tombol kuning <b>Tilawah Susulan</b> untuk santri yang memiliki ayat terlewat.
+                            Susulan selalu dimulai dari ayat pertama yang belum selesai dan boleh dicatat sebagian.
                         </p>
                     </div>
 
-                    <div class="guide-step" style="border-left-color: #198754; margin-bottom: 0;">
+                    <div class="guide-step mb-4" style="border-left-color: #198754;">
                         <span class="guide-number" style="background: #198754; color: white;">4</span>
-                        <h6 class="fw-bold mb-1 text-success">Pantau Progres</h6>
+                        <h6 class="fw-bold mb-1 text-success">Syarat Materi Tahsin</h6>
                         <p class="text-muted small mb-0">
-                            Gunakan tombol <b>Detail (Mata)</b> untuk melihat riwayat spesifik, catatan khusus, dan evaluasi
-                            pengajar.
+                            Ummi 1–3 dan Drill Materi tidak memiliki syarat Tilawah. Gharib 1, Gharib 2, dan Tajwid
+                            hanya dapat dicatat jika cakupan ayat santri sudah kontinu sampai targetnya.
+                        </p>
+                    </div>
+
+                    <div class="guide-step" style="border-left-color: #6f42c1; margin-bottom: 0;">
+                        <span class="guide-number" style="background: #6f42c1; color: white;">5</span>
+                        <h6 class="fw-bold mb-1 text-adaptive-purple">Panduan Bisa Dibuka Kembali</h6>
+                        <p class="text-muted small mb-0">
+                            Informasi ini muncul satu kali setiap sesi. Klik tombol <b>?</b> di pojok kiri bawah
+                            kapan pun Musyrif ingin membaca panduan ini kembali.
                         </p>
                     </div>
                 </div>
                 <div class="modal-footer border-0 p-4 pt-0">
                     <button type="button" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm"
-                        data-coreui-dismiss="modal">Saya Mengerti</button>
+                        data-coreui-dismiss="modal">Saya Mengerti, Mulai Mencatat</button>
                 </div>
             </div>
         </div>
@@ -761,7 +876,7 @@
                         <button type="button" class="btn btn-light rounded-pill px-4 fw-bold"
                             data-coreui-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-primary text-white rounded-pill px-4 shadow-sm fw-bold"
-                            id="btnSubmitTilawah">Simpan Tahsin</button>
+                            id="btnSubmitTahsin">Simpan Tahsin</button>
                     </div>
                 </div>
             </form>
@@ -884,10 +999,10 @@
 
     {{-- MODAL INPUT TILAWAH MASAL --}}
     <div class="modal fade" id="modalTilawah" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <form id="formTilawah" novalidate>
-                @csrf
-                <div class="modal-content shadow-lg border-0" style="border-radius: 25px;">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content shadow-lg border-0" style="border-radius: 25px;">
+                <form id="formTilawah" class="d-flex flex-column h-100 overflow-hidden" novalidate>
+                    @csrf
                     <div class="modal-header px-4 bg-success bg-opacity-10 border-0">
                         <h5 class="modal-title fw-bold text-success">
                             <i class="bi bi-journal-bookmark-fill me-2"></i>Target Tilawah Hari Ini
@@ -896,33 +1011,118 @@
                     </div>
                     <div class="modal-body p-4">
                         <div class="alert alert-success border-0 rounded-4 shadow-sm mb-4 small">
-                            <i class="bi bi-info-circle-fill me-2"></i> Input ini akan mencatat target tilawah yang sama
-                            untuk <b>semua santri binaan</b> Anda hari ini sebagai <b>HADIR</b>.
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            Satu rentang bacaan berlaku untuk <b>seluruh santri binaan</b>. Yang dibedakan hanya status
+                            kehadiran masing-masing santri. Hanya status <b>Hadir</b> yang menambah cakupan ayat;
+                            ketidakhadiran dapat ditutup melalui <b>Tilawah Susulan</b>.
                         </div>
 
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">JUZ</label>
-                                <select id="juz_tilawah" class="form-select bg-body-tertiary border-0" required>
-                                    <option value="">-- Pilih Juz --</option>
-                                    @for ($i = 1; $i <= 30; $i++)
-                                        <option value="{{ $i }}">Juz {{ $i }}</option>
-                                    @endfor
-                                </select>
+                        <div id="tilawahLoading" class="text-center py-5">
+                            <div class="spinner-border text-success mb-3" role="status"></div>
+                            <p class="small text-muted mb-0">Memuat progress Tilawah kelompok...</p>
+                        </div>
+
+                        <div id="tilawahFormContent" class="d-none">
+                            <div id="tilawahLegacyAlert" class="alert alert-warning border-0 rounded-4 small d-none"></div>
+
+                            <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                                <div>
+                                    <small class="text-muted fw-bold d-block">PROGRESS TERAKHIR</small>
+                                    <span id="tilawahLastProgress" class="fw-bold text-success">Belum ada progress</span>
+                                </div>
+                                <span id="tilawahTodayMode" class="badge rounded-pill bg-success-subtle text-success px-3 py-2">
+                                    Input Baru
+                                </span>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">TARGET BACAAN</label>
-                                <select name="template_id" id="template_tilawah"
-                                    class="form-select bg-body-tertiary border-0" required disabled>
-                                    <option value="">-- Pilih Juz Dulu --</option>
-                                </select>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-4 bg-body-tertiary h-100">
+                                        <div class="d-flex align-items-center justify-content-between mb-3">
+                                            <label class="small fw-bold text-uppercase mb-0">Dari</label>
+                                            <span id="tilawahFromBadge"
+                                                class="badge bg-secondary-subtle text-secondary">Otomatis</span>
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-8">
+                                                <label class="form-label small text-muted">Surat</label>
+                                                <select name="from_surah_id" id="from_surah_tilawah"
+                                                    class="form-select border-0" required>
+                                                    <option value="">-- Pilih Surat --</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-4">
+                                                <label class="form-label small text-muted">Ayat</label>
+                                                <select name="from_ayat" id="from_ayat_tilawah"
+                                                    class="form-select border-0" required disabled>
+                                                    <option value="">--</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-4 bg-success bg-opacity-10 h-100">
+                                        <label class="small fw-bold text-uppercase text-success mb-3 d-block">Sampai</label>
+                                        <div class="row g-2">
+                                            <div class="col-8">
+                                                <label class="form-label small text-muted">Surat</label>
+                                                <select name="to_surah_id" id="to_surah_tilawah"
+                                                    class="form-select border-0" required>
+                                                    <option value="">-- Pilih Surat --</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-4">
+                                                <label class="form-label small text-muted">Ayat</label>
+                                                <select name="to_ayat" id="to_ayat_tilawah"
+                                                    class="form-select border-0" required disabled>
+                                                    <option value="">--</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-12">
-                                <label class="form-label small fw-bold">DETAIL SURAH & AYAT (Ketik Manual)</label>
-                                <input type="text" name="detail_ayat" class="form-control bg-body-tertiary border-0"
-                                    placeholder="Catat Ayat Terakhir dari Target Bacaan" required>
+
+                            <div id="tilawahRangePreview" class="alert alert-light border rounded-4 small mb-4">
+                                Pilih titik mulai dan titik akhir bacaan.
                             </div>
-                            <div class="col-12">
+
+                            <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 mb-2">
+                                <div>
+                                    <label class="form-label small fw-bold mb-0">STATUS SANTRI</label>
+                                    <small class="text-muted d-block">Semua santri otomatis berstatus Hadir.</small>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-success rounded-pill dropdown-toggle" type="button"
+                                        data-coreui-toggle="dropdown">
+                                        Terapkan Status ke Semua
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                        <li><button type="button" class="dropdown-item tilawah-status-all" data-status="hadir">Hadir</button></li>
+                                        <li><button type="button" class="dropdown-item tilawah-status-all" data-status="izin">Izin</button></li>
+                                        <li><button type="button" class="dropdown-item tilawah-status-all" data-status="sakit">Sakit</button></li>
+                                        <li><button type="button" class="dropdown-item tilawah-status-all" data-status="alpha">Alpha</button></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="border rounded-4 overflow-hidden mb-3">
+                                <div class="table-responsive tilawah-status-scroll" style="max-height: 290px;">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="position-sticky top-0 bg-body-tertiary" style="z-index: 1;">
+                                            <tr>
+                                                <th class="ps-3">Santri</th>
+                                                <th style="width: 190px;">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tilawahStatusRows"></tbody>
+                                    </table>
+                                </div>
+                                <div id="tilawahStatusSummary" class="px-3 py-2 bg-body-tertiary small text-muted"></div>
+                            </div>
+
+                            <div>
                                 <label class="form-label small fw-bold">CATATAN UMUM (OPTIONAL)</label>
                                 <textarea name="catatan" class="form-control bg-body-tertiary border-0" rows="2"
                                     placeholder="Catatan untuk seluruh santri..."></textarea>
@@ -933,10 +1133,102 @@
                         <button type="button" class="btn btn-light rounded-pill px-4 fw-bold"
                             data-coreui-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-success text-white rounded-pill px-4 shadow-sm fw-bold"
-                            id="btnSubmitTilawah">Simpan Tilawah</button>
+                            id="btnSubmitTilawah" disabled>Simpan Tilawah</button>
                     </div>
-                </div>
-            </form>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- MODAL TILAWAH SUSULAN INDIVIDU --}}
+    <div class="modal fade" id="modalTilawahCatchup" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content shadow-lg border-0" style="border-radius: 25px;">
+                <form id="formTilawahCatchup" class="d-flex flex-column h-100 overflow-hidden" novalidate>
+                    @csrf
+                    <div class="modal-header px-4 bg-warning bg-opacity-10 border-0">
+                        <h5 class="modal-title fw-bold text-warning-emphasis">
+                            <i class="bi bi-arrow-repeat me-2"></i>Tilawah Susulan
+                        </h5>
+                        <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="alert alert-warning border-0 rounded-4 small">
+                            Susulan selalu dimulai dari <b>ayat pertama yang masih terlewat</b>. Musyrif dapat
+                            menyelesaikan seluruh celah atau sebagian terlebih dahulu.
+                        </div>
+
+                        <div id="tilawahCatchupLoading" class="text-center py-5">
+                            <div class="spinner-border text-warning mb-3" role="status"></div>
+                            <p class="small text-muted mb-0">Memeriksa celah progress santri...</p>
+                        </div>
+
+                        <div id="tilawahCatchupContent" class="d-none">
+                            <div id="tilawahCatchupEmpty" class="alert alert-success border-0 rounded-4 d-none"></div>
+
+                            <div id="tilawahCatchupFields">
+                                <div class="mb-4">
+                                    <label class="form-label small fw-bold">SANTRI</label>
+                                    <select name="santri_id" id="tilawah_catchup_santri"
+                                        class="form-select bg-body-tertiary border-0" required>
+                                        <option value="">-- Pilih Santri --</option>
+                                    </select>
+                                </div>
+
+                                <div id="tilawahCatchupProgress" class="p-3 rounded-4 bg-body-tertiary small mb-4 d-none"></div>
+
+                                <input type="hidden" name="from_surah_id" id="catchup_from_surah_id">
+                                <input type="hidden" name="from_ayat" id="catchup_from_ayat">
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <div class="p-3 rounded-4 bg-body-tertiary h-100">
+                                            <label class="small fw-bold text-uppercase mb-3 d-block">Dari</label>
+                                            <div id="tilawahCatchupFromLabel" class="fw-bold text-warning-emphasis">—</div>
+                                            <small class="text-muted">Otomatis dari celah pertama</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-3 rounded-4 bg-warning bg-opacity-10 h-100">
+                                            <label class="small fw-bold text-uppercase mb-3 d-block">Sampai</label>
+                                            <div class="row g-2">
+                                                <div class="col-8">
+                                                    <select name="to_surah_id" id="catchup_to_surah_id"
+                                                        class="form-select border-0" required disabled>
+                                                        <option value="">-- Surat --</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-4">
+                                                    <select name="to_ayat" id="catchup_to_ayat"
+                                                        class="form-select border-0" required disabled>
+                                                        <option value="">--</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="tilawahCatchupPreview" class="alert alert-light border rounded-4 small mb-3">
+                                    Pilih santri untuk melihat celah Tilawah.
+                                </div>
+
+                                <div>
+                                    <label class="form-label small fw-bold">CATATAN (OPTIONAL)</label>
+                                    <textarea name="catatan" class="form-control bg-body-tertiary border-0" rows="2"
+                                        placeholder="Catatan Tilawah Susulan..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 p-4 pt-0">
+                        <button type="button" class="btn btn-light rounded-pill px-4 fw-bold"
+                            data-coreui-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-warning rounded-pill px-4 shadow-sm fw-bold"
+                            id="btnSubmitTilawahCatchup" disabled>Simpan Susulan</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -1228,13 +1520,17 @@
             if (!ACADEMIC_INPUT_OPEN) {
                 $(document).on(
                     'click',
-                    '#btnAddTahsin, #btnAddTilawah, .btn-edit, .btn-delete, .btn-edit-tilawah, .btn-delete-tilawah',
+                    '#btnAddTahsin, #btnAddTilawah, #btnTilawahCatchup, .btn-edit, .btn-delete, .btn-edit-tilawah, .btn-delete-tilawah',
                     guardAcademicInput
                 );
             }
 
             let filterTanggal = 'today';
-            let tilawahTemplates = [];
+            let tilawahSurahs = [];
+            let tilawahGroupProgress = null;
+            let tilawahSubmitting = false;
+            let tilawahCatchupData = [];
+            let tilawahCatchupSubmitting = false;
             const DRILL_MATERI_CATATAN = 'Mengulang Materi Bersama';
 
             const filterLabels = {
@@ -1248,8 +1544,30 @@
             const modalEdit = new coreui.Modal(document.getElementById('modalEditTahsin'));
             const modalDetail = new coreui.Modal(document.getElementById('modalDetailTahsin'));
             const modalTilawah = new coreui.Modal(document.getElementById('modalTilawah'));
+            const modalTilawahCatchup = new coreui.Modal(
+                document.getElementById('modalTilawahCatchup')
+            );
+            const modalPanduanTahsin = new coreui.Modal(
+                document.getElementById('modalPanduanTahsin')
+            );
             const modalEditTilawah = new coreui.Modal(document.getElementById('modalEditTilawah'));
             const modalDetailTilawah = new coreui.Modal(document.getElementById('modalDetailTilawah'));
+
+            // Panduan pembaruan tampil sekali per tab/browser session.
+            const TILAWAH_GUIDE_SESSION_KEY = 'simtaqu.tilawah-guide.v2.shown';
+
+            $('#btnPanduanTahsin').on('click', function() {
+                modalPanduanTahsin.show();
+            });
+
+            try {
+                if (sessionStorage.getItem(TILAWAH_GUIDE_SESSION_KEY) !== '1') {
+                    sessionStorage.setItem(TILAWAH_GUIDE_SESSION_KEY, '1');
+                    setTimeout(() => modalPanduanTahsin.show(), 500);
+                }
+            } catch (error) {
+                // Storage dapat dinonaktifkan browser; tombol Panduan tetap bekerja.
+            }
 
             // --- EDIT STATUS TILAWAH ---
             $(document).on('click', '.btn-edit-tilawah', function() {
@@ -1410,39 +1728,361 @@
             /* =========================================================
                MODAL & FORM LOGIC: TILAWAH MASAL
                ========================================================= */
-            $.get("{{ route('musyrif.tilawah.progress') }}", function(res) {
-                tilawahTemplates = res.templates;
-            });
-
             $('#btnAddTilawah').on('click', function() {
+                tilawahSubmitting = false;
                 $('#formTilawah')[0].reset();
                 $('#formTilawah').find('.is-invalid').removeClass('is-invalid');
-                $('#template_tilawah').empty().append('<option value="">-- Pilih Juz Dulu --</option>')
-                    .prop('disabled', true);
+                $('#tilawahLoading').removeClass('d-none');
+                $('#tilawahFormContent').addClass('d-none');
+                $('#tilawahStatusRows').empty();
+                $('#tilawahLegacyAlert').addClass('d-none').empty();
+                $('#btnSubmitTilawah').prop('disabled', true).html('Simpan Tilawah');
                 modalTilawah.show();
+
+                $.get("{{ route('musyrif.tilawah.progress') }}")
+                    .done(hydrateTilawahForm)
+                    .fail(xhr => {
+                        modalTilawah.hide();
+                        Swal.fire(
+                            'Gagal Memuat Form',
+                            xhr.responseJSON?.message ?? 'Data progress Tilawah tidak dapat dimuat.',
+                            'error'
+                        );
+                    });
             });
 
-            $('#juz_tilawah').on('change', function() {
-                const selectedJuz = $(this).val();
-                const $templateSelect = $('#template_tilawah');
-                $templateSelect.empty().append('<option value="">-- Pilih Target --</option>');
+            function hydrateTilawahForm(res) {
+                tilawahSurahs = Array.isArray(res.surahs) ? res.surahs : [];
+                tilawahGroupProgress = res.group_progress ?? {};
 
-                if (selectedJuz) {
-                    const filteredTemplates = tilawahTemplates.filter(t => t.juz == selectedJuz);
-                    filteredTemplates.forEach(t => {
-                        $templateSelect.append(`<option value="${t.id}">${t.label}</option>`);
-                    });
-                    $templateSelect.prop('disabled', false);
+                populateTilawahSurahSelect($('#from_surah_tilawah'));
+                populateTilawahSurahSelect($('#to_surah_tilawah'));
+
+                const initialFrom = tilawahGroupProgress.initial_from;
+                const initialTo = tilawahGroupProgress.initial_to;
+
+                if (initialFrom) {
+                    $('#from_surah_tilawah').val(String(initialFrom.surah_id));
+                    populateTilawahAyatSelect(
+                        $('#from_ayat_tilawah'),
+                        initialFrom.surah_id,
+                        initialFrom.ayat
+                    );
                 } else {
-                    $templateSelect.prop('disabled', true);
+                    populateTilawahAyatSelect($('#from_ayat_tilawah'), null);
                 }
+
+                if (initialTo) {
+                    $('#to_surah_tilawah').val(String(initialTo.surah_id));
+                    populateTilawahAyatSelect(
+                        $('#to_ayat_tilawah'),
+                        initialTo.surah_id,
+                        initialTo.ayat
+                    );
+                } else {
+                    populateTilawahAyatSelect($('#to_ayat_tilawah'), null);
+                }
+
+                $('#tilawahLastProgress').text(
+                    tilawahGroupProgress.last_range ?? 'Belum ada progress terstruktur'
+                );
+
+                $('#tilawahTodayMode')
+                    .text(tilawahGroupProgress.editing_today ? 'Memperbarui Hari Ini' : 'Input Baru')
+                    .toggleClass('bg-warning-subtle text-warning', Boolean(tilawahGroupProgress.editing_today))
+                    .toggleClass('bg-success-subtle text-success', !tilawahGroupProgress.editing_today);
+
+                $('#btnSubmitTilawah').html(
+                    tilawahGroupProgress.editing_today ? 'Perbarui Tilawah Hari Ini' : 'Simpan Tilawah'
+                );
+
+                const legacy = tilawahGroupProgress.legacy_reference;
+                if (legacy) {
+                    const legacyText = [legacy.tanggal, legacy.target, legacy.catatan]
+                        .filter(Boolean)
+                        .join(' · ');
+                    $('#tilawahLegacyAlert')
+                        .removeClass('d-none')
+                        .html(
+                            '<i class="bi bi-exclamation-triangle-fill me-2"></i>' +
+                            '<b>Lanjutkan dari bacaan terakhir.</b> Sistem telah menyarankan kolom Dari ke ayat ' +
+                            'berikutnya. Periksa saran tersebut, lalu pilih titik Sampai. Jangan mulai ulang dari ' +
+                            'Al-Fatihah kecuali memang diperintahkan. <br><span class="d-inline-block mt-1">' +
+                            '<b>Catatan terakhir:</b> ' + escapeTilawahHtml(legacyText) + '</span>'
+                        );
+                }
+
+                setTilawahFromLocked(!legacy);
+
+                renderTilawahStatusRows(res.data_santri ?? []);
+                $('textarea[name="catatan"]', '#formTilawah').val(
+                    tilawahGroupProgress.note ?? ''
+                );
+                $('#tilawahLoading').addClass('d-none');
+                $('#tilawahFormContent').removeClass('d-none');
+
+                if (tilawahGroupProgress.is_complete && !tilawahGroupProgress.editing_today) {
+                    $('#tilawahRangePreview')
+                        .removeClass('alert-light alert-success alert-danger')
+                        .addClass('alert-warning')
+                        .html('<i class="bi bi-trophy-fill me-2"></i>Tilawah kelompok sudah mencapai An-Nas ayat terakhir.');
+                    syncTilawahSubmitState();
+                    return;
+                }
+
+                updateTilawahRangePreview();
+            }
+
+            function setTilawahFromLocked(locked) {
+                $('#formTilawah .tilawah-from-hidden').remove();
+                $('#from_surah_tilawah').prop('disabled', locked);
+                $('#from_ayat_tilawah').prop(
+                    'disabled',
+                    locked || !$('#from_surah_tilawah').val()
+                );
+
+                $('#tilawahFromBadge')
+                    .text(locked ? 'Otomatis' : 'Tentukan Sekali')
+                    .toggleClass('bg-secondary-subtle text-secondary', locked)
+                    .toggleClass('bg-warning-subtle text-warning', !locked);
+
+                if (!locked) return;
+
+                $('<input>', {
+                    type: 'hidden',
+                    name: 'from_surah_id',
+                    value: $('#from_surah_tilawah').val(),
+                    class: 'tilawah-from-hidden'
+                }).appendTo('#formTilawah');
+                $('<input>', {
+                    type: 'hidden',
+                    name: 'from_ayat',
+                    value: $('#from_ayat_tilawah').val(),
+                    class: 'tilawah-from-hidden'
+                }).appendTo('#formTilawah');
+            }
+
+            function populateTilawahSurahSelect($select) {
+                $select.empty().append('<option value="">-- Pilih Surat --</option>');
+                tilawahSurahs.forEach(surah => {
+                    $select.append(
+                        $('<option>', {
+                            value: surah.id,
+                            text: `${surah.id}. ${surah.nama}`
+                        })
+                    );
+                });
+            }
+
+            function populateTilawahAyatSelect($select, surahId, selectedAyat = null) {
+                const surah = tilawahSurahs.find(item => Number(item.id) === Number(surahId));
+                $select.empty().append('<option value="">--</option>');
+
+                if (!surah || Number(surah.jumlah_ayat) < 1) {
+                    $select.prop('disabled', true);
+                    return;
+                }
+
+                for (let ayat = 1; ayat <= Number(surah.jumlah_ayat); ayat++) {
+                    $select.append($('<option>', {
+                        value: ayat,
+                        text: ayat
+                    }));
+                }
+
+                $select.prop('disabled', false);
+                if (selectedAyat !== null) $select.val(String(selectedAyat));
+            }
+
+            function renderTilawahStatusRows(santris) {
+                const $rows = $('#tilawahStatusRows').empty();
+
+                if (!santris.length) {
+                    $rows.append(
+                        '<tr><td colspan="2" class="text-center text-muted py-4">Belum ada santri binaan aktif.</td></tr>'
+                    );
+                    updateTilawahStatusSummary();
+                    return;
+                }
+
+                santris.forEach((santri, index) => {
+                    const status = ['hadir', 'izin', 'sakit', 'alpha'].includes(santri.status)
+                        ? santri.status
+                        : 'hadir';
+                    const row = `
+                        <tr>
+                            <td class="ps-3">
+                                <span class="text-muted small me-2">${index + 1}.</span>
+                                <span class="fw-semibold">${escapeTilawahHtml(santri.nama)}</span>
+                            </td>
+                            <td>
+                                <select name="statuses[${Number(santri.id)}]"
+                                    class="form-select form-select-sm border-0 bg-body-tertiary tilawah-status-select">
+                                    <option value="hadir" ${status === 'hadir' ? 'selected' : ''}>Hadir</option>
+                                    <option value="izin" ${status === 'izin' ? 'selected' : ''}>Izin</option>
+                                    <option value="sakit" ${status === 'sakit' ? 'selected' : ''}>Sakit</option>
+                                    <option value="alpha" ${status === 'alpha' ? 'selected' : ''}>Alpha</option>
+                                </select>
+                            </td>
+                        </tr>`;
+                    $rows.append(row);
+                });
+
+                updateTilawahStatusSummary();
+            }
+
+            function updateTilawahStatusSummary() {
+                const counts = { hadir: 0, izin: 0, sakit: 0, alpha: 0 };
+                $('.tilawah-status-select').each(function() {
+                    if (Object.prototype.hasOwnProperty.call(counts, this.value)) {
+                        counts[this.value]++;
+                    }
+                });
+                $('#tilawahStatusSummary').text(
+                    `Hadir ${counts.hadir} · Izin ${counts.izin} · Sakit ${counts.sakit} · Alpha ${counts.alpha}`
+                );
+                syncTilawahSubmitState();
+            }
+
+            function tilawahQuranIndex(surahId, ayat) {
+                let total = Number(ayat);
+                for (const surah of tilawahSurahs) {
+                    if (Number(surah.id) >= Number(surahId)) break;
+                    total += Number(surah.jumlah_ayat);
+                }
+                return total;
+            }
+
+            function tilawahPointLabel(surahId, ayat) {
+                const surah = tilawahSurahs.find(item => Number(item.id) === Number(surahId));
+                return surah ? `${surah.nama}:${ayat}` : '-';
+            }
+
+            function getTilawahFormState() {
+                const fromSurahId = $('#from_surah_tilawah').val();
+                const fromAyat = $('#from_ayat_tilawah').val();
+                const toSurahId = $('#to_surah_tilawah').val();
+                const toAyat = $('#to_ayat_tilawah').val();
+                const hasRange = Boolean(fromSurahId && fromAyat && toSurahId && toAyat);
+                const hasStatuses = $('#tilawahStatusRows .tilawah-status-select').length > 0;
+                const isCompleted = Boolean(
+                    tilawahGroupProgress?.is_complete &&
+                    !tilawahGroupProgress?.editing_today
+                );
+                let rangeValid = false;
+
+                if (hasRange) {
+                    rangeValid = tilawahQuranIndex(toSurahId, toAyat) >=
+                        tilawahQuranIndex(fromSurahId, fromAyat);
+                }
+
+                return {
+                    ready: hasRange && rangeValid && hasStatuses && !isCompleted,
+                    hasRange,
+                    rangeValid,
+                    hasStatuses,
+                    isCompleted
+                };
+            }
+
+            function syncTilawahSubmitState() {
+                const state = getTilawahFormState();
+                const hardDisabled = tilawahSubmitting ||
+                    !state.hasStatuses ||
+                    state.isCompleted;
+
+                $('#btnSubmitTilawah')
+                    .prop('disabled', hardDisabled)
+                    .attr('aria-disabled', hardDisabled ? 'true' : 'false');
+
+                return state;
+            }
+
+            function updateTilawahRangePreview() {
+                const fromSurahId = $('#from_surah_tilawah').val();
+                const fromAyat = $('#from_ayat_tilawah').val();
+                const toSurahId = $('#to_surah_tilawah').val();
+                const toAyat = $('#to_ayat_tilawah').val();
+                const $preview = $('#tilawahRangePreview');
+
+                if (!fromSurahId || !fromAyat || !toSurahId || !toAyat) {
+                    $preview
+                        .removeClass('alert-success alert-danger alert-warning')
+                        .addClass('alert-light')
+                        .text('Pilih titik mulai dan titik akhir bacaan.');
+                    syncTilawahSubmitState();
+                    return;
+                }
+
+                const startIndex = tilawahQuranIndex(fromSurahId, fromAyat);
+                const endIndex = tilawahQuranIndex(toSurahId, toAyat);
+                const total = endIndex - startIndex + 1;
+
+                if (total < 1) {
+                    $preview
+                        .removeClass('alert-light alert-success alert-warning')
+                        .addClass('alert-danger')
+                        .html('<i class="bi bi-exclamation-circle-fill me-2"></i>Titik Sampai tidak boleh sebelum titik Dari.');
+                    syncTilawahSubmitState();
+                    return;
+                }
+
+                const fromLabel = tilawahPointLabel(fromSurahId, fromAyat);
+                const toLabel = tilawahPointLabel(toSurahId, toAyat);
+                $preview
+                    .removeClass('alert-light alert-danger alert-warning')
+                    .addClass('alert-success')
+                    .html(
+                        `<i class="bi bi-check-circle-fill me-2"></i><b>${escapeTilawahHtml(fromLabel)} – ` +
+                        `${escapeTilawahHtml(toLabel)}</b> akan ditandai terlewati · <b>${total} ayat</b>`
+                    );
+                syncTilawahSubmitState();
+            }
+
+            function escapeTilawahHtml(value) {
+                return $('<div>').text(value ?? '').html();
+            }
+
+            $('#from_surah_tilawah').on('change', function() {
+                populateTilawahAyatSelect($('#from_ayat_tilawah'), this.value, 1);
+                updateTilawahRangePreview();
+            });
+
+            $('#to_surah_tilawah').on('change', function() {
+                populateTilawahAyatSelect($('#to_ayat_tilawah'), this.value, 1);
+                updateTilawahRangePreview();
+            });
+
+            $('#from_ayat_tilawah, #to_ayat_tilawah').on('change', updateTilawahRangePreview);
+
+            $(document).on('change', '.tilawah-status-select', updateTilawahStatusSummary);
+
+            $(document).on('click', '.tilawah-status-all', function() {
+                $('.tilawah-status-select').val($(this).data('status'));
+                updateTilawahStatusSummary();
             });
 
             $('#formTilawah').on('submit', function(e) {
                 e.preventDefault();
                 const btn = $('#btnSubmitTilawah');
+                const formState = syncTilawahSubmitState();
+
+                if (!formState.ready) {
+                    const message = !formState.hasStatuses
+                        ? 'Belum ada santri binaan aktif yang dapat dicatat.'
+                        : !formState.hasRange
+                            ? 'Lengkapi surat dan ayat pada bagian Dari dan Sampai.'
+                            : !formState.rangeValid
+                                ? 'Titik Sampai tidak boleh berada sebelum titik Dari.'
+                                : 'Progress Tilawah belum dapat disimpan.';
+                    Swal.fire('Periksa Form', message, 'warning');
+                    return;
+                }
+
                 $(this).find('.is-invalid').removeClass('is-invalid');
-                btn.prop('disabled', true).html(
+                tilawahSubmitting = true;
+                syncTilawahSubmitState();
+                btn.html(
                     '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...');
 
                 $.ajax({
@@ -1450,8 +2090,13 @@
                     type: 'POST',
                     data: $(this).serialize(),
                     success: res => {
+                        tilawahSubmitting = false;
                         modalTilawah.hide();
-                        btn.prop('disabled', false).html('Simpan Tilawah');
+                        btn.html(
+                            tilawahGroupProgress?.editing_today
+                                ? 'Perbarui Tilawah Hari Ini'
+                                : 'Simpan Tilawah'
+                        );
                         tableTilawah.ajax.reload();
 
                         if (window.AppAlert) AppAlert.success(res.message);
@@ -1464,7 +2109,13 @@
                         });
                     },
                     error: xhr => {
-                        btn.prop('disabled', false).html('Simpan Tilawah');
+                        tilawahSubmitting = false;
+                        btn.html(
+                            tilawahGroupProgress?.editing_today
+                                ? 'Perbarui Tilawah Hari Ini'
+                                : 'Simpan Tilawah'
+                        );
+                        syncTilawahSubmitState();
                         if (xhr.status === 422) {
                             const res = xhr.responseJSON;
                             if (res.message && !res.errors) Swal.fire({
@@ -1472,10 +2123,260 @@
                                 title: 'Perhatian',
                                 text: res.message
                             });
-                            if (res.errors) $.each(res.errors, (k, v) => $(`[name="${k}"]`)
-                                .addClass('is-invalid'));
+                            if (res.errors) {
+                                $.each(res.errors, (k) => $(`[name="${k}"]`).addClass('is-invalid'));
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Periksa Form',
+                                    text: Object.values(res.errors).flat()[0] ?? 'Data Tilawah belum valid.'
+                                });
+                            }
                         } else {
                             Swal.fire('Error', 'Terjadi kesalahan sistem', 'error');
+                        }
+                    }
+                });
+            });
+
+            /* =========================================================
+               MODAL & FORM LOGIC: TILAWAH SUSULAN
+               ========================================================= */
+            $('#btnTilawahCatchup').on('click', function() {
+                tilawahCatchupSubmitting = false;
+                tilawahCatchupData = [];
+                $('#formTilawahCatchup')[0].reset();
+                $('#formTilawahCatchup').find('.is-invalid').removeClass('is-invalid');
+                $('#tilawahCatchupLoading').removeClass('d-none');
+                $('#tilawahCatchupContent').addClass('d-none');
+                $('#tilawahCatchupEmpty').addClass('d-none').empty();
+                $('#tilawahCatchupFields').removeClass('d-none');
+                $('#btnSubmitTilawahCatchup').prop('disabled', true).html('Simpan Susulan');
+                modalTilawahCatchup.show();
+
+                $.get("{{ route('musyrif.tilawah.catchup.options') }}")
+                    .done(hydrateTilawahCatchupForm)
+                    .fail(xhr => {
+                        modalTilawahCatchup.hide();
+                        Swal.fire(
+                            'Gagal Memuat Susulan',
+                            xhr.responseJSON?.message ?? 'Data celah Tilawah tidak dapat dimuat.',
+                            'error'
+                        );
+                    });
+            });
+
+            function hydrateTilawahCatchupForm(res) {
+                tilawahCatchupData = Array.isArray(res.data_santri) ? res.data_santri : [];
+                tilawahSurahs = Array.isArray(res.surahs) ? res.surahs : tilawahSurahs;
+                const $santri = $('#tilawah_catchup_santri')
+                    .empty()
+                    .append('<option value="">-- Pilih Santri --</option>');
+
+                tilawahCatchupData.forEach(item => {
+                    const gap = item.gap;
+                    $santri.append($('<option>', {
+                        value: item.id,
+                        text: `${item.nama} · ${gap.total_ayat} ayat terlewat`
+                    }));
+                });
+
+                $('#tilawahCatchupLoading').addClass('d-none');
+                $('#tilawahCatchupContent').removeClass('d-none');
+
+                if (!tilawahCatchupData.length) {
+                    $('#tilawahCatchupFields').addClass('d-none');
+                    $('#tilawahCatchupEmpty')
+                        .removeClass('d-none')
+                        .html(
+                            '<i class="bi bi-check-circle-fill me-2"></i>' +
+                            '<b>Tidak ada celah.</b> Semua santri sudah mengikuti progress kelompok.'
+                        );
+                }
+            }
+
+            function renderTilawahCatchupSelection() {
+                const santriId = Number($('#tilawah_catchup_santri').val());
+                const item = tilawahCatchupData.find(row => Number(row.id) === santriId);
+
+                if (!item) {
+                    $('#tilawahCatchupProgress').addClass('d-none').empty();
+                    $('#tilawahCatchupFromLabel').text('—');
+                    $('#catchup_from_surah_id, #catchup_from_ayat').val('');
+                    $('#catchup_to_surah_id, #catchup_to_ayat')
+                        .empty()
+                        .append('<option value="">--</option>')
+                        .prop('disabled', true);
+                    $('#tilawahCatchupPreview').text('Pilih santri untuk melihat celah Tilawah.');
+                    $('#btnSubmitTilawahCatchup').prop('disabled', true);
+                    return;
+                }
+
+                const gap = item.gap;
+                const coveredLabel = item.covered_through
+                    ? tilawahPointLabel(item.covered_through.surah_id, item.covered_through.ayat)
+                    : 'Belum dari Al-Fatihah:1';
+                const groupLabel = item.group_through
+                    ? tilawahPointLabel(item.group_through.surah_id, item.group_through.ayat)
+                    : 'Belum ada progress kelompok';
+
+                $('#tilawahCatchupProgress')
+                    .removeClass('d-none')
+                    .html(
+                        `<b>${escapeTilawahHtml(item.nama)}</b><br>` +
+                        `Kontinu sampai: <b>${escapeTilawahHtml(coveredLabel)}</b> · ` +
+                        `Kelompok sampai: <b>${escapeTilawahHtml(groupLabel)}</b>`
+                    );
+                $('#catchup_from_surah_id').val(gap.from.surah_id);
+                $('#catchup_from_ayat').val(gap.from.ayat);
+                $('#tilawahCatchupFromLabel').text(
+                    tilawahPointLabel(gap.from.surah_id, gap.from.ayat)
+                );
+
+                populateTilawahCatchupToSurahs(gap);
+                $('#catchup_to_surah_id').val(String(gap.to.surah_id));
+                populateTilawahCatchupAyat(gap, gap.to.ayat);
+                updateTilawahCatchupPreview();
+            }
+
+            function selectedTilawahCatchupItem() {
+                const santriId = Number($('#tilawah_catchup_santri').val());
+                return tilawahCatchupData.find(row => Number(row.id) === santriId) ?? null;
+            }
+
+            function populateTilawahCatchupToSurahs(gap) {
+                const $select = $('#catchup_to_surah_id')
+                    .empty()
+                    .append('<option value="">-- Surat --</option>');
+
+                tilawahSurahs
+                    .filter(surah =>
+                        Number(surah.id) >= Number(gap.from.surah_id) &&
+                        Number(surah.id) <= Number(gap.to.surah_id)
+                    )
+                    .forEach(surah => {
+                        $select.append($('<option>', {
+                            value: surah.id,
+                            text: surah.nama
+                        }));
+                    });
+
+                $select.prop('disabled', false);
+            }
+
+            function populateTilawahCatchupAyat(gap, selectedAyat = null) {
+                const surahId = Number($('#catchup_to_surah_id').val());
+                const surah = tilawahSurahs.find(row => Number(row.id) === surahId);
+                const $select = $('#catchup_to_ayat')
+                    .empty()
+                    .append('<option value="">--</option>');
+
+                if (!surah) {
+                    $select.prop('disabled', true);
+                    return;
+                }
+
+                const minAyat = surahId === Number(gap.from.surah_id)
+                    ? Number(gap.from.ayat)
+                    : 1;
+                const maxAyat = surahId === Number(gap.to.surah_id)
+                    ? Number(gap.to.ayat)
+                    : Number(surah.jumlah_ayat);
+
+                for (let ayat = minAyat; ayat <= maxAyat; ayat++) {
+                    $select.append($('<option>', {
+                        value: ayat,
+                        text: ayat
+                    }));
+                }
+
+                $select.prop('disabled', false);
+                if (selectedAyat !== null) $select.val(String(selectedAyat));
+            }
+
+            function updateTilawahCatchupPreview() {
+                const item = selectedTilawahCatchupItem();
+                const toSurahId = $('#catchup_to_surah_id').val();
+                const toAyat = $('#catchup_to_ayat').val();
+                const $preview = $('#tilawahCatchupPreview');
+
+                if (!item || !toSurahId || !toAyat) {
+                    $preview.text('Lengkapi titik akhir Tilawah Susulan.');
+                    $('#btnSubmitTilawahCatchup').prop('disabled', true);
+                    return;
+                }
+
+                const start = Number(item.gap.from_index);
+                const end = tilawahQuranIndex(toSurahId, toAyat);
+                const valid = end >= start && end <= Number(item.gap.to_index);
+                const total = end - start + 1;
+
+                $preview
+                    .toggleClass('alert-danger', !valid)
+                    .toggleClass('alert-success', valid)
+                    .removeClass('alert-light')
+                    .html(valid
+                        ? `<i class="bi bi-check-circle-fill me-2"></i>` +
+                            `<b>${total} ayat</b> akan menutup celah dari ` +
+                            `<b>${escapeTilawahHtml(tilawahPointLabel(item.gap.from.surah_id, item.gap.from.ayat))}</b>.`
+                        : '<i class="bi bi-exclamation-circle-fill me-2"></i>Titik akhir berada di luar celah pertama.'
+                    );
+                $('#btnSubmitTilawahCatchup').prop(
+                    'disabled',
+                    !valid || tilawahCatchupSubmitting
+                );
+            }
+
+            $('#tilawah_catchup_santri').on('change', renderTilawahCatchupSelection);
+
+            $('#catchup_to_surah_id').on('change', function() {
+                const item = selectedTilawahCatchupItem();
+                if (!item) return;
+                populateTilawahCatchupAyat(item.gap, null);
+                updateTilawahCatchupPreview();
+            });
+
+            $('#catchup_to_ayat').on('change', updateTilawahCatchupPreview);
+
+            $('#formTilawahCatchup').on('submit', function(e) {
+                e.preventDefault();
+                const btn = $('#btnSubmitTilawahCatchup');
+
+                if (btn.prop('disabled') || tilawahCatchupSubmitting) return;
+
+                tilawahCatchupSubmitting = true;
+                btn.prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...'
+                );
+
+                $.ajax({
+                    url: "{{ route('musyrif.tilawah.catchup.store') }}",
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: res => {
+                        tilawahCatchupSubmitting = false;
+                        modalTilawahCatchup.hide();
+                        btn.html('Simpan Susulan');
+                        tableTilawah.ajax.reload();
+
+                        if (window.AppAlert) AppAlert.success(res.message);
+                        else Swal.fire('Berhasil!', res.message, 'success');
+                    },
+                    error: xhr => {
+                        tilawahCatchupSubmitting = false;
+                        btn.html('Simpan Susulan');
+                        updateTilawahCatchupPreview();
+                        const res = xhr.responseJSON;
+
+                        if (xhr.status === 422) {
+                            Swal.fire(
+                                'Periksa Form',
+                                Object.values(res?.errors ?? {}).flat()[0] ??
+                                    res?.message ??
+                                    'Data Tilawah Susulan belum valid.',
+                                'warning'
+                            );
+                        } else {
+                            Swal.fire('Error', res?.message ?? 'Terjadi kesalahan sistem.', 'error');
                         }
                     }
                 });
@@ -1592,7 +2493,7 @@
 
                         $('#elig-rule-label').text(
                             requiresTilawah ?
-                            `MEMENUHI SYARAT (${syaratLabel} LENGKAP)` :
+                            `CAKUPAN AYAT KONTINU (${syaratLabel})` :
                             'TANPA SYARAT TILAWAH'
                         );
                         $('#elig-count').text(res.eligible);
@@ -1608,7 +2509,7 @@
                             $('#elig-warning')
                                 .stop(true, true)
                                 .text(
-                                    `*Ada ${selisih} santri yang otomatis terlewati karena Tilawah ${syaratLabel} belum lengkap.`
+                                    `*Ada ${selisih} santri yang dilewati karena cakupan ayat ${syaratLabel} belum kontinu. Gunakan Tilawah Susulan untuk menutup celah.`
                                 )
                                 .slideDown('fast');
                         } else {

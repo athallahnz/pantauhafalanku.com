@@ -93,6 +93,7 @@
 [FILE] app\Http\Middleware\EnsureAccountIsActive.php
 [FILE] app\Http\Middleware\EnsureUserIsApproved.php
 [FILE] app\Http\Middleware\PreventRequestsDuringMaintenance.php
+[FILE] app\Http\Middleware\ProtectAuthenticationEndpoints.php
 [FILE] app\Http\Middleware\RedirectIfAuthenticated.php
 [FILE] app\Http\Middleware\RoleMiddleware.php
 [FILE] app\Http\Middleware\TrimStrings.php
@@ -154,6 +155,8 @@
 [FILE] app\Providers\EventServiceProvider.php
 [FILE] app\Providers\FortifyServiceProvider.php
 [FILE] app\Providers\RouteServiceProvider.php
+[DIR]  app\Rules
+[FILE] app\Rules\SafePersonName.php
 [DIR]  app\Services
 [DIR]  app\Services\Academic
 [FILE] app\Services\Academic\AcademicCalendarService.php
@@ -163,6 +166,8 @@
 [FILE] app\Services\AcademicDocuments\RaportDraftService.php
 [FILE] app\Services\AcademicDocuments\RaportSnapshotService.php
 [FILE] app\Services\QuranExecutiveMetricsService.php
+[DIR]  app\Services\Security
+[FILE] app\Services\Security\TurnstileVerifier.php
 [FILE] app\Services\UserLifecycleService.php
 [FILE] app\Services\UserProfileConsistencyService.php
 [DIR]  app\Support
@@ -186,6 +191,7 @@
 [FILE] config\academic_documents.php
 [FILE] config\app.php
 [FILE] config\auth.php
+[FILE] config\auth_security.php
 [FILE] config\broadcasting.php
 [FILE] config\cache.php
 [FILE] config\cors.php
