@@ -17,3 +17,13 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/*.zip
+/.phpunit.result.cache
+/_ide_helper.php
+/_ide_helper_models.php
+/project-structure*.txt
+
+/public/storage
+/storage/app/imports/*
+/storage/app/private/*
+/storage/app/temp/*
