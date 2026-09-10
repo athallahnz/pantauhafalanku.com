@@ -91,6 +91,7 @@ class TilawahEligibilityService
 
         $firstStructuredOffset = $parsedRecords->search(
             fn(array $item): bool => is_array($item['payload'])
+                && $item['record']->entry_type === Tilawah::ENTRY_TYPE_GROUP
         );
         $hasLegacyBeforeFirstStructured = false;
 
@@ -114,6 +115,10 @@ class TilawahEligibilityService
             $payload = $item['payload'];
 
             if (!is_array($payload)) {
+                if ($record->entry_type === Tilawah::ENTRY_TYPE_INDIVIDUAL) {
+                    continue;
+                }
+
                 $legacyIntervals = $this->legacyIntervals($record);
 
                 foreach ($legacyIntervals as [$start, $end]) {
@@ -165,14 +170,20 @@ class TilawahEligibilityService
                 $intervals[] = [1, $baselineIndex];
             }
 
-            if ($this->progressService->isGroupPayload($payload)) {
+            if (
+                $record->entry_type === Tilawah::ENTRY_TYPE_GROUP
+                && $this->progressService->isGroupPayload($payload)
+            ) {
                 $structuredGroupThroughIndex = max(
                     $structuredGroupThroughIndex,
                     $toIndex
                 );
             }
 
-            if ($record->status === 'hadir') {
+            if (
+                $record->contributesToProgress()
+                && $this->progressService->contributesToProgress($payload)
+            ) {
                 $intervals[] = [$fromIndex, $toIndex];
             }
         }

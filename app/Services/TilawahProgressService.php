@@ -14,7 +14,11 @@ class TilawahProgressService
 
     private const SCHEMA_V2 = 'tilawah.v2';
 
-    private const MODES = ['group', 'catchup'];
+    private const SCHEMA_INDIVIDUAL_JUZ_V1 = 'tilawah.individual.juz.v1';
+
+    private const MODES = ['group', 'catchup', 'individual'];
+
+    private const READING_PURPOSES = ['continuation', 'review'];
 
     private ?Collection $surahCache = null;
 
@@ -106,7 +110,8 @@ class TilawahProgressService
         array $to,
         ?string $note,
         string $mode = 'group',
-        ?array $baseline = null
+        ?array $baseline = null,
+        string $readingPurpose = 'continuation'
     ): array {
         if ($from['quran_index'] > $to['quran_index']) {
             throw ValidationException::withMessages([
@@ -120,14 +125,149 @@ class TilawahProgressService
             ]);
         }
 
+        if (!in_array($readingPurpose, self::READING_PURPOSES, true)) {
+            throw ValidationException::withMessages([
+                'reading_purpose' => 'Tujuan bacaan Tilawah tidak valid.',
+            ]);
+        }
+
+        if ($mode !== 'individual' && $readingPurpose !== 'continuation') {
+            throw ValidationException::withMessages([
+                'reading_purpose' => 'Murojaah hanya tersedia untuk Tilawah Mandiri.',
+            ]);
+        }
+
         return [
             'schema' => self::SCHEMA_V2,
             'mode' => $mode,
+            'reading_purpose' => $readingPurpose,
             'baseline' => $baseline,
             'from' => $from,
             'to' => $to,
             'total_ayat' => $to['quran_index'] - $from['quran_index'] + 1,
             'note' => $this->normalizeNote($note),
+        ];
+    }
+
+    /**
+     * Membangun payload Tilawah Mandiri berbasis satu Juz penuh.
+     * Batas ayat tetap disimpan agar eligibility lama berbasis ayat tetap
+     * dapat menghitung cakupan kontinu tanpa membebani form Musyrif.
+     *
+     * @return array<string, mixed>
+     */
+    public function buildJuzPayload(
+        int $juz,
+        ?string $note,
+        string $readingPurpose = 'continuation'
+    ): array {
+        if ($juz < 1 || $juz > 30) {
+            throw ValidationException::withMessages([
+                'juz' => 'Juz harus berada antara 1 sampai 30.',
+            ]);
+        }
+
+        if (!in_array($readingPurpose, self::READING_PURPOSES, true)) {
+            throw ValidationException::withMessages([
+                'reading_purpose' => 'Tujuan bacaan Tilawah tidak valid.',
+            ]);
+        }
+
+        [$from, $to] = $this->juzRange($juz);
+
+        return [
+            'schema' => self::SCHEMA_INDIVIDUAL_JUZ_V1,
+            'mode' => 'individual',
+            'reading_purpose' => $readingPurpose,
+            'juz' => $juz,
+            'from' => $from,
+            'to' => $to,
+            'total_ayat' => $to['quran_index'] - $from['quran_index'] + 1,
+            'note' => $this->normalizeNote($note),
+        ];
+    }
+
+    public function resolveJuzBookmark(int $juz): HafalanTemplate
+    {
+        $template = HafalanTemplate::query()
+            ->where('tahap', 'harian')
+            ->where('juz', $juz)
+            ->orderByDesc('urutan')
+            ->first();
+
+        if (!$template) {
+            throw ValidationException::withMessages([
+                'juz' => "Master Tilawah Juz {$juz} belum tersedia.",
+            ]);
+        }
+
+        return $template;
+    }
+
+    /**
+     * @return array{0:array<string,mixed>,1:array<string,mixed>}
+     */
+    private function juzRange(int $juz): array
+    {
+        $templates = HafalanTemplate::query()
+            ->where('tahap', 'harian')
+            ->where('juz', $juz)
+            ->with('segments')
+            ->orderBy('urutan')
+            ->get();
+        $firstIndex = null;
+        $lastIndex = null;
+
+        foreach ($templates as $template) {
+            foreach ($template->segments as $segment) {
+                $surah = $this->surahs()->firstWhere(
+                    'id',
+                    (int) $segment->surah_id
+                );
+
+                if (!$surah) {
+                    continue;
+                }
+
+                $ayatAwal = max(1, (int) $segment->ayat_awal);
+                $ayatAkhir = (int) $segment->ayat_akhir;
+
+                if ($ayatAkhir === 0) {
+                    $ayatAkhir = (int) $surah->jumlah_ayat;
+                }
+
+                if ($ayatAkhir < $ayatAwal) {
+                    continue;
+                }
+
+                $from = $this->makePoint(
+                    (int) $segment->surah_id,
+                    $ayatAwal,
+                    'juz'
+                );
+                $to = $this->makePoint(
+                    (int) $segment->surah_id,
+                    $ayatAkhir,
+                    'juz'
+                );
+                $firstIndex = $firstIndex === null
+                    ? $from['quran_index']
+                    : min($firstIndex, $from['quran_index']);
+                $lastIndex = $lastIndex === null
+                    ? $to['quran_index']
+                    : max($lastIndex, $to['quran_index']);
+            }
+        }
+
+        if ($firstIndex === null || $lastIndex === null) {
+            throw ValidationException::withMessages([
+                'juz' => "Rentang ayat untuk Juz {$juz} belum dikonfigurasi.",
+            ]);
+        }
+
+        return [
+            $this->pointFromIndex($firstIndex, 'juz'),
+            $this->pointFromIndex($lastIndex, 'juz'),
         ];
     }
 
@@ -207,16 +347,31 @@ class TilawahProgressService
 
         if (
             !is_array($payload)
-            || !in_array($schema, [self::SCHEMA_V1, self::SCHEMA_V2], true)
+            || !in_array($schema, [
+                self::SCHEMA_V1,
+                self::SCHEMA_V2,
+                self::SCHEMA_INDIVIDUAL_JUZ_V1,
+            ], true)
             || !is_array($payload['from'] ?? null)
             || !is_array($payload['to'] ?? null)
         ) {
             return null;
         }
 
-        $payload['mode'] = ($payload['mode'] ?? null) === 'catchup'
-            ? 'catchup'
+        $payload['mode'] = in_array(
+            $payload['mode'] ?? null,
+            self::MODES,
+            true
+        )
+            ? $payload['mode']
             : 'group';
+        $payload['reading_purpose'] = in_array(
+            $payload['reading_purpose'] ?? null,
+            self::READING_PURPOSES,
+            true
+        )
+            ? $payload['reading_purpose']
+            : 'continuation';
         $payload['baseline'] = is_array($payload['baseline'] ?? null)
             ? $payload['baseline']
             : null;
@@ -227,9 +382,46 @@ class TilawahProgressService
     /**
      * @param array<string, mixed> $payload
      */
+    public function isJuzPayload(array $payload): bool
+    {
+        return ($payload['schema'] ?? null)
+            === self::SCHEMA_INDIVIDUAL_JUZ_V1;
+    }
+
+    /**
+     * @param array<string, mixed>|null $payload
+     */
+    public function juzFromPayload(?array $payload): ?int
+    {
+        if (!$payload || !$this->isJuzPayload($payload)) {
+            return null;
+        }
+
+        $juz = (int) ($payload['juz'] ?? 0);
+
+        return $juz >= 1 && $juz <= 30 ? $juz : null;
+    }
+
+    public function juzNumber(?string $catatan): ?int
+    {
+        return $this->juzFromPayload($this->parse($catatan));
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
     public function isGroupPayload(array $payload): bool
     {
         return ($payload['mode'] ?? 'group') === 'group';
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    public function contributesToProgress(array $payload): bool
+    {
+        return ($payload['reading_purpose'] ?? 'continuation')
+            === 'continuation';
     }
 
     /**
@@ -298,6 +490,12 @@ class TilawahProgressService
             return null;
         }
 
+        $juz = $this->juzFromPayload($payload);
+
+        if ($juz !== null) {
+            return "Juz {$juz}";
+        }
+
         $from = $payload['from'];
         $to = $payload['to'];
 
@@ -338,12 +536,30 @@ class TilawahProgressService
             return $this->normalizeNote($catatan) ?? '-';
         }
 
+        $juz = $this->juzFromPayload($payload);
+
+        if ($juz !== null) {
+            $purpose = ($payload['reading_purpose'] ?? 'continuation')
+                === 'review'
+                    ? 'Murojaah'
+                    : 'Lanjut';
+            $display = "Mandiri {$purpose} · Juz {$juz}";
+            $note = $this->note($catatan);
+
+            return $note ? $display . ' | ' . $note : $display;
+        }
+
         $range = $this->rangeLabel($catatan) ?? '-';
         $total = (int) ($payload['total_ayat'] ?? 0);
         $note = $this->note($catatan);
-        $display = ($payload['mode'] ?? 'group') === 'catchup'
-            ? 'Susulan · '
-            : '';
+        $display = match ($payload['mode'] ?? 'group') {
+            'catchup' => 'Susulan · ',
+            'individual' => ($payload['reading_purpose'] ?? 'continuation')
+                === 'review'
+                    ? 'Mandiri Murojaah · '
+                    : 'Mandiri Lanjut · ',
+            default => '',
+        };
 
         $baselineThrough = $payload['baseline']['through'] ?? null;
         if (is_array($baselineThrough)) {

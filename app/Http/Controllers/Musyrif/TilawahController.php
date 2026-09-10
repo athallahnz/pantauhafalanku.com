@@ -51,6 +51,7 @@ class TilawahController extends Controller
 
         $todayGroupRecords = Tilawah::query()
             ->where('semester_id', $semesterId)
+            ->where('entry_type', Tilawah::ENTRY_TYPE_GROUP)
             ->whereDate('tanggal', $tanggal)
             ->whereIn('santri_id', $santriIds)
             ->get()
@@ -214,6 +215,7 @@ class TilawahController extends Controller
 
             $todayStructured = Tilawah::query()
                 ->where('semester_id', $semesterId)
+                ->where('entry_type', Tilawah::ENTRY_TYPE_GROUP)
                 ->whereDate('tanggal', $tanggal)
                 ->whereIn('santri_id', $santriIds)
                 ->get()
@@ -312,6 +314,7 @@ class TilawahController extends Controller
                     $existing = Tilawah::query()
                         ->where('santri_id', $santriId)
                         ->where('semester_id', $semesterId)
+                        ->where('entry_type', Tilawah::ENTRY_TYPE_GROUP)
                         ->whereDate('tanggal', $tanggal)
                         ->get()
                         ->first(function (Tilawah $tilawah): bool {
@@ -330,6 +333,8 @@ class TilawahController extends Controller
                         'hafalan_template_id' => $template->id,
                         'status' => $statuses->get((int) $santriId),
                         'catatan' => $catatanFinal,
+                        'entry_type' => Tilawah::ENTRY_TYPE_GROUP,
+                        'reading_purpose' => Tilawah::PURPOSE_CONTINUATION,
                     ];
 
                     if ($existing) {
@@ -478,6 +483,8 @@ class TilawahController extends Controller
             'tanggal' => now('Asia/Jakarta')->toDateString(),
             'hafalan_template_id' => $template->id,
             'status' => 'hadir',
+            'entry_type' => Tilawah::ENTRY_TYPE_CATCHUP,
+            'reading_purpose' => Tilawah::PURPOSE_CONTINUATION,
             'catatan' => json_encode(
                 $payload,
                 JSON_UNESCAPED_UNICODE
@@ -501,6 +508,10 @@ class TilawahController extends Controller
         $musyrif = Musyrif::where('user_id', Auth::id())->firstOrFail();
         $query = Tilawah::query()
             ->where('musyrif_id', $musyrif->id)
+            ->whereIn('entry_type', [
+                Tilawah::ENTRY_TYPE_GROUP,
+                Tilawah::ENTRY_TYPE_CATCHUP,
+            ])
             ->with(['santri', 'template'])
             ->select('tilawahs.*');
 
@@ -516,11 +527,27 @@ class TilawahController extends Controller
             ->addIndexColumn()
             ->addColumn('santri', fn($row) => $row->santri->nama)
             ->addColumn('target_bacaan', function ($row) {
+                [$typeLabel, $typeColor] = match ($row->entry_type) {
+                    Tilawah::ENTRY_TYPE_CATCHUP => ['Susulan', 'warning'],
+                    default => ['Kelompok', 'secondary'],
+                };
+                $badge = '<span class="badge bg-'
+                    . $typeColor
+                    . '-subtle text-'
+                    . $typeColor
+                    . ' mb-1">'
+                    . e($typeLabel)
+                    . '</span><br>';
+
                 if ($row->template) {
-                    return "<span class='fw-bold'>Juz {$row->template->juz}</span><br><small class='text-muted'>{$row->template->label}</small>";
+                    return $badge
+                        . "<span class='fw-bold'>Juz {$row->template->juz}</span><br>"
+                        . "<small class='text-muted'>"
+                        . e($row->template->label)
+                        . '</small>';
                 }
 
-                return '-';
+                return $badge . '-';
             })
             ->addColumn('catatan_ayat', function ($row) {
                 $text = e($this->progressService->display($row->catatan));
@@ -552,6 +579,14 @@ class TilawahController extends Controller
                     $row->catatan
                 );
                 $catatanNote = $this->progressService->note($row->catatan);
+                $editButton = '<button type="button" class="btn btn-sm btn-primary btn-edit-tilawah"'
+                    . ' data-id="' . $row->id . '"'
+                    . ' data-santri_nama="' . e($row->santri->nama) . '"'
+                    . ' data-target_bacaan="' . e($target) . '"'
+                    . ' data-status="' . $row->status . '"'
+                    . ' data-catatan="' . e($catatanNote) . '"'
+                    . ' data-coreui-toggle="tooltip" title="Edit Status">'
+                    . '<i class="bi bi-pencil-square"></i></button>';
 
                 return '
                 <div class="d-flex justify-content-end gap-2 flex-nowrap">
@@ -565,15 +600,7 @@ class TilawahController extends Controller
                         <i class="bi bi-eye text-white"></i>
                     </button>
 
-                    <button type="button" class="btn btn-sm btn-primary btn-edit-tilawah"
-                        data-id="' . $row->id . '"
-                        data-santri_nama="' . e($row->santri->nama) . '"
-                        data-target_bacaan="' . e($target) . '"
-                        data-status="' . $row->status . '"
-                        data-catatan="' . e($catatanNote) . '"
-                        data-coreui-toggle="tooltip" title="Edit Status">
-                        <i class="bi bi-pencil-square"></i>
-                    </button>
+                    ' . $editButton . '
 
                     <button type="button" class="btn btn-sm btn-outline-danger btn-delete-tilawah"
                         data-id="' . $row->id . '"
@@ -601,6 +628,12 @@ class TilawahController extends Controller
             return response()->json([
                 'message' => 'Unauthorized! Data ini bukan milik Anda.',
             ], 403);
+        }
+
+        if ($tilawah->isIndividualEntry()) {
+            return response()->json([
+                'message' => 'Tilawah Mandiri harus diubah melalui halaman Tilawah Mandiri.',
+            ], 422);
         }
 
         $activeSemester = $this->assertRecordEditableInActiveSemester(
@@ -638,6 +671,12 @@ class TilawahController extends Controller
             ], 403);
         }
 
+        if ($tilawah->isIndividualEntry()) {
+            return response()->json([
+                'message' => 'Tilawah Mandiri harus dihapus melalui halaman Tilawah Mandiri.',
+            ], 422);
+        }
+
         $this->assertRecordEditableInActiveSemester($tilawah->semester_id);
         $tilawah->delete();
 
@@ -653,6 +692,7 @@ class TilawahController extends Controller
     ): ?Tilawah {
         $query = Tilawah::query()
             ->whereIn('santri_id', $santriIds)
+            ->where('entry_type', Tilawah::ENTRY_TYPE_GROUP)
             ->where(function ($schemaQuery): void {
                 $schemaQuery
                     ->where('catatan', 'like', '%"schema":"tilawah.v1"%')
@@ -680,6 +720,7 @@ class TilawahController extends Controller
         return Tilawah::query()
             ->with('template')
             ->whereIn('santri_id', $santriIds)
+            ->where('entry_type', Tilawah::ENTRY_TYPE_GROUP)
             ->latest('tanggal')
             ->latest('id')
             ->get()

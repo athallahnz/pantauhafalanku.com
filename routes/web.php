@@ -29,6 +29,7 @@ use App\Http\Controllers\Musyrif\DashboardController as MusyrifDashboardControll
 use App\Http\Controllers\Musyrif\HafalanController as MusyrifHafalanController;
 use App\Http\Controllers\Musyrif\TahsinController as MusyrifTahsinController;
 use App\Http\Controllers\Musyrif\TilawahController as MusyrifTilawahController;
+use App\Http\Controllers\Musyrif\TilawahMandiriController as MusyrifTilawahMandiriController;
 use App\Http\Controllers\Musyrif\SantriController as MusyrifSantriController;
 use App\Http\Controllers\Musyrif\MusyrifAttendanceController as MusyrifAttendanceController;
 
@@ -891,6 +892,26 @@ Route::prefix('musyrif')
                 Route::get('/santri/{santri}/timeline', [MusyrifTahsinController::class, 'timeline'])->name('timeline');
                 Route::get('/tahsin/{santri}/timeline-tilawah', [MusyrifTahsinController::class, 'timelineTilawah'])->name('timeline-tilawah');
                 Route::get('/tahsin/check-eligibility', [MusyrifTahsinController::class, 'checkEligibility'])->name('check');
+            });
+
+        // ===================== TILAWAH MANDIRI =====================
+        Route::prefix('tilawah-mandiri')
+            ->name('tilawah-mandiri.')
+            ->controller(MusyrifTilawahMandiriController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('/data', 'data')->name('data');
+                Route::get('/options', 'options')->name('options');
+                Route::get('/history/{santri}', 'history')
+                    ->whereNumber('santri')
+                    ->name('history');
+                Route::post('/', 'store')->name('store');
+                Route::put('/{tilawah}', 'update')
+                    ->whereNumber('tilawah')
+                    ->name('update');
+                Route::delete('/{tilawah}', 'destroy')
+                    ->whereNumber('tilawah')
+                    ->name('destroy');
             });
 
         // ===================== TILAWAH =====================

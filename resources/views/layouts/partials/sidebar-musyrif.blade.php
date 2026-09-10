@@ -40,3 +40,10 @@
         <i class="nav-icon bi bi-book-half"></i> <span>Tahsin & Tilawah Santri</span>
     </a>
 </li>
+
+<li class="nav-item mt-1">
+    <a class="nav-link {{ request()->routeIs('musyrif.tilawah-mandiri.*') ? 'active' : '' }}"
+        href="{{ route('musyrif.tilawah-mandiri.index') }}">
+        <i class="nav-icon bi bi-journal-bookmark-fill"></i> <span>Tilawah Mandiri</span>
+    </a>
+</li>
