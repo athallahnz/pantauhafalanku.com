@@ -79,7 +79,6 @@ class TahsinController extends Controller
         $academicDayContext = app(
             AcademicCalendarService::class
         )->todayContext();
-
         /*
         |--------------------------------------------------------------------------
         | STATISTIK HARIAN & PROGRESS (DASHBOARD MINI)
@@ -92,6 +91,10 @@ class TahsinController extends Controller
             ->count('santri_id');
 
         $tilawahToday = Tilawah::where('musyrif_id', $musyrif->id)
+            ->whereIn('entry_type', [
+                Tilawah::ENTRY_TYPE_GROUP,
+                Tilawah::ENTRY_TYPE_CATCHUP,
+            ])
             ->whereDate('tanggal', today())
             ->distinct('santri_id')
             ->count('santri_id');
@@ -101,6 +104,14 @@ class TahsinController extends Controller
             ->join('hafalan_templates', 'tilawahs.hafalan_template_id', '=', 'hafalan_templates.id')
             ->where('tilawahs.musyrif_id', $musyrif->id)
             ->where('tilawahs.status', 'hadir')
+            ->whereIn('tilawahs.entry_type', [
+                Tilawah::ENTRY_TYPE_GROUP,
+                Tilawah::ENTRY_TYPE_CATCHUP,
+            ])
+            ->where(
+                'tilawahs.reading_purpose',
+                Tilawah::PURPOSE_CONTINUATION
+            )
             ->select('tilawahs.santri_id', DB::raw('MAX(hafalan_templates.juz) as max_juz'))
             ->groupBy('tilawahs.santri_id')
             ->get();
