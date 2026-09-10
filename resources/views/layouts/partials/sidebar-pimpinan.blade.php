@@ -8,3 +8,5 @@
         Executive Dashboard
     </a>
 </li>
+
+@include('layouts.partials.sidebar-academic-monitoring', ['monitoringRole' => 'pimpinan'])
