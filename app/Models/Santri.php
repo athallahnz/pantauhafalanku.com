@@ -308,6 +308,11 @@ class Santri extends Model
         return $this->hasMany(Tahsin::class, 'santri_id');
     }
 
+    public function tahsinExams(): HasMany
+    {
+        return $this->hasMany(TahsinExam::class, 'santri_id');
+    }
+
     public function tilawahs(): HasMany
     {
         return $this->hasMany(Tilawah::class, 'santri_id');

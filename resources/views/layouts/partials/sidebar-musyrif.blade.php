@@ -47,3 +47,10 @@
         <i class="nav-icon bi bi-journal-bookmark-fill"></i> <span>Tilawah Mandiri</span>
     </a>
 </li>
+
+<li class="nav-item mt-1">
+    <a class="nav-link {{ request()->routeIs('musyrif.tahsin-exams.*') ? 'active' : '' }}"
+        href="{{ route('musyrif.tahsin-exams.index') }}">
+        <i class="nav-icon bi bi-clipboard2-check-fill"></i> <span>Ujian Tahsin</span>
+    </a>
+</li>
