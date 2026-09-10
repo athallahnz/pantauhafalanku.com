@@ -87,6 +87,11 @@ class Semester extends Model
         );
     }
 
+    public function tahsinExams(): HasMany
+    {
+        return $this->hasMany(TahsinExam::class, 'semester_id');
+    }
+
     public function scopeDraft(Builder $query): Builder
     {
         return $query->where(

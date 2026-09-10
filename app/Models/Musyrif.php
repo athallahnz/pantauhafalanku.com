@@ -241,6 +241,11 @@ class Musyrif extends Model
         return $this->hasMany(Hafalan::class, 'musyrif_id');
     }
 
+    public function tahsinExams(): HasMany
+    {
+        return $this->hasMany(TahsinExam::class, 'musyrif_id');
+    }
+
     public function attendances(): HasMany
     {
         return $this->hasMany(MusyrifAttendance::class, 'musyrif_id');
