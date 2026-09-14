@@ -46,6 +46,8 @@ use App\Http\Controllers\ProfileSettingController;
 use App\Http\Controllers\SuperAdmin\SystemReviewController as SuperAdminSystemReviewController;
 use App\Http\Controllers\Musyrif\SystemReviewController as MusyrifSystemReviewController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\AccountSecurityController;
+use App\Http\Controllers\Auth\PasskeyLoginController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,6 +81,15 @@ Route::get('/waiting-approval', function () {
     return view('auth.waiting-approval');
 })->name('waiting.approval');
 
+Route::prefix('passkeys')
+    ->name('passkeys.login.')
+    ->middleware(['guest', 'throttle:passkey-login'])
+    ->controller(PasskeyLoginController::class)
+    ->group(function (): void {
+        Route::post('/login/options', 'options')->name('options');
+        Route::post('/login', 'store')->name('store');
+    });
+
 /*
 |--------------------------------------------------------------------------
 | PROFILE SETTINGS
@@ -97,6 +108,26 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         [ProfileSettingController::class, 'store']
     )
         ->name('profile.settings.store');
+
+    Route::prefix('account/security')
+        ->name('account.security.')
+        ->middleware('role:superadmin|admin|pimpinan|musyrif')
+        ->controller(AccountSecurityController::class)
+        ->group(function (): void {
+            Route::get('/', 'index')->name('index');
+
+            Route::middleware('throttle:passkey-management')->group(function (): void {
+                Route::post('/passkeys/options', 'registrationOptions')->name('passkeys.options');
+                Route::post('/passkeys', 'store')->name('passkeys.store');
+            });
+
+            Route::patch('/passkeys/{credential}', 'update')
+                ->whereNumber('credential')
+                ->name('passkeys.update');
+            Route::delete('/passkeys/{credential}', 'destroy')
+                ->whereNumber('credential')
+                ->name('passkeys.destroy');
+        });
 });
 
 /*

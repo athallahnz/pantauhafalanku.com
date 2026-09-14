@@ -301,6 +301,21 @@
                             </button>
                         </div>
 
+                        <div class="d-flex align-items-center gap-3 mb-3" aria-hidden="true">
+                            <div class="border-top flex-grow-1 opacity-50"></div>
+                            <span class="small text-white-forced">atau</span>
+                            <div class="border-top flex-grow-1 opacity-50"></div>
+                        </div>
+
+                        <div class="d-grid mb-3">
+                            <button id="passkeyLoginButton" type="button"
+                                class="btn btn-light btn-lg rounded-4 shadow-sm fw-bold py-3 auth-submit">
+                                <i class="bi bi-key me-2"></i>Masuk dengan Passkey
+                            </button>
+                        </div>
+                        <div id="passkeyLoginStatus" class="small text-center text-white-forced mb-4 d-none"
+                            role="status" aria-live="polite"></div>
+
                         @if (Route::has('register'))
                             <div class="text-center">
                                 <span class="small force-white">Belum punya akun?</span>
@@ -489,3 +504,52 @@
         });
     }
 </script>
+
+@push('script')
+    <script src="{{ asset('js/passkeys.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const button = document.getElementById('passkeyLoginButton');
+            const status = document.getElementById('passkeyLoginStatus');
+
+            function showStatus(message) {
+                status.textContent = message;
+                status.classList.remove('d-none');
+            }
+
+            function errorMessage(error) {
+                if (error && error.name === 'NotAllowedError') {
+                    return 'Proses dibatalkan atau melewati batas waktu.';
+                }
+
+                return error && error.message
+                    ? error.message
+                    : 'Passkey tidak dapat digunakan. Silakan masuk dengan password.';
+            }
+
+            if (!window.SimtaquPasskeys.isSupported()) {
+                button.disabled = true;
+                showStatus('Passkey memerlukan browser modern serta HTTPS atau localhost.');
+                return;
+            }
+
+            button.addEventListener('click', async function () {
+                button.disabled = true;
+                showStatus('Pilih passkey dan ikuti verifikasi pada perangkat Anda…');
+
+                try {
+                    const result = await window.SimtaquPasskeys.authenticate({
+                        optionsUrl: @json(route('passkeys.login.options')),
+                        verifyUrl: @json(route('passkeys.login.store')),
+                        remember: document.getElementById('remember').checked,
+                    });
+
+                    window.location.assign(result.redirect);
+                } catch (error) {
+                    showStatus(errorMessage(error));
+                    button.disabled = false;
+                }
+            });
+        });
+    </script>
+@endpush

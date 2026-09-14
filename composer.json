@@ -16,6 +16,7 @@
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
+        "lbuchs/webauthn": "^2.2",
         "maatwebsite/excel": "^3.1",
         "pusher/pusher-php-server": "^7.2",
         "yajra/laravel-datatables-oracle": "^10.11"
