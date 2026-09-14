@@ -64,7 +64,7 @@ class AcademicMonitoringService
                 $all = $records->get($santri->id, collect());
                 $summary = $kind === 'exams' ? $this->examSummary($all, $filters) : $this->tilawahSummary($all, $filters);
                 $class = $classes->get($classId);
-                $classLabel = $class ? trim($class->nama_kelas . ' ' . ($class->kelompok ?? '')) : '-';
+                $classLabel = $this->classLabel($class);
                 $row = array_merge([
                     'id' => (int) $santri->id,
                     'nama' => $santri->nama,
@@ -183,5 +183,28 @@ class AcademicMonitoringService
         } while (count($ids) > $before);
 
         return $ids;
+    }
+
+    public function classLabel(?Kelas $class): string
+    {
+        if (!$class) {
+            return '-';
+        }
+
+        $name = trim((string) $class->nama_kelas);
+        $group = trim((string) $class->kelompok);
+
+        if ($group === '') {
+            return $name !== '' ? $name : '-';
+        }
+
+        $alreadyEndsWithGroup = preg_match(
+            '/(?:^|\s)' . preg_quote($group, '/') . '$/iu',
+            $name
+        ) === 1;
+
+        return $alreadyEndsWithGroup
+            ? $name
+            : trim($name . ' ' . $group);
     }
 }

@@ -28,7 +28,7 @@
                 <h4 class="fw-bold mb-1"><i class="bi {{ $isExam ? 'bi-clipboard-check' : 'bi-journal-bookmark-fill' }} me-2"></i>{{ $isExam ? 'Rekap Ujian Tahsin' : 'Rekap Tilawah Mandiri' }}</h4>
                 <p class="mb-0 small">Pantau progres dan riwayat santri berdasarkan semester.</p>
             </div>
-            <a id="am-export" class="btn btn-light disabled" aria-disabled="true" href="#"><i class="bi bi-file-earmark-excel me-1"></i>Ekspor Excel</a>
+            <a id="am-export" class="btn btn-light disabled no-loader" data-no-loader="true" aria-disabled="true" href="#"><i class="bi bi-file-earmark-excel me-1"></i>Ekspor Excel</a>
         </div>
     </div>
     @if(!$selected)
@@ -50,7 +50,7 @@
                     <select id="am-kelas" name="kelas_id" class="form-select">
                         <option value="">Semua kelas</option>
                         @foreach($classes as $class)
-                            <option value="{{ $class->id }}">{{ trim($class->nama_kelas . ' ' . $class->kelompok) }}</option>
+                            <option value="{{ $class['id'] }}">{{ $class['label'] }}</option>
                         @endforeach
                     </select>
                 </div>

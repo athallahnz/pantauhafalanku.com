@@ -64,7 +64,7 @@ class AcademicMonitoringTest extends TestCase
         ]);
         DB::table('kelas')->insert([
             ['id' => 1, 'parent_id' => null, 'nama_kelas' => 'Kelas 8', 'kelompok' => null],
-            ['id' => 2, 'parent_id' => 1, 'nama_kelas' => 'Kelas 8', 'kelompok' => 'A'],
+            ['id' => 2, 'parent_id' => 1, 'nama_kelas' => 'Kelas 8 A', 'kelompok' => 'A'],
             ['id' => 3, 'parent_id' => null, 'nama_kelas' => 'Kelas 9', 'kelompok' => 'C'],
         ]);
         DB::table('musyrifs')->insert([['id' => 1, 'nama' => 'Pembina Lama'], ['id' => 2, 'nama' => 'Pembina Baru']]);

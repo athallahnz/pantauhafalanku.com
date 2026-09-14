@@ -26,7 +26,11 @@ class AcademicMonitoringController extends Controller
             ->orderByDesc('tanggal_mulai')->orderByDesc('id')->get();
         $selected = $semesters->first(fn ($semester) => $semester->isActive()) ?? $semesters->first();
         $classes = Kelas::query()->orderBy('nama_kelas')->orderBy('kelompok')
-            ->get(['id', 'nama_kelas', 'kelompok']);
+            ->get(['id', 'nama_kelas', 'kelompok'])
+            ->map(fn (Kelas $class): array => [
+                'id' => (int) $class->id,
+                'label' => $this->reports->classLabel($class),
+            ]);
         $musyrifs = Musyrif::query()->orderBy('nama')->get(['id', 'nama']);
         $prefix = str_starts_with($request->route()->getName(), 'admin.') ? 'admin' : 'pimpinan';
         $routeBase = $prefix . '.monitoring.' . $kind;
@@ -72,7 +76,7 @@ class AcademicMonitoringController extends Controller
             ['Semester', $semester->nama . ' ' . $semester->tahunAjaran?->nama],
             ['Mulai', $filters['date_from'] ?? $semester->tanggal_mulai->toDateString()],
             ['Sampai', $filters['date_to'] ?? $semester->tanggal_selesai->toDateString()],
-            ['Kelas', $class ? trim($class->nama_kelas . ' ' . $class->kelompok) : 'Semua kelas'],
+            ['Kelas', $class ? $this->reports->classLabel($class) : 'Semua kelas'],
             ['Musyrif pembina', $musyrif?->nama ?? 'Semua Musyrif'],
             ['Jenis / tujuan', $filters['exam_type'] ?? $filters['purpose'] ?? 'Semua'],
             ['Status rekap', $filters['state'] ?? 'Semua'],
