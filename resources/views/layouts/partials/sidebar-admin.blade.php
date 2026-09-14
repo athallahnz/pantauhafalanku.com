@@ -13,6 +13,8 @@
     </a>
 </li>
 
+@include('layouts.partials.sidebar-academic-monitoring', ['monitoringRole' => 'admin'])
+
 <li class="nav-item mb-1">
     <a class="nav-link {{ request()->routeIs('admin.activity_logs.*') ? 'active' : '' }}"
         href="{{ route('admin.activity_logs.index') }}">
