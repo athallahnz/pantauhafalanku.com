@@ -138,5 +138,17 @@ class FortifyServiceProvider extends ServiceProvider
                 'two-factor:' . (string) $request->session()->get('login.id', 'guest')
             );
         });
+
+        RateLimiter::for('passkey-login', function (Request $request): Limit {
+            return Limit::perMinute(max(1, (int) config('passkeys.login_attempts_per_minute', 10)))
+                ->by('passkey-login:'.hash('sha256', (string) $request->ip()));
+        });
+
+        RateLimiter::for('passkey-management', function (Request $request): Limit {
+            $identity = $request->user()?->getAuthIdentifier() ?? $request->ip();
+
+            return Limit::perMinute(max(1, (int) config('passkeys.management_attempts_per_minute', 10)))
+                ->by('passkey-management:'.hash('sha256', (string) $identity));
+        });
     }
 }

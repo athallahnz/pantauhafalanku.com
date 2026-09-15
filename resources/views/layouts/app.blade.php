@@ -256,6 +256,11 @@
                         <a class="dropdown-item py-2" href="{{ route('profile.settings') }}">
                             <i class="bi bi-person me-2"></i> Setting Profil
                         </a>
+                        @if (in_array($role, config('passkeys.allowed_roles', []), true))
+                            <a class="dropdown-item py-2" href="{{ route('account.security.index') }}">
+                                <i class="bi bi-shield-lock me-2"></i> Keamanan Akun
+                            </a>
+                        @endif
                         <div class="dropdown-divider my-0"></div>
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf

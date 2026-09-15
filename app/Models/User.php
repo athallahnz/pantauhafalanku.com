@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasUserLifecycle;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -62,6 +63,11 @@ class User extends Authenticatable
     public function profileSetting(): HasOne
     {
         return $this->hasOne(ProfileSetting::class);
+    }
+
+    public function passkeyCredentials(): HasMany
+    {
+        return $this->hasMany(PasskeyCredential::class);
     }
 
     public function santri(): HasOne

@@ -92,21 +92,21 @@ class StoreHafalanRequest extends FormRequest
     {
         return [
             'santri_id.required' =>
-                'Santri wajib dipilih.',
+            'Santri wajib dipilih.',
             'santri_id.exists' =>
-                'Data santri tidak ditemukan.',
+            'Data santri tidak ditemukan.',
             'status.required' =>
-                'Status setoran wajib dipilih.',
+            'Status setoran wajib dipilih.',
             'status.in' =>
-                'Status setoran tidak valid.',
+            'Status setoran tidak valid.',
             'hafalan_template_id.required' =>
-                'Materi hafalan wajib dipilih untuk status Lulus atau Ulang.',
+            'Materi hafalan wajib dipilih untuk status Lulus atau Ulang.',
             'hafalan_template_id.exists' =>
-                'Materi hafalan tidak ditemukan.',
+            'Materi hafalan tidak ditemukan.',
             'nilai_label.required' =>
-                'Nilai wajib dipilih untuk status Lulus.',
+            'Nilai wajib dipilih untuk status Lulus.',
             'nilai_label.in' =>
-                'Nilai hafalan tidak valid.',
+            'Nilai hafalan tidak valid.',
         ];
     }
 
@@ -137,6 +137,7 @@ class StoreHafalanRequest extends FormRequest
          */
         if ($status !== 'lulus') {
             $payload['nilai_label'] = null;
+            $payload['nilai'] = null;
         }
 
         $this->merge($payload);
