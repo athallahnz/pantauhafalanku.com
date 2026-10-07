@@ -1378,6 +1378,8 @@
             </form>
         </section>
 
+        @include('pimpinan.partials.academic-summary')
+
         @if ($d['integrity']['has_warning'])
             <div class="integrity-alert mb-4">
                 <div class="d-flex align-items-start gap-2">

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
 require __DIR__ . '/academic-monitoring.php';
+require __DIR__ . '/daily-academic-reports.php';
 
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\UserController as SuperAdminUserController;
@@ -1170,6 +1171,10 @@ Route::prefix('santri')
             '/dashboard',
             [SantriHafalanController::class, 'index']
         )->name('dashboard');
+
+        Route::get('/ujian-tahsin/timeline', [SantriHafalanController::class, 'examTimeline'])->name('ujian-tahsin.timeline');
+        Route::get('/laporan-pribadi/pdf', [SantriHafalanController::class, 'exportPersonalPdf'])->name('laporan-pribadi.pdf');
+        Route::get('/laporan-pribadi/excel', [SantriHafalanController::class, 'exportPersonalExcel'])->name('laporan-pribadi.excel');
 
         Route::get(
             '/hafalan/export-pdf',

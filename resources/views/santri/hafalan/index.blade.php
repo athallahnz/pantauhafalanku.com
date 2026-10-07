@@ -615,8 +615,15 @@
                 'icon' => 'journal-bookmark-fill',
                 'color' => 'info',
             ],
+            [
+                'label' => 'Record Ujian Tahsin',
+                'semester' => $examSemesterCount,
+                'cumulative' => $examCumulativeCount,
+                'icon' => 'award',
+                'color' => 'primary',
+            ],
         ] as $comparison)
-                <div class="col-md-4">
+                <div class="col-md-6 col-xl-3">
                     <div class="comparison-card">
                         <div class="d-flex align-items-start justify-content-between gap-3">
                             <div>
@@ -644,6 +651,14 @@
         </div>
 
         {{-- TABS --}}
+        <div class="student-card p-3 mb-4 d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div><strong>Unduh Laporan Pribadi</strong><div class="small">Hafalan, Tahsin, Tilawah, dan Ujian Tahsin • {{ $scopeLabel }}</div></div>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-primary no-loader" data-no-loader="true" href="{{ route('santri.laporan-pribadi.pdf', ['scope' => $scope, 'semester_id' => $selectedSemesterId]) }}">PDF</a>
+                <a class="btn btn-outline-success no-loader" data-no-loader="true" href="{{ route('santri.laporan-pribadi.excel', ['scope' => $scope, 'semester_id' => $selectedSemesterId]) }}">Excel</a>
+            </div>
+        </div>
+
         <ul class="nav nav-pills nav-fill modern-tabs-container gap-2 mb-4" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active w-100" id="tab-hafalan-btn" data-coreui-toggle="tab"
@@ -661,6 +676,11 @@
                 <button class="nav-link w-100" id="tab-tilawah-btn" data-coreui-toggle="tab"
                     data-coreui-target="#tab-tilawah" type="button" role="tab" aria-selected="false">
                     <i class="bi bi-journal-bookmark-fill me-2"></i>Data Tilawah
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link w-100" id="tab-exams-btn" data-coreui-toggle="tab" data-coreui-target="#tab-exams" type="button" role="tab" aria-selected="false">
+                    <i class="bi bi-award"></i> Ujian Tahsin
                 </button>
             </li>
         </ul>
@@ -836,6 +856,23 @@
             {{-- ========================================================
                 TAB TAHSIN
             ========================================================= --}}
+            <div class="tab-pane fade" id="tab-exams" role="tabpanel">
+                <div class="row g-3 mb-4">
+                    @foreach (['total' => 'Total Ujian', 'passed' => 'Lulus', 'repeat' => 'Mengulang', 'promotion' => 'Kenaikan Buku/Jilid', 'semester' => 'Ujian Semester'] as $key => $label)
+                    <div class="col-6 col-lg"><div class="kpi-card h-100"><div class="kpi-label">{{ $label }}</div><div class="comparison-value">{{ $examSummary[$key] }}</div></div></div>
+                    @endforeach
+                </div>
+                <div class="student-card p-3 mb-4">
+                    <strong>Hasil Ujian Tahsin</strong>
+                    <p class="student-section-copy mb-0">Scope: {{ $scopeLabel }}. Setiap percobaan dicatat terpisah. Hasil ujian tidak mengubah persentase progres halaman Tahsin.</p>
+                </div>
+                <div class="student-card table-responsive p-3">
+                    <table id="timelineExamTable" class="table table-hover align-middle w-100">
+                        <thead><tr><th>No.</th><th>Tanggal</th><th>Semester</th><th>Jenis Ujian</th><th>Buku/Jilid</th><th>Percobaan</th><th>Nilai</th><th>Hasil</th><th>Rekomendasi Buku</th><th>Catatan</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+
             <div class="tab-pane fade" id="tab-tahsin" role="tabpanel">
                 @php
                     $tahsinKpi = [
@@ -1032,9 +1069,9 @@
                         <div class="kpi-card">
                             <div class="d-flex justify-content-between align-items-center gap-3">
                                 <div class="min-w-0">
-                                    <div class="kpi-label text-success">Progres Tilawah Terakhir</div>
+                                    <div class="kpi-label text-success">Bacaan Hadir Terakhir (Semua Jenis)</div>
                                     @if ($lastTilawah && $lastTilawah->template)
-                                        <div class="fw-bold fs-5 text-success">Juz {{ $lastTilawah->template->juz }}</div>
+                                        <div class="fw-bold fs-5 text-success">{{ app(\App\Services\TilawahProgressService::class)->rangeLabel($lastTilawah->catatan) ?? $lastTilawah->template->label }}</div>
                                         <div class="kpi-sub text-truncate" title="{{ $lastTilawah->template->label }}">
                                             {{ $lastTilawah->template->label }} •
                                             {{ $lastTilawah->tanggal?->translatedFormat('d M Y') }}
@@ -1055,13 +1092,13 @@
                 <section class="student-card summary-card mb-4">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                         <div>
-                            <h3 class="student-section-title text-success">Khatam Al-Qur'an (30 Juz)</h3>
-                            <p class="student-section-copy">Dihitung dari Juz tertinggi pada scope {{ $scopeLabel }}.
+                            <h3 class="student-section-title text-success">Tilawah Mandiri — Bacaan Lanjut (30 Juz)</h3>
+                            <p class="student-section-copy">Dihitung dari juz unik bacaan lanjut yang hadir pada scope {{ $scopeLabel }}. Murojaah dan kelompok dicatat terpisah.
                             </p>
                         </div>
                         <div class="text-md-end">
                             <div class="summary-value text-success">{{ $tilawahPct ?? 0 }}%</div>
-                            <div class="small text-muted">Posisi tertinggi: Juz {{ $maxJuzTilawah ?? 0 ?: 0 }}</div>
+                            <div class="small text-muted">Juz selesai: {{ $tilawahReport['completed_count'] ?? 0 }} / 30</div>
                         </div>
                     </div>
                     <div class="progress summary-progress">
@@ -1069,6 +1106,8 @@
                             style="width: {{ $tilawahPct ?? 0 }}%;"></div>
                     </div>
                 </section>
+
+                @include('reports.partials.tilawah-activity', ['report' => $tilawahReport])
 
                 <section class="student-card overflow-hidden mb-4">
                     <header class="student-card-header">
@@ -1431,10 +1470,33 @@
                     language: dataTableLanguage('Cari riwayat tilawah...', 'Belum ada riwayat Tilawah.')
                 });
 
+                const tableExams = $('#timelineExamTable').DataTable({
+                    ...commonTableOptions(),
+                    ajax: {
+                        url: "{{ route('santri.ujian-tahsin.timeline') }}",
+                        data: function(data) { data.scope = selectedScope; data.semester_id = selectedSemesterId; }
+                    },
+                    columns: [
+                        {data: 'DT_RowIndex', orderable: false, searchable: false},
+                        {data: 'tanggal', name: 'tanggal'},
+                        {data: 'semester', orderable: false, searchable: false},
+                        {data: 'exam_type', name: 'exam_type'},
+                        {data: 'buku', name: 'buku'},
+                        {data: 'attempt_number', name: 'attempt_number'},
+                        {data: 'grade_label', name: 'grade_label'},
+                        {data: 'result', name: 'result'},
+                        {data: 'next_book', orderable: false, searchable: false},
+                        {data: 'catatan', name: 'catatan', className: 'text-wrap'}
+                    ],
+                    order: [[1, 'desc']],
+                    language: dataTableLanguage('Cari riwayat ujian...', 'Belum ada riwayat Ujian Tahsin.')
+                });
+
                 return {
                     tableHafalan,
                     tableTahsin,
-                    tableTilawah
+                    tableTilawah,
+                    tableExams
                 };
             }
 

@@ -9,4 +9,4 @@
     </a>
 </li>
 
-@include('layouts.partials.sidebar-academic-monitoring', ['monitoringRole' => 'pimpinan'])
+@include('layouts.partials.sidebar-recap-group', ['recapRole' => 'pimpinan'])

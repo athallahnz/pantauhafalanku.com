@@ -8,7 +8,13 @@ use App\Models\Santri;
 use App\Models\SantriSemesterPlacement;
 use App\Models\Semester;
 use App\Models\Tahsin;
+use App\Models\TahsinExam;
+use App\Services\SantriPersonalReportService;
+use App\Exports\SantriPersonalReportExport;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Tilawah;
+use App\Services\TilawahReportService;
+use App\Services\TilawahProgressService;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -196,6 +202,10 @@ class HafalanController extends Controller
                 ?? '-'
             );
 
+        $examService = app(SantriPersonalReportService::class);
+        $examSemesterSummary = $selectedSemesterId ? $examService->examSummary($santri->id, (int) $selectedSemesterId) : ['total' => 0];
+        $examCumulativeSummary = $examService->examSummary($santri->id, null);
+
         $legacyCounts = [
             'hafalan' => Hafalan::query()
                 ->where(
@@ -220,6 +230,7 @@ class HafalanController extends Controller
                 )
                 ->whereNull('semester_id')
                 ->count(),
+            'ujian_tahsin' => TahsinExam::query()->where('santri_id', $santri->id)->whereNull('semester_id')->count(),
         ];
 
         $warnings = [];
@@ -246,9 +257,10 @@ class HafalanController extends Controller
             && array_sum(
                 $semesterSummary['record_counts']
             ) === 0
+            && $examSemesterSummary['total'] === 0
         ) {
             $warnings[] =
-                'Belum ada transaksi Hafalan, Tahsin, atau Tilawah pada semester terpilih.';
+                'Belum ada transaksi Hafalan, Tahsin, Tilawah, atau Ujian Tahsin pada semester terpilih.';
         }
 
         return view(
@@ -269,6 +281,9 @@ class HafalanController extends Controller
                 $displayKelas,
                 'displayMusyrif' =>
                 $displayMusyrif,
+                'examSummary' => $scope === self::SCOPE_CUMULATIVE ? $examCumulativeSummary : $examSemesterSummary,
+                'examSemesterCount' => $examSemesterSummary['total'],
+                'examCumulativeCount' => $examCumulativeSummary['total'],
                 'warnings' => $warnings,
                 'legacyCounts' =>
                 $legacyCounts,
@@ -314,6 +329,7 @@ class HafalanController extends Controller
                 $scopeSummary['tahsin']['last'],
 
                 // Tilawah pada scope aktif.
+                'tilawahReport' => $scopeSummary['tilawah']['report'] ?? app(TilawahReportService::class)->summarize([]),
                 'maxJuzTilawah' =>
                 $scopeSummary['tilawah']['max_juz'],
                 'tilawahPct' =>
@@ -637,6 +653,8 @@ class HafalanController extends Controller
                 'tilawahs.tanggal',
                 'tilawahs.status',
                 'tilawahs.catatan',
+                'tilawahs.entry_type',
+                'tilawahs.reading_purpose',
                 'tilawahs.created_at',
                 'ht.juz as template_juz',
                 'ht.label as template_label',
@@ -668,32 +686,16 @@ class HafalanController extends Controller
             ->addColumn(
                 'target_bacaan',
                 function ($row) {
-                    if (
-                        !$row->template_juz
-                        && !$row->template_label
-                    ) {
-                        return '-';
-                    }
+                    $service = app(TilawahProgressService::class);
+                    $label = $service->rangeLabel($row->catatan) ?? $row->template_label ?? '-';
+                    $type = match ($row->entry_type) {
+                        'individual' => $row->reading_purpose === 'review' ? 'Mandiri Murojaah' : 'Mandiri Lanjut',
+                        'group' => 'Kelompok',
+                        'catchup' => 'Susulan',
+                        default => 'Data lama',
+                    };
 
-                    $juz = e(
-                        $row->template_juz
-                            ?? '-'
-                    );
-
-                    $label = e(
-                        $row->template_label
-                            ?? '-'
-                    );
-
-                    return "
-                        <span class='fw-bold'>
-                            Juz {$juz}
-                        </span>
-                        <br>
-                        <small class='text-muted'>
-                            {$label}
-                        </small>
-                    ";
+                    return '<span class="fw-bold">' . e($type) . '</span><br><small>' . e($label) . '</small>';
                 }
             )
             ->editColumn(
@@ -706,10 +708,7 @@ class HafalanController extends Controller
             ->editColumn(
                 'catatan',
                 fn($row) =>
-                e(
-                    $row->catatan
-                        ?: '-'
-                )
+                app(TilawahProgressService::class)->display($row->catatan) ?: '-'
             )
             ->rawColumns([
                 'semester',
@@ -721,7 +720,7 @@ class HafalanController extends Controller
 
     /**
      * Endpoint PDF Hafalan lama tetap dipertahankan agar route existing
-     * tidak rusak. Raport/Ijazah resmi akan dibuat pada Step 2.
+     * tidak rusak. Laporan pribadi lengkap tersedia pada endpoint laporan-pribadi.
      */
     public function exportPdf(Request $request)
     {
@@ -917,6 +916,81 @@ class HafalanController extends Controller
         }
     }
 
+    public function examTimeline(Request $request)
+    {
+        abort_unless($request->ajax(), 404);
+        $santri = $this->authenticatedSantri($request);
+        $context = $this->resolveTimelineContext($request);
+        $labels = $this->semesterLabelMap();
+        $query = app(SantriPersonalReportService::class)->examQuery($santri->id, $context['semester_id']);
+        return DataTables::of($query)->addIndexColumn()
+            ->editColumn('tanggal', fn ($row) => $this->formatDate($row->tanggal))
+            ->addColumn('semester', fn ($row) => $labels[$row->semester_id] ?? 'Data lama / tanpa semester')
+            ->editColumn('exam_type', fn ($row) => TahsinExam::examTypeLabels()[$row->exam_type] ?? $row->exam_type)
+            ->editColumn('buku', fn ($row) => TahsinExam::bookLabels()[$row->buku] ?? $row->buku)
+            ->editColumn('grade_label', fn ($row) => TahsinExam::gradeLabels()[$row->grade_label] ?? $row->grade_label)
+            ->editColumn('result', fn ($row) => ['passed' => 'Lulus', 'repeat' => 'Mengulang'][$row->result] ?? $row->result)
+            ->editColumn('next_book', fn ($row) => TahsinExam::bookLabels()[$row->next_book] ?? '-')
+            ->editColumn('catatan', fn ($row) => $row->catatan ?: '-')
+            ->make(true);
+    }
+
+    private function personalReportData(Request $request): array
+    {
+        $request->validate(['scope' => 'required|in:semester,cumulative', 'semester_id' => 'nullable|integer|exists:semesters,id']);
+        $santri = $this->authenticatedSantri($request);
+        $context = $this->resolveTimelineContext($request);
+        $semester = $context['semester_id'] ? Semester::with('tahunAjaran')->findOrFail($context['semester_id']) : null;
+        $scopeLabel = $semester ? $this->semesterLabel($semester) : 'Kumulatif Seluruh Semester';
+        $summary = $this->buildSummary($santri->id, $context['semester_id']);
+        $service = app(SantriPersonalReportService::class);
+        $exams = $service->examSummary($santri->id, $context['semester_id']);
+        $histories = $service->histories($santri->id, $context['semester_id']);
+        $tilawah = $summary['tilawah']['report'];
+        $parameters = [
+            ['Santri', (string) $santri->nama], ['NIS', (string) $santri->nis],
+            ['Scope', $scopeLabel], ['Dibuat', now()->format('d-m-Y H:i')],
+            ['Progres Hafalan (%)', $summary['hafalan']['overall_pct']],
+            ['Juz Hafalan Selesai Ujian Akhir', $summary['hafalan']['juz_selesai']],
+            ['Progres Halaman Tahsin (%)', $summary['tahsin']['overall_pct']],
+            ['Tilawah Mandiri Juz Unik Selesai', $tilawah['completed_count']],
+            ['Tilawah Mandiri (%)', $tilawah['percentage']],
+            ['Ujian Tahsin Lulus', $exams['passed']], ['Ujian Tahsin Mengulang', $exams['repeat']],
+        ];
+        foreach ($histories as $name => $rows) {
+            $parameters[] = ['Record '.$name, count($rows)];
+        }
+        $kinds = ['continuation' => 'Mandiri Lanjut', 'review' => 'Mandiri Murojaah', 'group' => 'Kelompok', 'catchup' => 'Susulan', 'legacy' => 'Data Lama', 'individual' => 'Mandiri Lanjut'];
+        foreach ($tilawah['activity_counts'] as $kind => $count) {
+            $parameters[] = ['Aktivitas Tilawah '.($kinds[$kind] ?? $kind), $count];
+        }
+        foreach ($tilawah['unique_ayat'] as $kind => $count) {
+            $parameters[] = ['Ayat Unik Tilawah '.($kinds[$kind] ?? $kind), $count];
+        }
+        foreach ($summary['hafalan']['progress'] as $row) {
+            $parameters[] = ['Hafalan Juz '.$row['juz'].' — '.$row['status'].' (%)', $row['pct']];
+        }
+        foreach ($summary['tahsin']['progress'] as $row) {
+            $parameters[] = ['Tahsin '.($row['label'] ?? $row['buku']).' (%)', $row['pct']];
+        }
+        return compact('santri', 'scopeLabel', 'summary', 'exams', 'histories', 'parameters');
+    }
+
+    public function exportPersonalPdf(Request $request)
+    {
+        $data = $this->personalReportData($request);
+        return Pdf::loadView('santri.hafalan.personal-report-pdf', $data)
+            ->setPaper('a4', 'landscape')->setOptions(['defaultFont' => 'DejaVu Sans'])
+            ->download('Laporan-Pribadi-'.$data['santri']->id.'-'.now()->format('Ymd-His').'.pdf');
+    }
+
+    public function exportPersonalExcel(Request $request)
+    {
+        $data = $this->personalReportData($request);
+        return Excel::download(new SantriPersonalReportExport($data['parameters'], $data['histories']),
+            'Laporan-Pribadi-'.$data['santri']->id.'-'.now()->format('Ymd-His').'.xlsx');
+    }
+
     private function authenticatedSantri(
         Request $request
     ): Santri {
@@ -1059,46 +1133,9 @@ class HafalanController extends Controller
             ->orderByDesc('id')
             ->first();
 
-        $maxJuzTilawahQuery =
-            DB::table('tilawahs')
-            ->join(
-                'hafalan_templates',
-                'tilawahs.hafalan_template_id',
-                '=',
-                'hafalan_templates.id'
-            )
-            ->where(
-                'tilawahs.santri_id',
-                $santriId
-            )
-            ->where(
-                'tilawahs.status',
-                'hadir'
-            )
-            ->when(
-                $semesterId,
-                fn($query) =>
-                $query->where(
-                    'tilawahs.semester_id',
-                    $semesterId
-                )
-            );
-
-        $maxJuzTilawah = (int) (
-            $maxJuzTilawahQuery
-            ->max(
-                'hafalan_templates.juz'
-            )
-            ?? 0
-        );
-
-        $tilawahPct = min(
-            100,
-            (int) round(
-                ($maxJuzTilawah / 30)
-                    * 100
-            )
-        );
+        $tilawahReport = app(TilawahReportService::class)->forSantri($santriId, $semesterId);
+        $maxJuzTilawah = $tilawahReport['max_juz'];
+        $tilawahPct = $tilawahReport['percentage'];
 
         $lastTilawah = Tilawah::query()
             ->with('template')
@@ -1213,6 +1250,7 @@ class HafalanController extends Controller
             ],
 
             'tilawah' => [
+                'report' => $tilawahReport,
                 'max_juz' =>
                 $maxJuzTilawah,
                 'overall_pct' =>

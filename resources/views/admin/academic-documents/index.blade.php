@@ -1788,7 +1788,7 @@
                                                 </h4>
 
                                                 <div class="raport-progress-subtitle">
-                                                    Progress bacaan Al-Qur'an
+                                                    Progres Mandiri Lanjut; murojaah tidak menambah capaian
                                                 </div>
                                             </div>
                                         </div>
@@ -1802,7 +1802,7 @@
 
                                         <div class="raport-progress-metrics">
                                             <div>
-                                                <span>Juz tertinggi</span>
+                                                <span>Juz unik Mandiri Lanjut</span>
                                                 <strong id="previewTilawahJuz">0</strong>
                                             </div>
 
@@ -1810,10 +1810,24 @@
                                                 <span>Capaian kumulatif</span>
                                                 <strong id="previewTilawahProgress">0%</strong>
                                             </div>
+                                            <div>
+                                                <span>Aktivitas semester (lanjut / murojaah / kelompok / susulan)</span>
+                                                <strong id="previewTilawahActivity">-</strong>
+                                            </div>
                                         </div>
                                     </article>
                                 </div>
                             </div>
+                        </section>
+
+                        <section class="raport-evaluation-card mb-3" aria-labelledby="previewExamsHeading">
+                            <div id="previewSnapshotUpgrade" class="alert alert-warning d-none" role="status">
+                                Snapshot lama belum memuat Ujian Tahsin. Regenerasikan draft untuk memperbaruinya. Dokumen final memerlukan prosedur revisi yang berlaku.
+                            </div>
+                            <h3 id="previewExamsHeading" class="raport-section-title">Ujian Tahsin</h3>
+                            <p class="small text-muted">Percobaan ujian tercatat terpisah dari progres halaman Tahsin. Capaian buku hanya menghitung kenaikan buku yang lulus, tanpa duplikasi.</p>
+                            <p id="previewExamsSummary"></p>
+                            <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Tanggal</th><th>Jenis</th><th>Buku</th><th>Percobaan</th><th>Nilai</th><th>Hasil</th><th>Catatan</th></tr></thead><tbody id="previewExamsHistory"></tbody></table></div>
                         </section>
 
                         {{-- =================================================
@@ -2389,6 +2403,28 @@
                     snapshot.tilawah
                     ?.cumulative_achievement || {};
 
+                const examSnapshot = snapshot.tahsin_exams;
+                document.getElementById('previewSnapshotUpgrade').classList.toggle('d-none', !!examSnapshot);
+                const examStats = examSnapshot?.semester_activity;
+                setText('previewExamsSummary', examStats
+                    ? `${examStats.total} ujian; ${examStats.passed} lulus; ${examStats.repeat} mengulang. Buku kenaikan lulus unik semester: ${examStats.completed_count}/6. Batas capaian: ${examSnapshot.cutoff_date || '-'}.`
+                    : 'Belum tersedia pada snapshot ini.');
+                const examBody = document.getElementById('previewExamsHistory');
+                examBody.replaceChildren();
+                const examRows = examSnapshot?.history || [];
+                for (const exam of examRows) {
+                    const tr = document.createElement('tr');
+                    for (const value of [exam.tanggal, exam.exam_type === 'promotion' ? 'Kenaikan Buku' : 'Ujian Semester', exam.buku, exam.attempt_number, exam.grade_label, exam.result === 'passed' ? 'Lulus' : 'Mengulang', exam.catatan]) {
+                        const td = document.createElement('td'); td.textContent = value ?? '-'; tr.appendChild(td);
+                    }
+                    examBody.appendChild(tr);
+                }
+                if (!examRows.length) {
+                    const tr = document.createElement('tr'), td = document.createElement('td');
+                    td.colSpan = 7; td.textContent = examSnapshot ? 'Belum ada ujian pada semester ini.' : 'Regenerasikan draft untuk memuat bagian ujian.';
+                    tr.appendChild(td); examBody.appendChild(tr);
+                }
+
                 setText(
                     'previewStudentName',
                     student.nama
@@ -2505,6 +2541,11 @@
                     )
                 );
 
+                const tilawahCounts = snapshot.tilawah?.report?.activity_counts;
+                setText('previewTilawahActivity', tilawahCounts
+                    ? [tilawahCounts.continuation, tilawahCounts.review, tilawahCounts.group, tilawahCounts.catchup].join(' / ')
+                    : 'Snapshot lama — regenerasi draft');
+
                 setText(
                     'previewTilawahRecords',
                     recordCounts.tilawah ?? 0
@@ -2512,14 +2553,14 @@
 
                 setText(
                     'previewTilawahJuz',
-                    tilawahAchievement.max_juz ?? 0
+                    tilawahAchievement.completed_count ?? 'Belum dihitung ulang'
                 );
 
                 setText(
                     'previewTilawahProgress',
-                    percentage(
-                        tilawahAchievement.overall_pct
-                    )
+                    tilawahAchievement.policy === 'tilawah.report.v1'
+                        ? percentage(tilawahAchievement.overall_pct)
+                        : 'Snapshot lama — regenerasi draft'
                 );
 
                 setHtml(

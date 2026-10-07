@@ -9,6 +9,8 @@ use App\Models\SantriSemesterPlacement;
 use App\Models\Semester;
 use App\Models\Tahsin;
 use App\Models\Tilawah;
+use App\Services\TilawahReportService;
+use App\Services\TilawahProgressService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -335,6 +337,7 @@ class SantriProgressController extends Controller
                 $scopeSummary['tahsin']['last'],
 
                 // Tilawah pada scope aktif.
+                'tilawahReport' => $scopeSummary['tilawah']['report'] ?? app(TilawahReportService::class)->summarize([]),
                 'maxJuzTilawah' =>
                 $scopeSummary['tilawah']['max_juz'],
                 'tilawahPct' =>
@@ -674,6 +677,8 @@ class SantriProgressController extends Controller
                 'tilawahs.tanggal',
                 'tilawahs.status',
                 'tilawahs.catatan',
+                'tilawahs.entry_type',
+                'tilawahs.reading_purpose',
                 'tilawahs.created_at',
                 'ht.juz as template_juz',
                 'ht.label as template_label',
@@ -705,32 +710,16 @@ class SantriProgressController extends Controller
             ->addColumn(
                 'target_bacaan',
                 function ($row) {
-                    if (
-                        !$row->template_juz
-                        && !$row->template_label
-                    ) {
-                        return '-';
-                    }
+                    $service = app(TilawahProgressService::class);
+                    $label = $service->rangeLabel($row->catatan) ?? $row->template_label ?? '-';
+                    $type = match ($row->entry_type) {
+                        'individual' => $row->reading_purpose === 'review' ? 'Mandiri Murojaah' : 'Mandiri Lanjut',
+                        'group' => 'Kelompok',
+                        'catchup' => 'Susulan',
+                        default => 'Data lama',
+                    };
 
-                    $juz = e(
-                        $row->template_juz
-                            ?? '-'
-                    );
-
-                    $label = e(
-                        $row->template_label
-                            ?? '-'
-                    );
-
-                    return "
-                        <span class='fw-bold'>
-                            Juz {$juz}
-                        </span>
-                        <br>
-                        <small class='text-muted'>
-                            {$label}
-                        </small>
-                    ";
+                    return '<span class="fw-bold">' . e($type) . '</span><br><small>' . e($label) . '</small>';
                 }
             )
             ->editColumn(
@@ -743,10 +732,7 @@ class SantriProgressController extends Controller
             ->editColumn(
                 'catatan',
                 fn($row) =>
-                e(
-                    $row->catatan
-                        ?: '-'
-                )
+                app(TilawahProgressService::class)->display($row->catatan) ?: '-'
             )
             ->rawColumns([
                 'target_bacaan',
@@ -835,46 +821,9 @@ class SantriProgressController extends Controller
             ->orderByDesc('id')
             ->first();
 
-        $maxJuzTilawahQuery =
-            DB::table('tilawahs')
-            ->join(
-                'hafalan_templates',
-                'tilawahs.hafalan_template_id',
-                '=',
-                'hafalan_templates.id'
-            )
-            ->where(
-                'tilawahs.santri_id',
-                $santriId
-            )
-            ->where(
-                'tilawahs.status',
-                'hadir'
-            )
-            ->when(
-                $semesterId,
-                fn($query) =>
-                $query->where(
-                    'tilawahs.semester_id',
-                    $semesterId
-                )
-            );
-
-        $maxJuzTilawah = (int) (
-            $maxJuzTilawahQuery
-            ->max(
-                'hafalan_templates.juz'
-            )
-            ?? 0
-        );
-
-        $tilawahPct = min(
-            100,
-            (int) round(
-                ($maxJuzTilawah / 30)
-                    * 100
-            )
-        );
+        $tilawahReport = app(TilawahReportService::class)->forSantri($santriId, $semesterId);
+        $maxJuzTilawah = $tilawahReport['max_juz'];
+        $tilawahPct = $tilawahReport['percentage'];
 
         $lastTilawah = Tilawah::query()
             ->with('template')
@@ -991,6 +940,7 @@ class SantriProgressController extends Controller
             ],
 
             'tilawah' => [
+                'report' => $tilawahReport,
                 'max_juz' =>
                 $maxJuzTilawah,
                 'overall_pct' =>

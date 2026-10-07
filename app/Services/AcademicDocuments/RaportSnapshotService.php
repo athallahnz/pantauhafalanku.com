@@ -8,6 +8,7 @@ use App\Models\SantriSemesterPlacement;
 use App\Models\Semester;
 use App\Models\Tahsin;
 use App\Models\Tilawah;
+use App\Services\TilawahReportService;
 use App\Support\AcademicDocuments\RaportSnapshotResult;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -289,11 +290,14 @@ final class RaportSnapshotService
             $semesterEndDate
         );
 
+        $exams = $this->buildTahsinExams($santri->id, $semester->id, $semesterEndDate);
+        $recordCounts['tahsin_exams'] = $exams['semester_activity']['total'];
+
         $snapshot = [
             'schema_version' =>
                 (string) config(
                     'academic_documents.snapshot_schema_version',
-                    'raport-snapshot-v2'
+                    'raport-snapshot-v3'
                 ),
 
             'document_type' => 'raport',
@@ -407,6 +411,7 @@ final class RaportSnapshotService
             'hafalan' => $hafalan,
             'tahsin' => $tahsin,
             'tilawah' => $tilawah,
+            'tahsin_exams' => $exams,
 
             'evaluation' =>
                 $this->buildEvaluation(
@@ -697,11 +702,8 @@ final class RaportSnapshotService
             )
             ->first();
 
-        $cumulativeMaxJuz =
-            $this->tilawahMaxJuzCumulative(
-                $santriId,
-                $semesterEndDate
-            );
+        $semesterReport = app(TilawahReportService::class)->forSantri($santriId, $semesterId);
+        $cumulativeReport = app(TilawahReportService::class)->forSantri($santriId, null, $semesterEndDate);
 
         return [
             'semester_activity' => [
@@ -726,25 +728,11 @@ final class RaportSnapshotService
                     ),
             ],
 
-            'cumulative_achievement' => [
-                'cutoff_date' =>
-                    $semesterEndDate,
-
-                'max_juz' =>
-                    $cumulativeMaxJuz,
-
-                'overall_pct' =>
-                    min(
-                        100,
-                        (int) round(
-                            (
-                                $cumulativeMaxJuz
-                                / 30
-                            )
-                            * 100
-                        )
-                    ),
-            ],
+            'report' => $semesterReport,
+            'cumulative_achievement' => array_merge($cumulativeReport, [
+                'cutoff_date' => $semesterEndDate,
+                'overall_pct' => $cumulativeReport['percentage'],
+            ]),
         ];
     }
 
@@ -986,42 +974,6 @@ final class RaportSnapshotService
             )
             ->values()
             ->all();
-    }
-
-    private function tilawahMaxJuzCumulative(
-        int $santriId,
-        ?string $cutoffDate
-    ): int {
-        $query = DB::table('tilawahs')
-            ->join(
-                'hafalan_templates',
-                'hafalan_templates.id',
-                '=',
-                'tilawahs.hafalan_template_id'
-            )
-            ->where(
-                'tilawahs.santri_id',
-                $santriId
-            )
-            ->where(
-                'tilawahs.status',
-                'hadir'
-            );
-
-        if ($cutoffDate) {
-            $query->whereDate(
-                'tilawahs.tanggal',
-                '<=',
-                $cutoffDate
-            );
-        }
-
-        return (int) (
-            $query->max(
-                'hafalan_templates.juz'
-            )
-            ?? 0
-        );
     }
 
     private function averageNilai(
@@ -1322,6 +1274,32 @@ final class RaportSnapshotService
     /**
      * @return array<string, mixed>
      */
+    private function buildTahsinExams(int $santriId, int $semesterId, ?string $cutoff): array
+    {
+        $query = \App\Models\TahsinExam::query()->where('santri_id', $santriId);
+        if ($cutoff !== null) { $query->whereDate('tanggal', '<=', $cutoff); }
+        $all = $query->orderByDesc('tanggal')->orderByDesc('id')->get();
+        $semester = $all->where('semester_id', $semesterId)->values();
+        $summarize = static function ($records): array {
+            $completed = $records->where('exam_type', 'promotion')->where('result', 'passed')
+                ->pluck('buku')->unique()->intersect(\App\Models\TahsinExam::books())->values();
+            return ['total' => $records->count(), 'passed' => $records->where('result', 'passed')->count(),
+                'repeat' => $records->where('result', 'repeat')->count(),
+                'promotion' => $records->where('exam_type', 'promotion')->count(),
+                'semester' => $records->where('exam_type', 'semester')->count(),
+                'completed_books' => $completed->all(), 'completed_count' => $completed->count(),
+                'target' => 6, 'percentage' => round($completed->count() / 6 * 100, 1)];
+        };
+        return ['policy' => 'raport.tahsin-exams.v1', 'cutoff_date' => $cutoff,
+            'semester_activity' => $summarize($semester), 'cumulative_achievement' => $summarize($all),
+            'history' => $semester->map(static fn ($exam): array => [
+                'id' => (int) $exam->id, 'tanggal' => $exam->tanggal->toDateString(),
+                'exam_type' => $exam->exam_type, 'buku' => $exam->buku,
+                'attempt_number' => (int) $exam->attempt_number, 'grade_label' => $exam->grade_label,
+                'result' => $exam->result, 'catatan' => $exam->catatan,
+            ])->all()];
+    }
+
     private function sourceIntegrity(
         int $santriId,
         int $semesterId,
@@ -1351,6 +1329,8 @@ final class RaportSnapshotService
                 ),
         ];
 
+        $semesterSources['tahsin_exams'] = $this->sourceState('tahsin_exams', $santriId, $semesterId);
+
         $cumulativeSources = [
             'hafalan' =>
                 $this->sourceStateUntilDate(
@@ -1376,6 +1356,8 @@ final class RaportSnapshotService
                     $semesterEndDate
                 ),
         ];
+
+        $cumulativeSources['tahsin_exams'] = $this->sourceStateUntilDate('tahsin_exams', 'tanggal', $santriId, $semesterEndDate);
 
         $fingerprintPayload = [
             'semester' => $semesterSources,
