@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers\Reports;
 
-use App\Exports\AcademicMonitoringExport;
+use App\Exports\DailyAcademicReportExport;
 use App\Http\Controllers\Controller;
 use App\Models\Kelas;
 use App\Models\Musyrif;
 use App\Models\Semester;
-use App\Services\AcademicMonitoringService;
+use App\Services\DailyAcademicReportService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 
-class AcademicMonitoringController extends Controller
+class DailyAcademicReportController extends Controller
 {
-    public function __construct(private AcademicMonitoringService $reports)
+    public function __construct(private DailyAcademicReportService $reports)
     {
     }
 
@@ -31,19 +31,19 @@ class AcademicMonitoringController extends Controller
             ->get(['id', 'nama_kelas', 'kelompok'])
             ->map(fn (Kelas $class): array => [
                 'id' => (int) $class->id,
-                'label' => $this->reports->classLabel($class),
+                'label' => app(\App\Services\AcademicMonitoringService::class)->classLabel($class),
             ]);
         $musyrifs = Musyrif::query()->orderBy('nama')->get(['id', 'nama']);
         $prefix = str_starts_with($request->route()->getName(), 'admin.') ? 'admin' : 'pimpinan';
-        $routeBase = $prefix . '.monitoring.' . $kind;
+        $routeBase = $prefix . '.daily-reports.' . $kind;
 
-        return view('reports.academic-monitoring', compact('kind', 'semesters', 'selected', 'classes', 'musyrifs', 'routeBase'));
+        return view('reports.daily-academic', compact('kind', 'semesters', 'selected', 'classes', 'musyrifs', 'routeBase'));
     }
 
     public function data(Request $request)
     {
         [$semester, $filters] = $this->context($request);
-        $rows = $this->reports->report($this->kind($request), $semester, $filters);
+        $rows = $this->reports->report($this->kind($request), $semester, $filters, false);
 
         return response()->json([
             'data' => $rows->map(fn ($row) => collect($row)->except('history')->all())->all(),
@@ -52,6 +52,8 @@ class AcademicMonitoringController extends Controller
                 'with_activity' => $rows->where('total', '>', 0)->count(),
                 'without_activity' => $rows->where('total', 0)->count(),
                 'total_records' => (int) $rows->sum('total'),
+                'hadir' => (int) $rows->sum('hadir'), 'izin' => (int) $rows->sum('izin'),
+                'sakit' => (int) $rows->sum('sakit'), 'alpha' => (int) $rows->sum('alpha'),
             ],
         ])->header('Cache-Control', 'private, no-store');
     }
@@ -59,7 +61,7 @@ class AcademicMonitoringController extends Controller
     public function history(Request $request, int $santri)
     {
         [$semester, $filters] = $this->context($request);
-        $row = $this->reports->report($this->kind($request), $semester, $filters)->firstWhere('id', $santri);
+        $row = $this->reports->report($this->kind($request), $semester, $filters, true, $santri)->firstWhere('id', $santri);
         abort_unless($row, 404);
 
         return response()->json(['santri' => $row['nama'], 'data' => $row['history']])
@@ -74,22 +76,22 @@ class AcademicMonitoringController extends Controller
         $class = !empty($filters['kelas_id']) ? Kelas::find($filters['kelas_id']) : null;
         $musyrif = !empty($filters['musyrif_id']) ? Musyrif::find($filters['musyrif_id']) : null;
         $parameters = [
-            ['Laporan', $kind === 'exams' ? 'Rekap Ujian Tahsin' : 'Rekap Tilawah Mandiri'],
+            ['Laporan', $kind === 'tahsin' ? 'Rekap Tahsin Harian' : 'Rekap Seluruh Tilawah'],
             ['Semester', $semester->nama . ' ' . $semester->tahunAjaran?->nama],
             ['Mulai', $filters['date_from'] ?? $semester->tanggal_mulai->toDateString()],
             ['Sampai', $filters['date_to'] ?? $semester->tanggal_selesai->toDateString()],
-            ['Kelas', $class ? $this->reports->classLabel($class) : 'Semua kelas'],
+            ['Kelas', $class ? app(\App\Services\AcademicMonitoringService::class)->classLabel($class) : 'Semua kelas'],
             ['Musyrif pembina', $musyrif?->nama ?? 'Semua Musyrif'],
-            ['Jenis / tujuan', $filters['exam_type'] ?? $filters['purpose'] ?? 'Semua'],
-            ['Status rekap', $filters['state'] ?? 'Semua'],
+            ['Jenis / tujuan', $filters['buku'] ?? $filters['entry_type'] ?? 'Semua'],
+            ['Status rekap', $filters['status'] ?? 'Semua'],
             ['Pencarian', $filters['q'] ?? ''],
             ['Dicetak pada', now('Asia/Jakarta')->format('Y-m-d H:i:s') . ' WIB'],
             ['Cakupan', 'Transaksi semester dan rentang tanggal terpilih. Kelas/Musyrif mengikuti penempatan semester; fallback data aktif ditandai.'],
-            ['Progres', 'Buku/Juz unik dalam periode, dihitung sebelum filter jenis/tujuan. Hasil mengikuti ujian terakhir pada jenis terpilih.'],
+            ['Progres', 'Progres dihitung setelah seluruh filter transaksi. Tahsin: halaman tertinggi hadir per buku. Tilawah: juz unik Mandiri Lanjut hadir; aktivitas jenis lain terpisah.'],
         ];
 
-        return Excel::download(new AcademicMonitoringExport($rows, $kind, $parameters),
-            'rekap-' . ($kind === 'exams' ? 'ujian-tahsin' : 'tilawah-mandiri') . '-' . $semester->id . '-' . now()->format('Ymd-His') . '.xlsx');
+        return Excel::download(new DailyAcademicReportExport($rows, $kind, $parameters),
+            'rekap-' . ($kind === 'tahsin' ? 'tahsin-harian' : 'seluruh-tilawah') . '-' . $semester->id . '-' . now()->format('Ymd-His') . '.xlsx');
     }
 
     private function context(Request $request): array
@@ -101,10 +103,9 @@ class AcademicMonitoringController extends Controller
             'musyrif_id' => ['nullable', 'integer', 'exists:musyrifs,id'],
             'date_from' => ['nullable', 'date_format:Y-m-d'],
             'date_to' => ['nullable', 'date_format:Y-m-d'],
-            'exam_type' => ['nullable', Rule::in(['promotion', 'semester'])],
-            'purpose' => ['nullable', Rule::in(['continuation', 'review'])],
-            'state' => ['nullable', Rule::in($this->kind($request) === 'exams'
-                ? ['not_examined', 'passed', 'repeat'] : ['no_activity', 'not_started', 'in_progress', 'completed'])],
+            'buku' => ['nullable', Rule::in(\App\Models\TahsinExam::books())],
+            'entry_type' => ['nullable', Rule::in(['individual', 'group', 'catchup', 'legacy'])],
+            'status' => ['nullable', Rule::in(['hadir', 'izin', 'sakit', 'alpha'])],
             'q' => ['nullable', 'string', 'max:150'],
         ]);
         $semester = Semester::with('tahunAjaran:id,nama')->findOrFail($filters['semester_id']);
@@ -119,10 +120,10 @@ class AcademicMonitoringController extends Controller
         ]);
         $filters['date_from'] ??= $start;
         $filters['date_to'] ??= $end;
-        if ($this->kind($request) === 'exams') {
-            unset($filters['purpose']);
+        if ($this->kind($request) === 'tahsin') {
+            unset($filters['entry_type']);
         } else {
-            unset($filters['exam_type']);
+            unset($filters['buku']);
         }
 
         return [$semester, $filters];

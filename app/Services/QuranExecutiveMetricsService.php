@@ -18,12 +18,18 @@ class QuranExecutiveMetricsService
         'tahap_3',
     ];
 
+    private function validPlacementsQuery(): \Illuminate\Database\Query\Builder
+    {
+        return DB::table('santri_semester_placements as sp')
+            ->whereIn('sp.santri_id', \App\Models\Santri::query()->select('id'));
+    }
+
     public function build(Request $request): array
     {
         $semester = $this->resolveSemester($request);
         $context = $this->resolveRange($request, $semester);
 
-        $placementRows = DB::table('santri_semester_placements as sp')
+        $placementRows = $this->validPlacementsQuery()
             ->where('sp.semester_id', $semester->id)
             ->select('sp.santri_id', 'sp.kelas_id', 'sp.musyrif_id')
             ->distinct()
@@ -478,7 +484,7 @@ class QuranExecutiveMetricsService
         Carbon $start,
         Carbon $end
     ): array {
-        $rows = DB::table('santri_semester_placements as sp')
+        $rows = $this->validPlacementsQuery()
             ->join('kelas as k', 'k.id', '=', 'sp.kelas_id')
             ->leftJoin('hafalans as h', function ($join) use ($semesterId, $start, $end): void {
                 $join->on('h.santri_id', '=', 'sp.santri_id')
@@ -558,7 +564,7 @@ class QuranExecutiveMetricsService
             ->get()
             ->keyBy('musyrif_id');
 
-        $rows = DB::table('santri_semester_placements as sp')
+        $rows = $this->validPlacementsQuery()
             ->join('musyrifs as m', 'm.id', '=', 'sp.musyrif_id')
             ->leftJoin('hafalans as h', function ($join) use ($semesterId, $start, $end): void {
                 $join->on('h.santri_id', '=', 'sp.santri_id')

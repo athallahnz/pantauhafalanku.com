@@ -107,6 +107,30 @@ class AcademicMonitoringTest extends TestCase
         ], $overrides));
     }
 
+    public function test_shared_tilawah_report_respects_student_semester_and_cutoff(): void
+    {
+        $this->tilawah(30);
+        $this->tilawah(30);
+        $this->tilawah(2, ['reading_purpose' => 'review']);
+        $this->tilawah(3, ['semester_id' => 1, 'tanggal' => '2026-01-10']);
+        $this->tilawah(4, ['tanggal' => '2026-09-20']);
+        $this->tilawah(5, ['santri_id' => 2]);
+        $service = app(\App\Services\TilawahReportService::class);
+        $semester = $service->forSantri(1, 2);
+        $this->assertSame([4, 30], $semester['completed']);
+        $this->assertSame(6.7, $semester['percentage']);
+        $this->assertSame(1, $semester['activity_counts']['review']);
+        $historical = $service->forSantri(1, null, '2026-09-10');
+        $this->assertSame([3, 30], $historical['completed']);
+        $this->assertSame([3, 4, 30], $service->forSantri(1)['completed']);
+        $this->assertSame([], $service->forSantri(999, 2)['completed']);
+        $monitoring = app(AcademicMonitoringService::class)->tilawahSummary(
+            \App\Models\Tilawah::query()->where('santri_id', 1)->where('semester_id', 2)->get()
+        );
+        $this->assertSame($semester['completed'], $monitoring['completed']);
+        $this->assertSame($semester['percentage'], $monitoring['percentage']);
+    }
+
     public function test_routes_are_read_only_and_forbidden_for_other_roles(): void
     {
         foreach (['admin', 'pimpinan'] as $role) {

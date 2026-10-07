@@ -142,9 +142,8 @@ class AcademicMonitoringService
     public function tilawahSummary(Collection $records, array $filters = []): array
     {
         $records = $records->where('entry_type', Tilawah::ENTRY_TYPE_INDIVIDUAL);
-        $completed = $records->filter(fn ($record) => $record->contributesToProgress())
-            ->map(fn ($record) => $this->progress->juzNumber($record->catatan))
-            ->filter(fn ($juz) => $juz !== null)->unique()->sort()->values();
+        $summary = app(TilawahReportService::class)->summarize($records);
+        $completed = collect($summary['completed']);
         $visible = empty($filters['purpose']) ? $records : $records->where('reading_purpose', $filters['purpose']);
         $latest = $visible->first();
         $juz = $latest ? $this->progress->juzNumber($latest->catatan) : null;

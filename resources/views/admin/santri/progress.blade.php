@@ -1433,9 +1433,9 @@
                         <div class="kpi-card">
                             <div class="d-flex justify-content-between align-items-center gap-3">
                                 <div class="min-w-0">
-                                    <div class="kpi-label text-success">Progres Tilawah Terakhir</div>
+                                    <div class="kpi-label text-success">Bacaan Hadir Terakhir (Semua Jenis)</div>
                                     @if ($lastTilawah && $lastTilawah->template)
-                                        <div class="fw-bold fs-5 text-success">Juz {{ $lastTilawah->template->juz }}</div>
+                                        <div class="fw-bold fs-5 text-success">{{ app(\App\Services\TilawahProgressService::class)->rangeLabel($lastTilawah->catatan) ?? $lastTilawah->template->label }}</div>
                                         <div class="kpi-sub text-truncate" title="{{ $lastTilawah->template->label }}">
                                             {{ $lastTilawah->template->label }} •
                                             {{ $lastTilawah->tanggal?->translatedFormat('d M Y') }}
@@ -1456,13 +1456,13 @@
                 <section class="student-card summary-card mb-4">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                         <div>
-                            <h3 class="student-section-title text-success">Khatam Al-Qur'an (30 Juz)</h3>
-                            <p class="student-section-copy">Dihitung dari Juz tertinggi pada scope {{ $scopeLabel }}.
+                            <h3 class="student-section-title text-success">Tilawah Mandiri — Bacaan Lanjut (30 Juz)</h3>
+                            <p class="student-section-copy">Dihitung dari juz unik bacaan lanjut yang hadir pada scope {{ $scopeLabel }}. Murojaah dan kelompok dicatat terpisah.
                             </p>
                         </div>
                         <div class="text-md-end">
                             <div class="summary-value text-success">{{ $tilawahPct ?? 0 }}%</div>
-                            <div class="small text-muted">Posisi tertinggi: Juz {{ $maxJuzTilawah ?? 0 ?: 0 }}</div>
+                            <div class="small text-muted">Juz selesai: {{ $tilawahReport['completed_count'] ?? 0 }} / 30</div>
                         </div>
                     </div>
                     <div class="progress summary-progress">
@@ -1470,6 +1470,8 @@
                             style="width: {{ $tilawahPct ?? 0 }}%;"></div>
                     </div>
                 </section>
+
+                @include('reports.partials.tilawah-activity', ['report' => $tilawahReport])
 
                 <section class="student-card overflow-hidden mb-4">
                     <header class="student-card-header">
