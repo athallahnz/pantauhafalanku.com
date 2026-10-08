@@ -1301,10 +1301,11 @@
                 <div class="col-xl-4 d-flex justify-content-xl-end">
                     <div class="health-panel">
                         <div class="health-label">Status Departemen</div>
-                        <div class="health-value">
+                        <button type="button" class="health-value border-0 bg-transparent p-0 text-start" style="color:inherit" data-bs-toggle="modal" data-bs-target="#pimpinanHealthInsights" aria-label="Lihat dasar status departemen">
                             <span class="health-dot"></span>
                             {{ $d['health']['label'] }}
-                        </div>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-light mt-2" data-bs-toggle="modal" data-bs-target="#pimpinanHealthInsights">Lihat pemicu &amp; bukti <i class="bi bi-arrow-up-right" aria-hidden="true"></i></button>
                         <div class="health-progress"><span></span></div>
                         <div class="health-meta">
                             <span>Perjalanan semester</span>
@@ -1860,6 +1861,7 @@
 
 
 @push('modals')
+    @include('pimpinan.partials.health-insights')
     {{-- FLOATING BUTTON: PANDUAN EXECUTIVE DASHBOARD --}}
     <button type="button" class="page-guide-fab" id="btnPageGuide"
         aria-label="Buka panduan Executive Dashboard Departemen Al-Qur’an" title="Panduan membaca dashboard">

@@ -53,11 +53,18 @@ class PasskeyLoginController extends Controller
         Auth::guard('web')->login($user, (bool) ($validated['remember'] ?? false));
         $request->session()->regenerate();
 
+        // Pimpinan cannot access admin routes; discard a stale intended admin URL.
+        $intendedPath = parse_url((string) $request->session()->get('url.intended', ''), PHP_URL_PATH);
+        if ($user->role === 'pimpinan' && is_string($intendedPath)
+            && ($intendedPath === '/admin' || str_starts_with($intendedPath, '/admin/'))) {
+            $request->session()->forget('url.intended');
+        }
+
         $defaultRedirect = match ($user->role) {
             'superadmin' => route('superadmin.dashboard'),
             'admin' => route('admin.dashboard'),
             'musyrif' => route('musyrif.dashboard'),
-            'pimpinan' => route('admin.laporan.index'),
+            'pimpinan' => route('pimpinan.dashboard'),
             default => url('/dashboard'),
         };
         $redirect = redirect()->intended($defaultRedirect)->getTargetUrl();

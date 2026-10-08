@@ -23,7 +23,11 @@
     </a>
 </li>
 
-<li class="nav-title">Data Hafalan</li>
+<li class="nav-item sidebar-section">
+    <details data-sidebar-group="musyrif-pencatatan">
+        <summary class="nav-link"><i class="nav-icon bi bi-journal-check" aria-hidden="true"></i><span class="sidebar-label">Pencatatan Akademik</span><i class="bi bi-chevron-down sidebar-chevron" aria-hidden="true"></i></summary>
+        <ul class="sidebar-group-items list-unstyled">
+
 
 <li class="nav-item">
     <a class="nav-link {{ request()->routeIs('musyrif.hafalan.*') ? 'active' : '' }}"
@@ -32,7 +36,7 @@
     </a>
 </li>
 
-<li class="nav-title">Data Tahsin & Tilawah</li>
+
 
 <li class="nav-item">
     <a class="nav-link {{ request()->routeIs('musyrif.tahsin.*') ? 'active' : '' }}"
@@ -53,4 +57,8 @@
         href="{{ route('musyrif.tahsin-exams.index') }}">
         <i class="nav-icon bi bi-clipboard2-check-fill"></i> <span>Ujian Tahsin</span>
     </a>
+</li>
+
+        </ul>
+    </details>
 </li>

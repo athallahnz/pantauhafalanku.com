@@ -23,7 +23,11 @@
     </a>
 </li>
 
-<li class="nav-title">Master Data</li>
+<li class="nav-item sidebar-section">
+    <details data-sidebar-group="admin-akademik">
+        <summary class="nav-link"><i class="nav-icon bi bi-mortarboard" aria-hidden="true"></i><span class="sidebar-label">Akademik</span><i class="bi bi-chevron-down sidebar-chevron" aria-hidden="true"></i></summary>
+        <ul class="sidebar-group-items list-unstyled">
+
 
 <li class="nav-item mb-1">
     <a class="nav-link {{ request()->routeIs('kelas.*') ? 'active' : '' }}" href="{{ route('kelas.index') }}">
@@ -46,12 +50,16 @@
     </a>
 </li>
 
+
+        </ul>
+    </details>
+</li>
 {{-- MENU MUSYRIF DROPDOWN (COLLAPSE) --}}
-<li class="nav-group {{ request()->routeIs('admin.musyrif.*', 'admin.attendances.*') ? 'show' : '' }} mb-1">
-    <a class="nav-link nav-group-toggle" href="#">
+<li class="nav-item sidebar-section">
+    <details data-sidebar-group="admin-musyrif"><summary class="nav-link">
         <i class="nav-icon bi bi-person-plus-fill"></i> <span>Data Musyrif</span>
-    </a>
-    <ul class="nav-group-items">
+    <i class="bi bi-chevron-down sidebar-chevron" aria-hidden="true"></i></summary>
+    <ul class="sidebar-group-items list-unstyled">
         <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('admin.musyrif.index') ? 'active' : '' }}"
                 href="{{ route('admin.musyrif.index') }}">
@@ -65,15 +73,14 @@
             </a>
         </li>
     </ul>
-</li>
+</details></li>
 
 {{-- MENU SANTRI DROPDOWN (COLLAPSE) --}}
-<li
-    class="nav-group {{ request()->routeIs('santri.master.*', 'admin.santri.migrasi.*', 'admin.santri.archive.*') ? 'show' : '' }} mb-1">
-    <a class="nav-link nav-group-toggle" href="#">
+<li class="nav-item sidebar-section">
+    <details data-sidebar-group="admin-santri"><summary class="nav-link">
         <i class="nav-icon bi bi-people-fill"></i> <span> Data Santri</span>
-    </a>
-    <ul class="nav-group-items">
+    <i class="bi bi-chevron-down sidebar-chevron" aria-hidden="true"></i></summary>
+    <ul class="sidebar-group-items list-unstyled">
         {{-- Data Master Santri --}}
         <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('santri.master.index') ? 'active' : '' }}"
@@ -107,4 +114,4 @@
             </a>
         </li>
     </ul>
-</li>
+</details></li>

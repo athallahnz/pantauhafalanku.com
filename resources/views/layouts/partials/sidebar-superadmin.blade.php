@@ -53,7 +53,11 @@
     </a>
 </li>
 
-<li class="nav-title">Pengaturan</li>
+<li class="nav-item sidebar-section">
+    <details data-sidebar-group="superadmin-pengaturan">
+        <summary class="nav-link"><i class="nav-icon bi bi-gear" aria-hidden="true"></i><span class="sidebar-label">Pengaturan</span><i class="bi bi-chevron-down sidebar-chevron" aria-hidden="true"></i></summary>
+        <ul class="sidebar-group-items list-unstyled">
+
 
 <li class="nav-item">
     <a class="nav-link {{ request()->routeIs('profile.settings*') ? 'active' : '' }}"
@@ -75,4 +79,8 @@
             <div>Review Sistem</div>
         </div>
     </a>
+</li>
+
+        </ul>
+    </details>
 </li>

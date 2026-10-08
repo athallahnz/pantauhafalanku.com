@@ -181,14 +181,17 @@
     {{-- ================= END GLOBAL LOADER ================= --}}
 
 
+    @include('layouts.partials.sidebar-ux')
+
     {{-- SIDEBAR --}}
-    <div class="sidebar sidebar-dark sidebar-fixed border-end" id="sidebar">
+    <div class="sidebar sidebar-dark sidebar-fixed border-end" id="sidebar" aria-label="Navigasi utama" data-sidebar-role="{{ $role }}">
         <div class="sidebar-header border-bottom border-white d-flex justify-content-center py-4 sidebar-brand-logo">
             <img src="{{ !empty($institution?->logo) ? asset('storage/' . $institution->logo) : asset('assets/logos.png') }}"
                 alt="Logo Institusi" class="img-fluid">
         </div>
 
-        <ul class="sidebar-nav" data-coreui="navigation">
+        <button type="button" id="sidebar-mobile-close" aria-label="Tutup navigasi"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+        <ul class="sidebar-nav" id="sidebar-navigation">
             @switch($role)
                 @case('superadmin')
                     @include('layouts.partials.sidebar-superadmin')
@@ -213,12 +216,14 @@
         </ul>
     </div>
 
+    <div id="sidebar-backdrop" hidden></div>
+
     {{-- WRAPPER --}}
     <div class="wrapper d-flex flex-column min-vh-100">
 
         {{-- HEADER --}}
         <header class="header header-sticky px-3 py-3 border-bottom">
-            <button class="header-toggler me-3" type="button" id="custom-sidebar-toggler">
+            <button class="header-toggler me-3" type="button" id="custom-sidebar-toggler" aria-controls="sidebar" aria-expanded="true" aria-label="Perkecil sidebar" title="Perkecil sidebar">
                 <i class="icon icon-lg bi bi-list fs-3"></i>
             </button>
 
@@ -418,36 +423,6 @@
             /* =========================================================
             SIDEBAR COLLAPSE SYSTEM
             ========================================================= */
-            const sidebar = document.getElementById("sidebar");
-            const body = document.body;
-            const sidebarToggle = document.getElementById("custom-sidebar-toggler");
-
-            if (sidebarToggle && sidebar) {
-                sidebarToggle.addEventListener("click", function(e) {
-                    e.stopPropagation();
-
-                    if (window.innerWidth < 992) {
-                        body.classList.toggle("sidebar-open");
-                    } else {
-                        sidebar.classList.toggle("sidebar-narrow");
-                        localStorage.setItem("sidebar-collapse", sidebar.classList.contains(
-                            "sidebar-narrow"));
-                    }
-                });
-
-                document.addEventListener("click", function(e) {
-                    if (window.innerWidth < 992 && body.classList.contains("sidebar-open")) {
-                        if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-                            body.classList.remove("sidebar-open");
-                        }
-                    }
-                });
-
-                if (localStorage.getItem("sidebar-collapse") === "true" && window.innerWidth >= 992) {
-                    sidebar.classList.add("sidebar-narrow");
-                }
-            }
-
             /* Alert Handler (Laravel Session) */
             if (typeof AppAlert !== "undefined") {
                 @if (session('success'))

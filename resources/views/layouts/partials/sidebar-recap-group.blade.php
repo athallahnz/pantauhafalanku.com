@@ -8,11 +8,11 @@
     ];
 @endphp
 <li class="nav-item mb-1 recap-sidebar">
-    <details @if($recapOpen) open @endif>
+    <details data-sidebar-group="{{ $recapRole }}-rekap" @if($recapOpen) open @endif>
         <summary class="nav-link" style="cursor:pointer;list-style:none">
             <i class="nav-icon bi bi-collection"></i><span class="flex-grow-1">Rekap Akademik</span><i class="bi bi-chevron-down recap-chevron" aria-hidden="true"></i>
         </summary>
-        <ul class="list-unstyled ps-3 mb-1">
+        <ul class="sidebar-group-items list-unstyled">
             @foreach($recapLinks as $recapLink)
                 @if(\Illuminate\Support\Facades\Route::has($recapRole.'.'.$recapLink[0].'.index'))
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs($recapRole.'.'.$recapLink[0].'.*') ? 'active' : '' }}" href="{{ route($recapRole.'.'.$recapLink[0].'.index') }}" @if(request()->routeIs($recapRole.'.'.$recapLink[0].'.*')) aria-current="page" @endif><i class="nav-icon bi {{ $recapLink[2] }}"></i><span>{{ $recapLink[1] }}</span></a></li>
