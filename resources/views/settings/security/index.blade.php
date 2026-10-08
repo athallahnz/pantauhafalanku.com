@@ -35,7 +35,8 @@
                         Tambahkan ponsel, komputer, atau security key. Setiap akun boleh memiliki beberapa perangkat.
                     </p>
 
-                    <form id="passkeyRegistrationForm" class="no-loader" novalidate>
+                    <form id="passkeyRegistrationForm" class="no-loader" method="POST" action="{{ route('account.security.passkeys.store') }}" novalidate>
+                        @csrf
                         <div class="mb-3">
                             <label for="passkeyName" class="form-label fw-semibold">Nama perangkat</label>
                             <input id="passkeyName" name="name" type="text" class="form-control"
@@ -159,6 +160,13 @@
                 }
 
                 return error && error.message ? error.message : 'Passkey gagal ditambahkan.';
+            }
+
+            if (!window.SimtaquPasskeys) {
+                form.addEventListener('submit', function (event) { event.preventDefault(); });
+                showStatus('Aset Passkey gagal dimuat. Refresh halaman atau hubungi administrator.', 'error');
+                button.disabled = true;
+                return;
             }
 
             if (!window.SimtaquPasskeys.isSupported()) {
